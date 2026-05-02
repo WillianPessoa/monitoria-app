@@ -77,12 +77,12 @@ Mande suas respostas para o Willian assim que puder.
 
 ### EP04 — Registro de Atendimentos e Bolsas
 
-| ID | História | Atual | João Pedro | Pedro | Gabriel | Gustavo | Willian |
-|----|----------|:-----:|:----------:|:-----:|:-------:|:-------:|:-------:|
-| US16 | Monitor registra presença ou ausência do aluno | Must | | | | | |
-| US17 | Monitor registra o assunto tratado no atendimento | Should | | | | | |
-| US18 | Admin vê total de horas de monitoria por monitor no mês | Must | | | | | |
-| US19 | Professor vê histórico de atendimentos dos monitores | Should | | | | | |
+| ID   | História                                                | Atual  | João Pedro | Pedro | Gabriel | Gustavo | Willian |
+| ---- | ------------------------------------------------------- | :----: | :--------: | :---: | :-----: | :-----: | :-----: |
+| US16 | Monitor registra presença ou ausência do aluno          |  Must  |            |       |         |         |         |
+| US17 | Monitor registra o assunto tratado no atendimento       | Should |            |       |         |         |         |
+| US18 | Admin vê total de horas de monitoria por monitor no mês |  Must  |            |       |         |         |         |
+| US19 | Professor vê histórico de atendimentos dos monitores    | Should |            |       |         |         |         |
 
 ### EP05 — Relatórios e Notificações
 

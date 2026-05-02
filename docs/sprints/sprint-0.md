@@ -1,6 +1,6 @@
 # Sprint 0 — Entregáveis do Grupo
 
-**Time:** 
+**Time:** Bruna, Thais, João Pedro Bianco, Willian Gomes Pessoa, Pedro Chaves, Gabriel dos Reis Benevides, Gustavo Blandy de Oliveira
 **Data:** 30/04/2026
 
 ---
@@ -38,6 +38,7 @@ A coordenação tem acesso a um painel de acompanhamento que mostra se o monitor
 - Tem dificuldade de comunicar previamente ao monitor quais são suas dificuldades — não sabe como estruturar isso ou onde registrar
 - Quando vai, o monitor muitas vezes não está preparado porque não sabia o que ela precisava
 - Quando não pode ir, não tem como acompanhar o que foi visto
+
 **O que ela precisa:** agendar um horário, informar suas dificuldades com antecedência, e — se não puder ir — acessar um registro ou gravação do que foi coberto na monitoria.
 
 ---
@@ -51,6 +52,7 @@ A coordenação tem acesso a um painel de acompanhamento que mostra se o monitor
 - Às vezes resolve um exercício ou grava uma explicação para um aluno específico, mas esse conteúdo fica perdido — deveria estar disponível para todos da disciplina
 - Alunos às vezes relatam dificuldades fora da monitoria (por mensagem, por exemplo), mas esse contato não fica registrado em lugar nenhum
 - Tem que comprovar as horas para a secretaria, mas o controle é manual
+
 **O que ele precisa:** divulgar horários, saber o que os alunos precisam antes do encontro, e ter um mural por disciplina onde possa postar materiais, resoluções e gravações — tornando o conteúdo produzido na monitoria acessível a todos, não só a quem estava presente.
 
 ---
@@ -61,6 +63,7 @@ A coordenação tem acesso a um painel de acompanhamento que mostra se o monitor
 - Não tem visibilidade se a monitoria está acontecendo de fato
 - Não recebe feedback se os alunos estão melhorando ou se as dúvidas estão sendo resolvidas
 - A monitoria deveria ser uma estratégia combinada entre ele e o monitor, mas hoje não tem canal para isso
+
 **O que ele precisa:** acompanhar a frequência da monitoria, receber um resumo do que está sendo coberto e ter algum indicativo de se os alunos estão evoluindo.
 
 ---
@@ -71,118 +74,132 @@ A coordenação tem acesso a um painel de acompanhamento que mostra se o monitor
 - Controla tudo em planilha — cruza e-mails, relatórios e frequência manualmente todo mês
 - Não tem como saber automaticamente se um monitor está cumprindo a carga mínima semanal
 - Liberar ou suspender bolsas é um processo lento e sujeito a erro
+
 **O que ela precisa:** um painel que mostre automaticamente quais monitores cumpriram o mínimo de 1h semanal, com sinalização clara de quem está irregular para tomar providências sobre a bolsa.
 
 ---
 
 ## 3. Épicos
 
-| ID | Nome do épico | Sprint alvo |
-|----|--------------|-------------|
-| EP01 | | |
-| EP02 | | |
-| EP03 | | |
-| EP04 | | |
-| EP05 | | |
+| ID | Épico | Sprint alvo |
+|----|-------|:-----------:|
+| EP00 | Infraestrutura e Setup | Sprint 0 |
+| EP01 | Perfis e Autenticação | Sprint 1 |
+| EP02 | Cadastro de Disciplinas e Monitores | Sprint 2 |
+| EP03 | Agenda e Agendamento | Sprint 3 |
+| EP04 | Registro de Atendimentos e Bolsas | Sprint 4 |
+| EP05 | Relatórios e Notificações | Sprint 5 |
 
 ---
 
 ## 4. Backlog Inicial
 
-### EP01 — 
+### EP00 — Infraestrutura e Setup
+
+| ID | Tarefa | Prioridade |
+|----|--------|:----------:|
+| TT01 | Definir e documentar a stack (versão do Python, framework, MySQL) | **Must** |
+| TT02 | Modelar banco de dados (usuários, disciplinas, monitores, agendas, atendimentos) | **Must** |
+| TT03 | Configurar ambiente de desenvolvimento local (guia para o time) | **Must** |
+| TT04 | Criar estrutura base do projeto (skeleton do backend) | **Must** |
+| TT05 | Configurar conexão da aplicação com o MySQL | **Must** |
+
+### EP01 — Perfis e Autenticação
 
 | ID | Como... | Quero... | Para que... | Prioridade |
-|----|---------|----------|-------------|-----------|
-| US01 | | | | |
-| US02 | | | | |
-| US03 | | | | |
+|----|---------|----------|-------------|:----------:|
+| US01 | admin | cadastrar usuários com perfis diferentes (aluno, monitor, professor, admin) | cada um acesse apenas o que é permitido | **Must** |
+| US02 | usuário | fazer login com email e senha | entrar no sistema | **Must** |
+| US03 | monitor | editar meu perfil (contato, disponibilidade) | manter meus dados atualizados | Should |
+| US04 | admin | desativar um usuário | remover o acesso de quem saiu do programa | Should |
+| US05 | usuário | recuperar minha senha por email | não ficar bloqueado | Could |
 
-### EP02 — 
-
-| ID | Como... | Quero... | Para que... | Prioridade |
-|----|---------|----------|-------------|-----------|
-| US04 | | | | |
-| US05 | | | | |
-| US06 | | | | |
-
-### EP03 — 
+### EP02 — Cadastro de Disciplinas e Monitores
 
 | ID | Como... | Quero... | Para que... | Prioridade |
-|----|---------|----------|-------------|-----------|
-| US07 | | | | |
-| US08 | | | | |
-| US09 | | | | |
+|----|---------|----------|-------------|:----------:|
+| US06 | admin | cadastrar disciplinas com nome, código e professor | organizar o programa | **Must** |
+| US07 | professor | indicar um aluno como monitor da minha disciplina | iniciar o vínculo de monitoria | **Must** |
+| US08 | admin | aprovar ou rejeitar indicações de monitor | controlar quem entra no programa | **Must** |
+| US09 | admin | listar monitorias ativas por disciplina | ter visibilidade do programa | Should |
 
-### EP04 — 
-
-| ID | Como... | Quero... | Para que... | Prioridade |
-|----|---------|----------|-------------|-----------|
-| US10 | | | | |
-| US11 | | | | |
-| US12 | | | | |
-
-### EP05 — 
+### EP03 — Agenda e Agendamento
 
 | ID | Como... | Quero... | Para que... | Prioridade |
-|----|---------|----------|-------------|-----------|
-| US13 | | | | |
-| US14 | | | | |
-| US15 | | | | |
+|----|---------|----------|-------------|:----------:|
+| US10 | monitor | criar horários de atendimento na minha agenda | os alunos saibam quando estou disponível | **Must** |
+| US11 | aluno | ver os horários disponíveis de um monitor | escolher quando ser atendido | **Must** |
+| US12 | aluno | agendar um horário disponível | garantir minha vaga | **Must** |
+| US13 | monitor | ver minha agenda com agendamentos confirmados | me organizar | **Must** |
+| US14 | aluno | cancelar um agendamento | liberar o horário se não puder ir | Should |
+| US15 | monitor | bloquear um horário da agenda | marcar quando não estou disponível | Should |
+
+### EP04 — Registro de Atendimentos e Bolsas
+
+| ID | Como... | Quero... | Para que... | Prioridade |
+|----|---------|----------|-------------|:----------:|
+| US16 | monitor | registrar presença ou ausência do aluno | manter o histórico de atendimentos | **Must** |
+| US17 | monitor | registrar o assunto tratado no atendimento | documentar o que foi coberto | Should |
+| US18 | admin | ver total de horas de monitoria por monitor no mês | controle de bolsas | **Must** |
+| US19 | professor | ver histórico de atendimentos dos monitores da minha disciplina | acompanhar o programa | Should |
+
+### EP05 — Relatórios e Notificações
+
+| ID | Como... | Quero... | Para que... | Prioridade |
+|----|---------|----------|-------------|:----------:|
+| US20 | admin | gerar relatório de participação por disciplina | avaliar o impacto do programa | **Must** |
+| US21 | aluno | receber confirmação quando agendar | não esquecer o atendimento | Should |
+| US22 | aluno | receber lembrete antes do atendimento | não perder o horário | Could |
+| US23 | professor | receber relatório mensal por email | acompanhar sem precisar entrar no sistema | Could |
 
 ---
 
 ## 5. Priorização MoSCoW
 
-| ID | Descrição curta | Must | Should | Could | Won't |
-|----|----------------|:----:|:------:|:-----:|:-----:|
-| US01 | | | | | |
-| US02 | | | | | |
-| US03 | | | | | |
-| US04 | | | | | |
-| US05 | | | | | |
-| US06 | | | | | |
-| US07 | | | | | |
-| US08 | | | | | |
-| US09 | | | | | |
-| US10 | | | | | |
-| US11 | | | | | |
-| US12 | | | | | |
-| US13 | | | | | |
-| US14 | | | | | |
-| US15 | | | | | |
+| Classificação | IDs | Total |
+|---------------|-----|:-----:|
+| **Must have** | TT01, TT02, TT03, TT04, TT05, US01, US02, US06, US07, US08, US10, US11, US12, US13, US16, US18, US20 | 17 |
+| **Should have** | US03, US04, US09, US14, US15, US17, US19, US21 | 8 |
+| **Could have** | US05, US22, US23 | 3 |
 
 ---
 
 ## 6. Setup do Repositório
 
-**Link do repositório:**
+**Link do repositório:** (preencher após criar no GitHub)
 
 **Stack escolhida:**
-- Backend:
-- Frontend:
-- Banco de dados:
+- Backend: Python
+- Frontend: HTML + CSS
+- Banco de dados: MySQL
 
 **Papéis do QScrum:**
 | Nome | Papel |
 |------|-------|
-| | Product Owner |
-| | Scrum Master |
-| | Quality Manager |
-| | Developer |
-| | Developer |
-| | Developer |
+| Bruna | Product Owner |
+| Thais | Product Owner |
+| João Pedro Bianco | Scrum Master |
+| Willian Gomes Pessoa | Quality Manager |
+| Pedro Chaves | Developer |
+| Gabriel dos Reis Benevides | Developer |
+| Gustavo Blandy de Oliveira | Developer |
 
 ---
 
 ## 7. Quadro Scrum
 
-**Ferramenta escolhida:**
+**Ferramenta escolhida:** (definir — GitHub Projects ou Trello)
 
-**Link do board:**
+**Link do board:** (preencher)
 
-**Colunas definidas:**
-- [x] Product Backlog
-- [ ] Sprint Backlog
-- [ ] In Progress
-- [ ] Review
-- [ ] Done
+**Colunas do QScrum:**
+| Coluna | Quem usa |
+|--------|----------|
+| Product Backlog | PO |
+| Sprint Backlog | Time |
+| Ready for Dev | Dev |
+| Dev (In Progress) | Dev |
+| Ready for Review | Dev → QM |
+| In Review | QM |
+| Ready for Deploy | Time |
+| Done | Time |
