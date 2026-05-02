@@ -181,7 +181,7 @@ A coordenação tem acesso a um painel de acompanhamento que mostra se o monitor
 **Link do board:**
 
 **Colunas definidas:**
-- [ ] Product Backlog
+- [x] Product Backlog
 - [ ] Sprint Backlog
 - [ ] In Progress
 - [ ] Review

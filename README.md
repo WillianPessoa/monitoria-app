@@ -1,8 +1,6 @@
 # Monitoria App
 
-Sistema para centralizar o programa de monitoria acadêmica:
-cadastro de monitores, agendas de atendimento, agendamento por alunos
-e relatórios para professores e coordenação.
+Sistema para centralizar o programa de monitoria acadêmica: cadastro de monitores, agendas de atendimento, agendamento por alunos e relatórios para professores e coordenação.
 
 ## Time
 
@@ -14,7 +12,7 @@ e relatórios para professores e coordenação.
 | Pedro Chaves | Developer |
 | Gabriel dos Reis Benevides | Developer |
 | Gustavo Blandy de Oliveira | Developer |
-| William Gomes Pessoa | Quality Manager |
+| Willian Gomes Pessoa | Quality Manager |
 
 ## Stack
 
