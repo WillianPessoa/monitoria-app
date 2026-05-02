@@ -33,6 +33,18 @@ Mande suas respostas para o Willian assim que puder.
 
 ## Parte 1 — Revisão do MoSCoW
 
+### EP00 — Infraestrutura e Setup
+
+> Tarefas técnicas — sem formato de User Story. Avaliem se concordam com a prioridade e se falta alguma tarefa técnica.
+
+| ID | Tarefa | Atual | João Pedro | Pedro | Gabriel | Gustavo | Willian |
+|----|--------|:-----:|:----------:|:-----:|:-------:|:-------:|:-------:|
+| TT01 | Definir e documentar a stack | Must | | | | | |
+| TT02 | Modelar banco de dados | Must | | | | | |
+| TT03 | Configurar ambiente de desenvolvimento local | Must | | | | | |
+| TT04 | Criar estrutura base do projeto (skeleton) | Must | | | | | |
+| TT05 | Configurar conexão com MySQL | Must | | | | | |
+
 ### EP01 — Perfis e Autenticação
 
 | ID | História | Atual | João Pedro | Pedro | Gabriel | Gustavo | Willian |
@@ -85,7 +97,17 @@ Mande suas respostas para o Willian assim que puder.
 
 ## Parte 2 — Planning Poker
 
-Estime o esforço de cada história (1 · 2 · 3 · 5 · 8 · 13).
+Estime o esforço de cada item (1 · 2 · 3 · 5 · 8 · 13).
+
+### EP00 — Infraestrutura e Setup
+
+| ID | Tarefa | João Pedro | Pedro | Gabriel | Gustavo | Willian | Consenso |
+|----|--------|:----------:|:-----:|:-------:|:-------:|:-------:|:--------:|
+| TT01 | Definir e documentar a stack | | | | | | |
+| TT02 | Modelar banco de dados | | | | | | |
+| TT03 | Configurar ambiente de desenvolvimento local | | | | | | |
+| TT04 | Criar estrutura base do projeto (skeleton) | | | | | | |
+| TT05 | Configurar conexão com MySQL | | | | | | |
 
 ### EP01 — Perfis e Autenticação
 
