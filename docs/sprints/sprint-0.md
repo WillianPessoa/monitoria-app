@@ -166,7 +166,7 @@ A coordenação tem acesso a um painel de acompanhamento que mostra se o monitor
 
 ## 6. Setup do Repositório
 
-**Link do repositório:** (preencher após criar no GitHub)
+**Link do repositório:** https://github.com/jpmab26/monitoria-app
 
 **Stack escolhida:**
 - Backend: Python
