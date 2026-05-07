@@ -92,6 +92,8 @@
 
 ---
 
+> Os critérios de aceitação de cada história estão em [`docs/criterios-de-aceitacao.md`](criterios-de-aceitacao.md).
+
 ## Definition of Ready (DoR)
 
 Uma história está pronta para entrar em Sprint quando:
