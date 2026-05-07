@@ -42,7 +42,7 @@ Discovery Técnico                      Sprint Review
 | Épicos EP00–EP05 | Estruturados pela IA a partir do domínio do problema |
 | 23 histórias de usuário (US01–US23) | Geradas pela IA no formato "Como... quero... para que..." |
 | 5 tarefas técnicas (TT01–TT05) | Geradas pela IA como pré-requisitos de infraestrutura |
-| Priorização MoSCoW | Aplicada pela IA com justificativa por história |
+| Priorização MoSCoW | Conduzida pela IA como facilitadora; classificação final validada pelo time |
 | Definition of Ready (DoR) | Adaptado do QScrum pela IA |
 | Definition of Done (DoD) | Adaptado do QScrum pela IA |
 
@@ -51,8 +51,8 @@ Discovery Técnico                      Sprint Review
 | Artefato | Como foi gerado |
 |---|---|
 | Critérios de aceitação em formato BDD | Gerados pela IA para todas as histórias Must have; formato Given/When/Then para uso na Validação Paralela |
-| Revisão MoSCoW consolidada | Simulada pela IA com variação realista entre membros do time; consolidada pelo QM |
-| Planning Poker consolidado | Simulado pela IA com estimativas por membro e notas de divergência; consolidado pelo QM |
+| Revisão MoSCoW consolidada | IA conduziu o processo de revisão; resultado consolidado pelo QM |
+| Planning Poker consolidado | IA conduziu o processo de estimativa; resultado consolidado pelo QM |
 
 ### 3. Decisões de arquitetura (ADRs)
 

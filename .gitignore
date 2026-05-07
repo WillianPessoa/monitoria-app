@@ -29,3 +29,6 @@ build/
 .idea/
 *.swp
 *.swo
+
+# PDFs gerados localmente (nao versionados)
+docs/sprints/*.pdf

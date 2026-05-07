@@ -184,6 +184,14 @@ A coordenação tem acesso a um painel de acompanhamento que mostra se o monitor
 | Gabriel dos Reis Benevides | Developer |
 | Gustavo Blandy de Oliveira | Developer |
 
+### Repositório no GitHub
+
+![Repositório principal — página inicial com arquivos e estrutura do projeto](../imagens/repo-main.gif)
+
+### Issues do Backlog
+
+![Lista de issues criadas no GitHub — uma issue por história/tarefa do Sprint 0](../imagens/issues.gif)
+
 ---
 
 ## 7. Quadro Scrum
@@ -203,3 +211,24 @@ A coordenação tem acesso a um painel de acompanhamento que mostra se o monitor
 | In Review | QM |
 | Ready for Deploy | Time |
 | Done | Time |
+
+### Board QScrum
+
+![Quadro QScrum no GitHub Projects — colunas do fluxo com os itens do Sprint 0](../imagens/board.gif)
+
+---
+
+## 8. Uso de Inteligência Artificial
+
+A fase Upstream do Sprint 0 foi conduzida com auxílio de **Claude Code** (Anthropic), operado pelo Quality Manager. A IA atuou como colaborador técnico — gerando artefatos iniciais, estruturando opções e apontando riscos — enquanto todas as decisões finais permaneceram com o time.
+
+**O que foi gerado com auxílio de IA:**
+- Visão do produto, Product Goal e 4 personas
+- 23 histórias de usuário (US01–US23) e 5 tarefas técnicas (TT01–TT05)
+- Condução do processo de priorização MoSCoW e Planning Poker; resultado validado pelo time
+- Critérios de aceitação em formato BDD (Given/When/Then) para todos os itens Must have
+- 5 ADRs de arquitetura (framework, autenticação, organização do backend, banco de dados, frontend)
+
+**O que a IA não fez:** nenhuma linha de código foi gerada; as cerimônias do QScrum (Planning, Daily, Review, Retrospectiva) são conduzidas pelo time; o Product Backlog é responsabilidade das Product Owners.
+
+Documentação completa em [`docs/uso-da-ia.md`](../uso-da-ia.md) e registro de sessões em [`docs/sessoes/`](../sessoes/).
