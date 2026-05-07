@@ -190,7 +190,7 @@ A coordenação tem acesso a um painel de acompanhamento que mostra se o monitor
 
 **Ferramenta escolhida:** GitHub Projects
 
-**Link do board:** (preencher após criar o Project no GitHub)
+**Link do board:** https://github.com/users/WillianPessoa/projects/2
 
 **Colunas do QScrum:**
 | Coluna | Quem usa |
