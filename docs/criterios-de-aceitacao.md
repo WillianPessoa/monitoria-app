@@ -1,6 +1,7 @@
 # Critérios de Aceitação — Monitoria App
 
-Referência para o DoR: uma história só entra em Sprint com os critérios abaixo revisados e aprovados pelo QM.
+Formato: **BDD (Given / When / Then)** para histórias de usuário — base da Validação Paralela do QM.  
+Tarefas técnicas (TT) usam checklist — não são comportamentos de usuário.
 
 ---
 
@@ -25,8 +26,8 @@ Referência para o DoR: uma história só entra em Sprint com os critérios abai
 - [ ] Testado em ao menos dois ambientes diferentes
 
 ### TT04 — Criar estrutura base do projeto (skeleton)
-- [ ] Estrutura de pastas definida e criada (ex: `routes/`, `models/`, `controllers/` ou equivalente no framework)
-- [ ] Servidor sobe sem erros e responde a uma rota de saúde (ex: `GET /health` → 200)
+- [ ] Estrutura de pastas definida e criada
+- [ ] Servidor sobe sem erros e responde a uma rota de saúde (`GET /health` → 200)
 - [ ] Dependências listadas em `requirements.txt` com versões fixadas
 - [ ] `.gitignore` configurado para Python e variáveis de ambiente
 
@@ -34,103 +35,300 @@ Referência para o DoR: uma história só entra em Sprint com os critérios abai
 - [ ] Aplicação conecta ao banco na inicialização
 - [ ] Configuração de banco via variável de ambiente (não hardcoded)
 - [ ] Erro de conexão é logado de forma clara no console
-- [ ] Conexão funciona no ambiente de desenvolvimento de todos os membros do time
+- [ ] Conexão funciona no ambiente de todos os membros do time
 
 ---
 
 ## EP01 — Perfis e Autenticação
 
 ### US01 — Admin cadastra usuários com perfis
-- [ ] Admin pode cadastrar usuário informando: nome, email e papel (aluno, monitor, professor, admin)
-- [ ] Sistema gera senha temporária aleatória e exibe ao admin no momento do cadastro
-- [ ] Usuário criado com status "Pendente" até realizar a troca de senha
-- [ ] Tentativa de cadastrar email já existente é rejeitada com mensagem clara
-- [ ] Usuário sem papel definido não pode ser cadastrado
+
+**Cenário 1: Cadastro bem-sucedido**
+```
+Given: admin autenticado na tela de gestão de usuários
+When:  preenche nome, email e papel (aluno/monitor/professor/admin) e confirma
+Then:  usuário é criado com status "Pendente" e senha temporária é exibida ao admin
+```
+
+**Cenário 2: Email duplicado**
+```
+Given: admin tenta cadastrar um email que já existe no sistema
+When:  confirma o cadastro
+Then:  sistema rejeita com mensagem "Email já cadastrado"
+```
+
+**Cenário 3: Campos obrigatórios ausentes**
+```
+Given: admin está na tela de cadastro de usuário
+When:  tenta confirmar sem preencher nome, email ou papel
+Then:  sistema impede o envio e aponta o campo faltando
+```
+
+---
 
 ### US02 — Usuário faz login com email e senha
-- [ ] Login aceita email e senha
-- [ ] Credenciais inválidas retornam mensagem de erro sem revelar qual campo está errado
-- [ ] Usuário com status "Pendente" é redirecionado para troca de senha obrigatória
-- [ ] Usuário com status "Inativo" não consegue fazer login, com mensagem clara
-- [ ] Após login bem-sucedido, usuário é redirecionado para a tela correspondente ao seu papel
+
+**Cenário 1: Login bem-sucedido**
+```
+Given: usuário com status "Ativo" na tela de login
+When:  informa email e senha corretos
+Then:  é autenticado e redirecionado para a tela correspondente ao seu papel
+```
+
+**Cenário 2: Credenciais inválidas**
+```
+Given: usuário na tela de login
+When:  informa email ou senha incorretos
+Then:  sistema exibe mensagem de erro genérica sem revelar qual campo está errado
+```
+
+**Cenário 3: Primeiro acesso (status Pendente)**
+```
+Given: usuário com status "Pendente" na tela de login
+When:  informa email e senha temporária corretos
+Then:  é redirecionado para a tela de troca de senha obrigatória
+```
+
+**Cenário 4: Usuário inativo**
+```
+Given: usuário com status "Inativo" na tela de login
+When:  informa credenciais corretas
+Then:  login é negado com mensagem de que a conta está inativa
+```
 
 ---
 
 ## EP02 — Cadastro de Disciplinas e Monitores
 
 ### US06 — Admin cadastra disciplinas
-- [ ] Admin pode cadastrar disciplina informando: nome, código e professor responsável
-- [ ] Código de disciplina duplicado é rejeitado com mensagem clara
-- [ ] Apenas usuários com papel "professor" podem ser associados como responsáveis
-- [ ] Disciplina cadastrada aparece imediatamente na listagem
-- [ ] Campos obrigatórios (nome e código) não podem ficar em branco
+
+**Cenário 1: Cadastro bem-sucedido**
+```
+Given: admin autenticado na tela de gestão de disciplinas
+When:  preenche nome, código e seleciona professor responsável e confirma
+Then:  disciplina é criada e aparece imediatamente na listagem
+```
+
+**Cenário 2: Código duplicado**
+```
+Given: admin tenta cadastrar uma disciplina com código já existente
+When:  confirma o cadastro
+Then:  sistema rejeita com mensagem de código duplicado
+```
+
+**Cenário 3: Professor inválido**
+```
+Given: admin tenta associar usuário sem papel "professor" como responsável
+When:  confirma o cadastro
+Then:  sistema rejeita com mensagem de papel inválido
+```
+
+---
 
 ### US07 — Professor indica aluno como monitor
-- [ ] Professor autenticado pode indicar um aluno como monitor de uma das suas disciplinas
-- [ ] Apenas usuários com papel "aluno" podem ser indicados
-- [ ] A indicação cria um vínculo com status "Pendente de aprovação"
-- [ ] Professor não pode indicar monitor para disciplina de outro professor
-- [ ] Uma disciplina não pode ter duas indicações pendentes para o mesmo aluno
+
+**Cenário 1: Indicação bem-sucedida**
+```
+Given: professor autenticado na tela de uma das suas disciplinas
+When:  seleciona um aluno e confirma a indicação como monitor
+Then:  vínculo é criado com status "Pendente de aprovação"
+```
+
+**Cenário 2: Indicação de usuário sem papel aluno**
+```
+Given: professor tenta indicar usuário que não tem papel "aluno"
+When:  confirma a indicação
+Then:  sistema rejeita com mensagem de papel inválido
+```
+
+**Cenário 3: Disciplina de outro professor**
+```
+Given: professor autenticado
+When:  tenta criar indicação para disciplina que não é de sua responsabilidade
+Then:  a disciplina não aparece nas opções disponíveis para ele
+```
+
+---
 
 ### US08 — Admin aprova ou rejeita indicação de monitor
-- [ ] Admin vê lista de indicações com status "Pendente de aprovação"
-- [ ] Admin pode aprovar → vínculo muda para "Ativo" e papel do usuário passa a incluir "monitor"
-- [ ] Admin pode rejeitar com motivo obrigatório → vínculo muda para "Rejeitado"
-- [ ] Indicação aprovada ou rejeitada sai da lista de pendentes
-- [ ] Professor pode ver o resultado da indicação no sistema
+
+**Cenário 1: Aprovação**
+```
+Given: admin visualiza indicação com status "Pendente de aprovação"
+When:  aprova a indicação
+Then:  vínculo muda para "Ativo" e o aluno passa a ter acesso como monitor da disciplina
+```
+
+**Cenário 2: Rejeição com motivo**
+```
+Given: admin visualiza indicação com status "Pendente de aprovação"
+When:  rejeita informando o motivo
+Then:  vínculo muda para "Rejeitado" e o motivo é registrado
+```
+
+**Cenário 3: Indicação processada sai da fila**
+```
+Given: admin aprova ou rejeita uma indicação
+When:  retorna à lista de pendentes
+Then:  a indicação processada não aparece mais na lista
+```
 
 ---
 
 ## EP03 — Agenda e Agendamento
 
 ### US10 — Monitor cria horários de atendimento
-- [ ] Monitor pode criar um bloco de disponibilidade informando: data, horário de início, horário de fim e local (presencial ou link)
-- [ ] O sistema rejeita horários sobrepostos com aviso claro
-- [ ] Monitor pode ver sua agenda com os blocos criados
-- [ ] Não é possível criar horários com data/hora no passado
-- [ ] Monitor pode cancelar um horário sem agendamentos vinculados
+
+**Cenário 1: Criação bem-sucedida**
+```
+Given: monitor autenticado na sua agenda
+When:  informa data, horário de início, horário de fim e local e confirma
+Then:  bloco aparece na agenda como disponível para agendamento
+```
+
+**Cenário 2: Horários sobrepostos**
+```
+Given: monitor já tem um horário das 14h às 16h em uma data
+When:  tenta criar outro horário das 15h às 17h na mesma data
+Then:  sistema rejeita com mensagem de sobreposição de horário
+```
+
+**Cenário 3: Data no passado**
+```
+Given: monitor na tela de criação de horários
+When:  tenta criar horário com data anterior ao dia atual
+Then:  sistema rejeita com mensagem de data inválida
+```
+
+---
 
 ### US11 — Aluno vê horários disponíveis de um monitor
-- [ ] Aluno pode buscar monitores por disciplina
-- [ ] Listagem exibe: nome do monitor, data, horário de início/fim e local
-- [ ] Apenas horários com vagas disponíveis aparecem
-- [ ] Horários com data/hora passada não aparecem na listagem
+
+**Cenário 1: Busca por disciplina**
+```
+Given: aluno autenticado na tela de busca de monitoria
+When:  seleciona uma disciplina
+Then:  sistema exibe lista de horários disponíveis com nome do monitor, data, horário e local
+```
+
+**Cenário 2: Horário lotado não aparece**
+```
+Given: horário de um monitor já tem agendamento confirmado
+When:  aluno busca horários disponíveis desse monitor
+Then:  o horário com agendamento não aparece na listagem
+```
+
+**Cenário 3: Horário passado não aparece**
+```
+Given: horário de atendimento cuja data já passou
+When:  aluno busca horários disponíveis
+Then:  o horário passado não aparece na listagem
+```
+
+---
 
 ### US12 — Aluno agenda um horário disponível
-- [ ] Aluno pode confirmar um agendamento em horário disponível
-- [ ] Agendamento é confirmado imediatamente e horário sai da lista de disponíveis
-- [ ] Aluno não pode agendar dois atendimentos no mesmo horário
-- [ ] Aluno não pode ter dois agendamentos ativos com o mesmo monitor no mesmo dia
-- [ ] Monitor recebe o novo agendamento visível na sua agenda
+
+**Cenário 1: Agendamento bem-sucedido**
+```
+Given: aluno visualiza horário disponível na listagem
+When:  confirma o agendamento
+Then:  agendamento é criado, horário sai da listagem de disponíveis e aparece na agenda do monitor
+```
+
+**Cenário 2: Conflito de horário do aluno**
+```
+Given: aluno já tem agendamento confirmado em um determinado horário
+When:  tenta agendar outro atendimento no mesmo período
+Then:  sistema rejeita com mensagem de conflito de horário
+```
+
+---
 
 ### US13 — Monitor vê agenda com agendamentos confirmados
-- [ ] Monitor vê lista de agendamentos com: nome do aluno, data, horário e local
-- [ ] A visualização distingue horários com agendamento dos horários livres
-- [ ] Monitor pode ver agendamentos futuros e histórico de passados
+
+**Cenário 1: Visualização da agenda**
+```
+Given: monitor autenticado
+When:  acessa sua agenda
+Then:  visualiza todos os horários criados, diferenciando visualmente os que têm agendamento dos que estão livres
+```
+
+**Cenário 2: Dados do agendamento**
+```
+Given: monitor visualiza horário com agendamento na agenda
+When:  acessa o detalhe do agendamento
+Then:  sistema exibe nome do aluno, data e horário do atendimento
+```
 
 ---
 
 ## EP04 — Registro de Atendimentos e Bolsas
 
 ### US16 — Monitor registra presença ou ausência do aluno
-- [ ] Após o horário do agendamento, monitor pode registrar: presente, ausente ou cancelado
-- [ ] Registro só é possível a partir do horário de início do agendamento
-- [ ] Registro fica no histórico do aluno, do monitor e da disciplina
-- [ ] Agendamento sem registro após 24h aparece como pendente no painel do monitor
+
+**Cenário 1: Registro de presença**
+```
+Given: horário de um agendamento já passou
+When:  monitor registra o aluno como "presente"
+Then:  registro é salvo no histórico e contabilizado no total de horas do monitor
+```
+
+**Cenário 2: Registro de ausência**
+```
+Given: horário de um agendamento já passou
+When:  monitor registra o aluno como "ausente"
+Then:  registro é salvo no histórico mas não contabilizado no total de horas
+```
+
+**Cenário 3: Registro antes do horário**
+```
+Given: agendamento com horário ainda no futuro
+When:  monitor tenta registrar presença ou ausência
+Then:  sistema rejeita com mensagem de que o horário ainda não chegou
+```
+
+---
 
 ### US18 — Admin vê total de horas de monitoria por monitor no mês
-- [ ] Admin vê painel com total de horas realizadas por monitor no mês corrente
-- [ ] Painel sinaliza monitores abaixo do mínimo de 1h semanal
-- [ ] Apenas sessões com presença registrada ("presente") contam para o total
-- [ ] É possível filtrar por disciplina
-- [ ] É possível selecionar mês de referência
+
+**Cenário 1: Painel de horas**
+```
+Given: admin autenticado no painel de controle de bolsas
+When:  acessa o relatório do mês corrente
+Then:  sistema exibe total de horas por monitor com destaque para quem está abaixo de 1h semanal
+```
+
+**Cenário 2: Filtro por disciplina**
+```
+Given: admin no painel de horas
+When:  filtra por uma disciplina específica
+Then:  sistema exibe apenas os monitores vinculados àquela disciplina
+```
+
+**Cenário 3: Apenas sessões com presença contam**
+```
+Given: monitor tem 3 agendamentos no mês — 2 com registro "presente" e 1 com "ausente"
+When:  admin consulta o total de horas desse monitor
+Then:  sistema contabiliza apenas as 2 sessões com presença confirmada
+```
 
 ---
 
 ## EP05 — Relatórios e Notificações
 
 ### US20 — Admin gera relatório de participação por disciplina
-- [ ] Admin pode gerar relatório de uma disciplina informando o período (mês/semestre)
-- [ ] Relatório inclui: total de sessões realizadas, total de alunos atendidos, horas realizadas e monitores ativos
-- [ ] Relatório pode ser exportado em PDF ou CSV
-- [ ] Dados refletem apenas sessões com registro de presença confirmado
+
+**Cenário 1: Geração do relatório**
+```
+Given: admin seleciona uma disciplina e um período
+When:  solicita a geração do relatório
+Then:  sistema exibe relatório com total de sessões realizadas, alunos atendidos, horas realizadas e monitores ativos
+```
+
+**Cenário 2: Exportação**
+```
+Given: admin visualiza relatório gerado
+When:  solicita exportação
+Then:  arquivo PDF ou CSV é gerado e disponibilizado para download
+```
