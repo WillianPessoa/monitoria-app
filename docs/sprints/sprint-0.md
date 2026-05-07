@@ -188,9 +188,9 @@ A coordenação tem acesso a um painel de acompanhamento que mostra se o monitor
 
 ## 7. Quadro Scrum
 
-**Ferramenta escolhida:** (definir — GitHub Projects ou Trello)
+**Ferramenta escolhida:** GitHub Projects
 
-**Link do board:** (preencher)
+**Link do board:** (preencher após criar o Project no GitHub)
 
 **Colunas do QScrum:**
 | Coluna | Quem usa |
