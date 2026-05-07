@@ -69,14 +69,14 @@ Mande suas respostas para o Willian assim que puder.
 
 ### EP03 — Agenda e Agendamento
 
-| ID | História | Atual | João Pedro | Pedro | Gabriel | Gustavo | Willian |
-|----|----------|:-----:|:----------:|:-----:|:-------:|:-------:|:-------:|
-| US10 | Monitor cria horários de atendimento na agenda | Must | ✅ | ✅ | ✅ | ✅ | ✅ |
-| US11 | Aluno vê horários disponíveis de um monitor | Must | ✅ | ✅ | ✅ | ✅ | ✅ |
-| US12 | Aluno agenda um horário disponível | Must | ✅ | ✅ | ✅ | ✅ | ✅ |
-| US13 | Monitor vê sua agenda com agendamentos confirmados | Must | ✅ | ✅ | ✅ | ✅ | ✅ |
-| US14 | Aluno cancela um agendamento | Should | ✅ | ✅ | ✅ | ✅ | ✅ |
-| US15 | Monitor bloqueia um horário da agenda | Should | ✅ | ✅ | ✅ | ✅ | ✅ |
+| ID   | História                                           | Atual  | João Pedro | Pedro | Gabriel | Gustavo | Willian |
+| ---- | -------------------------------------------------- | :----: | :--------: | :---: | :-----: | :-----: | :-----: |
+| US10 | Monitor cria horários de atendimento na agenda     |  Must  |     ✅      |   ✅   |    ✅    |    ✅    |    ✅    |
+| US11 | Aluno vê horários disponíveis de um monitor        |  Must  |     ✅      |   ✅   |    ✅    |    ✅    |    ✅    |
+| US12 | Aluno agenda um horário disponível                 |  Must  |     ✅      |   ✅   |    ✅    |    ✅    |    ✅    |
+| US13 | Monitor vê sua agenda com agendamentos confirmados |  Must  |     ✅      |   ✅   |    ✅    |    ✅    |    ✅    |
+| US14 | Aluno cancela um agendamento                       | Should |     ✅      |   ✅   |    ✅    |    ✅    |    ✅    |
+| US15 | Monitor bloqueia um horário da agenda              | Should |     ✅      |   ✅   |    ✅    |    ✅    |    ✅    |
 
 ### EP04 — Registro de Atendimentos e Bolsas
 
