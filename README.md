@@ -16,14 +16,30 @@ Sistema para centralizar o programa de monitoria acadêmica: cadastro de monitor
 
 ## Stack
 
-- **Backend:** Python
-- **Frontend:** HTML + CSS
-- **Banco de dados:** MySQL
+- **Backend:** Python 3.12 + Flask 3.0.3
+- **Frontend:** HTML + CSS (Jinja2 no backend)
+- **Banco de dados:** MySQL 8.0
 - **Hospedagem:** (a definir)
+
+Detalhamento da stack em [docs/stack.md](docs/stack.md).
 
 ## Como rodar localmente
 
-(preencher após setup técnico)
+1. Abra [docs/setup.md](docs/setup.md) e siga o passo a passo.
+2. Entre na pasta `backend/`.
+3. Instale dependencias com `pip install -r requirements.txt`.
+4. Suba o banco containerizado com `docker compose -f docker-sql.yaml up -d` na raiz do projeto.
+5. Copie `backend/.env.example` como base e exporte as variaveis no shell.
+6. Rode `python app.py`.
+7. Para smoke test automatizado da Sprint 1, rode `bash scripts/smoke_test_sprint1.sh` dentro de `backend/`.
+8. Reset de senha e gestao de acesso ficam nas maos do admin na tela de usuarios.
+
+Arquivos de referencia:
+
+- Setup local: [docs/setup.md](docs/setup.md)
+- Modelagem do banco (ER): [docs/modelagem-banco.md](docs/modelagem-banco.md)
+- Schema SQL: [backend/db/schema.sql](backend/db/schema.sql)
+- Docker SQL: [docker-sql.yaml](docker-sql.yaml)
 
 ## Sprints
 

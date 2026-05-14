@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Primeiro acesso{% endblock %}
+{% block content %}
+<section class="card" style="max-width:480px;margin:0 auto;">
+  <h2>Primeiro acesso</h2>
+  <form method="post">
+    <label for="senha">Nova senha</label>
+    <input id="senha" name="senha" type="password" required />
+    <label for="confirmar_senha">Confirmar senha</label>
+    <input id="confirmar_senha" name="confirmar_senha" type="password" required />
+    <button class="button" type="submit">Salvar</button>
+  </form>
+</section>
+{% endblock %}
