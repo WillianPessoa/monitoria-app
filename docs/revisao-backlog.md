@@ -56,7 +56,7 @@ Mande suas respostas para o Willian assim que puder.
 | US04 | Admin desativa um usuário | Should | ✅ | ✅ | ✅ | ✅ | ✅ |
 | US05 | Usuário recupera senha por email | Could | ✅ | ✅ | ✅ | Won't | ✅ |
 
-> **US05 — nota de consolidação (Willian/QM):** Gustavo sugeriu mover para Won't argumentando que configurar SMTP está fora do escopo atual e aumenta a superfície de falha. Time manteve Could por maioria — pode entrar se sobrar capacidade no final do projeto.
+> **US05 — nota de consolidação (Willian/QM):** A recuperação por email foi simplificada e transferida para o admin: o sistema agora gera senha temporária/reset direto na tela de usuarios, sem SMTP.
 
 ### EP02 — Cadastro de Disciplinas e Monitores
 
@@ -128,7 +128,7 @@ Estime o esforço de cada item (1 · 2 · 3 · 5 · 8 · 13).
 
 > **US01 — nota:** divergência entre 5 e 8. Convergiu para 8 — RBAC com 4 papéis e fluxo de senha temporária é mais complexo do que parece.  
 > **US02 — nota:** Gabriel estimou 8 prevendo o fluxo de primeiro acesso (senha temporária). Time convergiu para 5 após esclarecer que o fluxo de primeiro acesso está em US01.  
-> **US05 — nota:** Pedro e Gustavo estimaram 13 pela dependência de SMTP externo. Consenso 13 — dependência externa eleva o risco.
+> **US05 — nota:** A estimativa original considerava SMTP externo; com o fluxo simplificado, a responsabilidade ficou com o admin e a dependência externa foi removida.
 
 ### EP02 — Cadastro de Disciplinas e Monitores
 
