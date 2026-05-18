@@ -1,9 +1,12 @@
 import logging
+import os
 
 import mysql.connector
 from mysql.connector.pooling import MySQLConnectionPool
 
 _pool = None
+
+_SCHEMA = os.path.join(os.path.dirname(__file__), "schema.sql")
 
 
 def _build_pool(app):
@@ -20,10 +23,24 @@ def _build_pool(app):
     )
 
 
+def _apply_schema(conn):
+    with open(_SCHEMA, encoding="utf-8") as f:
+        sql = f.read()
+    statements = [s.strip() for s in sql.split(";") if s.strip()]
+    cursor = conn.cursor()
+    for stmt in statements:
+        first = stmt.split()[0].upper() if stmt.split() else ""
+        if first in ("CREATE", "ALTER", "DROP"):
+            cursor.execute(stmt)
+    conn.commit()
+    cursor.close()
+
+
 def init_db(app):
     try:
         _build_pool(app)
         conn = get_connection()
+        _apply_schema(conn)
         conn.close()
     except mysql.connector.Error:
         logging.exception("Falha ao conectar no MySQL durante a inicializacao")
