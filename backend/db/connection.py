@@ -42,8 +42,9 @@ def init_db(app):
         conn = get_connection()
         _apply_schema(conn)
         conn.close()
-    except mysql.connector.Error:
+    except mysql.connector.Error as exc:
         logging.exception("Falha ao conectar no MySQL durante a inicializacao")
+        raise RuntimeError("Falha ao inicializar o pool de conexao MySQL") from exc
 
 
 def get_connection():

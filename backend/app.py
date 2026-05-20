@@ -9,6 +9,7 @@ from disciplinas import bp as disciplinas_bp
 from relatorios import bp as relatorios_bp
 from registros import bp as registros_bp
 from usuarios import bp as usuarios_bp
+from monitorias import bp as monitorias_bp
 
 
 def create_app():
@@ -25,6 +26,7 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(usuarios_bp)
     app.register_blueprint(disciplinas_bp)
+    app.register_blueprint(monitorias_bp)
     app.register_blueprint(agenda_bp)
     app.register_blueprint(registros_bp)
     app.register_blueprint(relatorios_bp)
