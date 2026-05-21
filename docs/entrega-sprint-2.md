@@ -252,3 +252,28 @@ CREATE TABLE IF NOT EXISTS disciplina_alunos (
 ```
 
 As migrations são aplicadas automaticamente na inicialização via `_apply_migrations()` em `connection.py`, de forma idempotente.
+
+---
+
+## TT06 — Publicação no Railway
+
+**Problema:** As POs precisam acessar o sistema sem depender do ambiente local de nenhum dev.
+
+**Solução:** Publicação no Railway, plataforma de nuvem com detecção automática de Python e plugin MySQL nativo.
+
+**Como funciona:**
+
+1. O Railway detecta o projeto via `railpack.json` (provider Python) e executa o comando definido no `Procfile`:
+   ```
+   web: gunicorn --chdir backend "app:create_app()" --bind 0.0.0.0:$PORT
+   ```
+2. O plugin MySQL do Railway injeta as variáveis de conexão com nomes diferentes dos padrões locais (`MYSQLHOST`, `MYSQLPORT`, `MYSQLUSER`, `MYSQLPASSWORD`, `MYSQLDATABASE`). O `backend/config.py` foi adaptado para aceitar ambos os formatos sem quebrar o ambiente local.
+3. Na inicialização (`init_db()` em `connection.py`), a aplicação aplica o schema e as migrations automaticamente — sem necessidade de rodar scripts manuais no banco de produção.
+4. O mesmo `init_db()` executa `_seed_admins()`, que cria os usuários pré-cadastrados do time e da PO caso ainda não existam.
+
+**Arquivos alterados:**
+- `Procfile` — comando de start para o gunicorn
+- `railpack.json` — provider e start command para o Railway
+- `requirements.txt` — movido para a raiz (Railway auto-detect)
+- `backend/config.py` — suporte às variáveis do plugin MySQL do Railway
+- `backend/db/connection.py` — `_apply_schema`, `_apply_migrations` e `_seed_admins` chamados em `init_db()`
