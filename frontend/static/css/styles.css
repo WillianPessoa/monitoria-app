@@ -61,6 +61,8 @@ body{
 button, .button{appearance:none;border:0;border-radius:10px;padding:0.6rem 0.9rem;background:var(--primary);color:var(--primary-contrast);cursor:pointer;font-weight:600}
 button:focus, .button:focus{outline:3px solid rgba(79,209,197,0.18)}
 .danger{background:var(--error)}
+.outline{background:transparent;border:1px solid rgba(255,255,255,0.2);color:var(--text)}
+.small{padding:0.4rem 0.65rem;font-size:0.85rem}
 
 .inline-form{display:inline-block;margin-right:0.4rem;margin-bottom:0.3rem}
 
@@ -73,12 +75,24 @@ form{display:grid;gap:0.65rem}
 label{font-size:0.9rem;color:var(--muted)}
 input,select,textarea{width:100%;padding:0.7rem;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:var(--card);color:var(--text)}
 input::placeholder{color:rgba(255,255,255,0.35)}
+.search-input{min-width:220px}
 
 .table-wrap{overflow:auto;border-radius:8px}
 table{width:100%;border-collapse:collapse}
 th,td{padding:0.75rem;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left}
 
 .grid-2{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+
+.stack-gap{margin-top:1rem}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:0.6rem;align-items:center;justify-content:space-between}
+.toolbar .inline-form{margin:0}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+
+.dialog{border:none;border-radius:16px;padding:1.2rem;max-width:520px;width:100%;background:var(--card);color:var(--text);box-shadow:0 24px 60px rgba(0,0,0,0.35)}
+.dialog::backdrop{background:rgba(5,12,22,0.65)}
+.dialog-actions{display:flex;gap:0.6rem;justify-content:flex-end;margin-top:1rem}
+.ghost{background:transparent;border:1px solid rgba(255,255,255,0.2);color:var(--text)}
 
 /* Table action buttons side-by-side */
 td .inline-form{margin-right:0.35rem}
@@ -119,4 +133,21 @@ a,button,input,select{transition:all 0.14s ease}
 :root[data-theme='light'] select option{
   background:#ffffff;
   color:#0f1724;
+}
+
+:root[data-theme='light'] .outline{
+  border-color:rgba(15,23,36,0.25);
+  color:#0f1724;
+}
+
+:root[data-theme='light'] .search-input,
+:root[data-theme='light'] input,
+:root[data-theme='light'] textarea,
+:root[data-theme='light'] select{
+  color:#0f1724;
+}
+
+:root[data-theme='light'] input::placeholder,
+:root[data-theme='light'] textarea::placeholder{
+  color:rgba(15,23,36,0.55);
 }

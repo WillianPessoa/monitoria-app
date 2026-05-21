@@ -15,14 +15,18 @@
 
       <div class="nav-wrap">
         <button class="menu-toggle" aria-expanded="false" aria-label="Abrir menu">☰</button>
-        <nav class="nav-links" role="navigation" aria-label="Navegacao principal">
+        <nav class="nav-links" role="navigation" aria-label="Navegação principal">
           {% if current_user.id %}
-          <a href="{{ url_for('home') }}" class="button">Inicio</a>
+          <a href="{{ url_for('home') }}" class="button">Início</a>
           {% if current_user.papel == 'ADMIN' %}
-          <a href="{{ url_for('usuarios.index') }}" class="button">Usuarios</a>
+          <a href="{{ url_for('usuarios.index') }}" class="button">Usuários</a>
+          <a href="{{ url_for('disciplinas.index') }}" class="button">Disciplinas</a>
           <a href="{{ url_for('monitorias.pendentes') }}" class="button">Indicações</a>
           {% endif %}
-          {% if current_user.papel == 'MONITOR' %}
+          {% if current_user.papel == 'PROFESSOR' %}
+          <a href="{{ url_for('monitorias.indicar') }}" class="button">Indicar monitor</a>
+          {% endif %}
+          {% if current_user.is_monitor %}
           <a href="{{ url_for('usuarios.my_profile') }}" class="button">Meu perfil</a>
           {% endif %}
           <form action="{{ url_for('auth.logout') }}" method="post" class="inline-form">

@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
-{% block title %}Meu perfil{% endblock %}
+{% block title %}Meu perfil de monitoria{% endblock %}
 {% block content %}
 <section class="card">
-  <h2>Meu perfil</h2>
+  <h2>Meu perfil de monitoria</h2>
+  <p class="muted">Essas informacoes sao usadas na sua atuacao como monitor.</p>
   <form method="post">
     <label for="contato">Contato</label>
     <input id="contato" name="contato" value="{{ user.contato or '' }}" />

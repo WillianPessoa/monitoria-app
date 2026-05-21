@@ -32,10 +32,27 @@ CREATE TABLE IF NOT EXISTS disciplinas (
   codigo VARCHAR(32) NOT NULL UNIQUE,
   nome VARCHAR(120) NOT NULL,
   professor_id BIGINT UNSIGNED NOT NULL,
+  status ENUM('ATIVA', 'INATIVA') NOT NULL DEFAULT 'ATIVA',
   criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_disciplina_professor
     FOREIGN KEY (professor_id) REFERENCES usuarios (id)
+);
+
+CREATE TABLE IF NOT EXISTS disciplina_alunos (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  disciplina_id BIGINT UNSIGNED NOT NULL,
+  aluno_id BIGINT UNSIGNED NOT NULL,
+  criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_disciplina_aluno_disciplina
+    FOREIGN KEY (disciplina_id) REFERENCES disciplinas (id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_disciplina_aluno_usuario
+    FOREIGN KEY (aluno_id) REFERENCES usuarios (id)
+    ON DELETE CASCADE,
+  CONSTRAINT uq_disciplina_aluno
+    UNIQUE (disciplina_id, aluno_id)
 );
 
 CREATE TABLE IF NOT EXISTS monitorias (

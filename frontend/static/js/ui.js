@@ -38,4 +38,35 @@ document.addEventListener('DOMContentLoaded', function(){
       themeBtn.setAttribute('aria-pressed', next === 'dark' ? 'false' : 'true');
     });
   }
+
+  const dialogTriggers = document.querySelectorAll('[data-dialog-open]');
+  dialogTriggers.forEach(function(trigger){
+    const targetId = trigger.getAttribute('data-dialog-open');
+    const dialog = document.getElementById(targetId);
+    if(!dialog) return;
+    trigger.addEventListener('click', function(){
+      if(typeof dialog.showModal === 'function'){
+        dialog.showModal();
+      }
+    });
+  });
+
+  const dialogClose = document.querySelectorAll('[data-dialog-close]');
+  dialogClose.forEach(function(button){
+    const dialog = button.closest('dialog');
+    if(!dialog) return;
+    button.addEventListener('click', function(){
+      dialog.close();
+    });
+  });
+
+  const toggleAll = document.getElementById('toggle-all');
+  if(toggleAll){
+    toggleAll.addEventListener('change', function(){
+      const checkboxes = document.querySelectorAll('input[name="alunos_ids"]');
+      checkboxes.forEach(function(cb){
+        cb.checked = toggleAll.checked;
+      });
+    });
+  }
 });

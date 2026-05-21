@@ -1,9 +1,8 @@
 {% extends 'base.html' %}
-{% block title %}Usuarios - Monitoria App{% endblock %}
+{% block title %}Usuários - Monitoria App{% endblock %}
 {% block content %}
-<div class="grid-2">
-  <section class="card">
-    <h2>Cadastrar usuario</h2>
+<section class="card">
+  <h2>Cadastrar usuário</h2>
     <form method="post">
       <label for="nome">Nome</label>
       <input id="nome" name="nome" required />
@@ -15,7 +14,6 @@
       <select id="papel" name="papel" required>
         <option value="">Selecione</option>
         <option value="ALUNO">Aluno</option>
-        <option value="MONITOR">Monitor</option>
         <option value="PROFESSOR">Professor</option>
         <option value="ADMIN">Admin</option>
       </select>
@@ -25,13 +23,13 @@
 
     {% if generated_password %}
     <p class="alert success">
-      Senha temporaria gerada: <strong>{{ generated_password }}</strong>
+      Senha temporária gerada: <strong>{{ generated_password }}</strong>
     </p>
     {% endif %}
   </section>
 
-  <section class="card">
-    <h2>Usuarios cadastrados</h2>
+  <section class="card stack-gap">
+    <h2>Usuários cadastrados</h2>
     <div class="table-wrap">
       <table>
         <thead>
@@ -40,7 +38,7 @@
             <th>Email</th>
             <th>Papel</th>
             <th>Status</th>
-            <th>Acoes</th>
+            <th>Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -59,18 +57,19 @@
                 <button type="submit" class="button">Resetar senha</button>
               </form>
               {% else %}
-              -
+              <form class="inline-form" method="post" action="{{ url_for('usuarios.reactivate', user_id=user.id) }}">
+                <button type="submit" class="button">Reativar</button>
+              </form>
               {% endif %}
             </td>
           </tr>
           {% else %}
           <tr>
-            <td colspan="5">Nenhum usuario cadastrado.</td>
+              <td colspan="5">Nenhum usuário cadastrado.</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
   </section>
-</div>
 {% endblock %}

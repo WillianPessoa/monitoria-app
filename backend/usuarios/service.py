@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash
 
 from usuarios import repository
 
-VALID_ROLES = {"ALUNO", "MONITOR", "PROFESSOR", "ADMIN"}
+VALID_ROLES = {"ALUNO", "PROFESSOR", "ADMIN"}
 
 
 def create_user(nome, email, papel):
@@ -37,6 +37,10 @@ def reset_user_password(user_id):
     if not repository.reset_user_password(user_id, password_hash):
         return None
     return temporary_password
+
+
+def reactivate_user(user_id):
+    return repository.reactivate_user(user_id)
 
 
 def update_monitor_profile(user_id, contato, disponibilidade):

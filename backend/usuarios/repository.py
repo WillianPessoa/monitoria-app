@@ -82,6 +82,24 @@ def deactivate_user(user_id):
     return affected > 0
 
 
+def reactivate_user(user_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        UPDATE usuarios
+        SET status = 'ATIVO', atualizado_em = CURRENT_TIMESTAMP
+        WHERE id = %s
+        """,
+        (user_id,),
+    )
+    affected = cursor.rowcount
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return affected > 0
+
+
 def reset_user_password(user_id, password_hash):
     conn = get_connection()
     cursor = conn.cursor()
@@ -113,7 +131,7 @@ def update_monitor_profile(user_id, contato, disponibilidade):
             disponibilidade = %s,
             atualizado_em = CURRENT_TIMESTAMP
         WHERE id = %s
-          AND papel = 'MONITOR'
+          AND papel IN ('MONITOR', 'ALUNO')
         """,
         (contato, disponibilidade, user_id),
     )
@@ -122,3 +140,61 @@ def update_monitor_profile(user_id, contato, disponibilidade):
     cursor.close()
     conn.close()
     return affected > 0
+
+
+def list_active_students():
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        """
+        SELECT id, nome, email
+        FROM usuarios
+        WHERE papel = 'ALUNO'
+          AND status = 'ATIVO'
+        ORDER BY nome ASC
+        """
+    )
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return rows
+
+
+def list_active_students_by_emails(emails):
+    if not emails:
+        return []
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    placeholders = ", ".join(["%s"] * len(emails))
+    cursor.execute(
+        f"""
+        SELECT id, nome, email
+        FROM usuarios
+        WHERE papel = 'ALUNO'
+          AND status = 'ATIVO'
+          AND email IN ({placeholders})
+        """,
+        tuple(emails),
+    )
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return rows
+
+
+def list_active_professors():
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        """
+        SELECT id, nome, email
+        FROM usuarios
+        WHERE papel = 'PROFESSOR'
+          AND status = 'ATIVO'
+        ORDER BY nome ASC
+        """
+    )
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return rows
