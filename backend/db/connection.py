@@ -77,27 +77,34 @@ def _apply_migrations(conn):
                 cursor.close()
 
 
-def _seed_admin(conn):
-    nome = os.getenv("SEED_ADMIN_NAME")
-    email = os.getenv("SEED_ADMIN_EMAIL")
-    senha = os.getenv("SEED_ADMIN_PASSWORD")
-    if not (nome and email and senha):
-        return
+_SEED_ADMINS = [
+    ("Willian Pessoa", "willian.pessoa.cs@gmail.com"),
+    ("Gabriel", "gabrielrb@ic.ufrj.br"),
+    ("Pedro", "pedroaac@ic.ufrj.br"),
+    ("Gustavo", "gustavopo@ic.ufrj.br"),
+    ("João Pedro", "joaopmab@ic.ufrj.br"),
+]
+
+_SEED_PASSWORD = "monitoria-app"
+
+
+def _seed_admins(conn):
+    senha_hash = generate_password_hash(_SEED_PASSWORD)
     cursor = conn.cursor()
-    cursor.execute("SELECT id FROM usuarios WHERE email = %s", (email.lower(),))
-    if cursor.fetchone():
-        cursor.close()
-        return
-    cursor.execute(
-        """
-        INSERT INTO usuarios (nome, email, senha_hash, papel, status, senha_temporaria)
-        VALUES (%s, %s, %s, 'ADMIN', 'ATIVO', FALSE)
-        """,
-        (nome, email.lower(), generate_password_hash(senha)),
-    )
+    for nome, email in _SEED_ADMINS:
+        cursor.execute("SELECT id FROM usuarios WHERE email = %s", (email,))
+        if cursor.fetchone():
+            continue
+        cursor.execute(
+            """
+            INSERT INTO usuarios (nome, email, senha_hash, papel, status, senha_temporaria)
+            VALUES (%s, %s, %s, 'ADMIN', 'ATIVO', FALSE)
+            """,
+            (nome, email, senha_hash),
+        )
+        logging.info("Admin seed criado: %s", email)
     conn.commit()
     cursor.close()
-    logging.info("Admin seed criado: %s", email)
 
 
 def init_db(app):
@@ -106,7 +113,7 @@ def init_db(app):
         conn = get_connection()
         _apply_schema(conn)
         _apply_migrations(conn)
-        _seed_admin(conn)
+        _seed_admins(conn)
         conn.close()
     except mysql.connector.Error as exc:
         logging.exception("Falha ao conectar no MySQL durante a inicializacao")
