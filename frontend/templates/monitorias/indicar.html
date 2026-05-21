@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Indicar monitor - Monitoria App{% endblock %}
+{% block content %}
+<section class="card">
+  <h2>Indicar monitor</h2>
+  {% if not disciplinas %}
+  <p class="muted">Você ainda não tem disciplinas cadastradas.</p>
+  {% else %}
+  <form method="post">
+    <label for="disciplina_id">Disciplina</label>
+    <select id="disciplina_id" name="disciplina_id" required>
+      <option value="">Selecione</option>
+      {% for disciplina in disciplinas %}
+      <option value="{{ disciplina.id }}">{{ disciplina.codigo }} - {{ disciplina.nome }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="aluno_id">Aluno</label>
+    <select id="aluno_id" name="aluno_id" required>
+      <option value="">Selecione</option>
+      {% for aluno in alunos %}
+      <option value="{{ aluno.id }}">{{ aluno.nome }} ({{ aluno.email }})</option>
+      {% else %}
+      <option value="" disabled>Nenhum aluno ativo</option>
+      {% endfor %}
+    </select>
+
+    <button type="submit" class="button">Enviar indicação</button>
+  </form>
+  {% endif %}
+</section>
+
+<section class="card stack-gap">
+  <h2>Minhas indicações</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Disciplina</th>
+          <th>Aluno</th>
+          <th>Status</th>
+          <th>Criado em</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for indicacao in indicacoes %}
+        <tr>
+          <td>{{ indicacao.disciplina_codigo }} - {{ indicacao.disciplina_nome }}</td>
+          <td>{{ indicacao.aluno_nome }}</td>
+          <td>{{ indicacao.status }}</td>
+          <td>{{ indicacao.criado_em }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4">Nenhuma indicação encontrada.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

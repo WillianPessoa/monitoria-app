@@ -1,8 +1,106 @@
 {% extends 'base.html' %}
-{% block title %}Inicio - Monitoria App{% endblock %}
+{% block title %}Início - Monitoria App{% endblock %}
 {% block content %}
 <section class="card">
   <h2>Bem-vindo</h2>
-  <p class="muted">Painel inicial</p>
+  <p class="muted">Painel inicial.</p>
 </section>
+
+{% if role == 'PROFESSOR' %}
+<section class="card stack-gap">
+  <h2>Minhas disciplinas</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Disciplina</th>
+          <th>Status</th>
+          <th>Monitor</th>
+          <th>Alunos</th>
+          <th>Ver alunos</th>
+          <th>Indicar monitor</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for disciplina in professor_disciplinas %}
+        <tr>
+          <td>
+            <a href="{{ url_for('disciplinas.detalhe', disciplina_id=disciplina.id) }}" class="button">
+              {{ disciplina.codigo }} - {{ disciplina.nome }}
+            </a>
+          </td>
+          <td>{{ disciplina.status }}</td>
+          <td>{{ disciplina.monitor_nome or 'Sem monitor' }}</td>
+          <td>{{ disciplina.alunos_count }}</td>
+          <td>
+            <a href="{{ url_for('disciplinas.alunos', disciplina_id=disciplina.id) }}" class="button outline small">Ver alunos</a>
+          </td>
+          <td>
+            <form class="inline-form" method="post" action="{{ url_for('monitorias.indicar') }}">
+              <input type="hidden" name="disciplina_id" value="{{ disciplina.id }}" />
+              <select name="aluno_id" {% if disciplina.status != 'ATIVA' %}disabled{% else %}required{% endif %}>
+                <option value="">Selecione um aluno</option>
+                {% for aluno in disciplina.alunos_nao_matriculados %}
+                <option value="{{ aluno.id }}">{{ aluno.nome }}</option>
+                {% else %}
+                <option value="" disabled>Nenhum aluno disponível</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="button" {% if disciplina.status != 'ATIVA' %}disabled{% endif %}>
+                Indicar
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6">Nenhuma disciplina vinculada.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if role in ['ALUNO', 'MONITOR'] %}
+<section class="card stack-gap">
+  <h2>Disciplina em que você é monitor</h2>
+  {% if monitoria %}
+  <a href="{{ url_for('disciplinas.detalhe', disciplina_id=monitoria.disciplina_id) }}" class="button">
+    {{ monitoria.disciplina_codigo }} - {{ monitoria.disciplina_nome }}
+  </a>
+  {% else %}
+  <p class="muted">Você não é monitor de nenhuma disciplina.</p>
+  {% endif %}
+</section>
+
+<section class="card stack-gap">
+  <h2>Disciplinas em que você é aluno</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Disciplina</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for disciplina in aluno_disciplinas %}
+        <tr>
+          <td>
+            <a href="{{ url_for('disciplinas.detalhe', disciplina_id=disciplina.id) }}" class="button">
+              {{ disciplina.codigo }} - {{ disciplina.nome }}
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td>Nenhuma disciplina matriculada.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}Alunos da disciplina - Monitoria App{% endblock %}
+{% block content %}
+<section class="card">
+  <h2>Alunos matriculados</h2>
+  <p class="muted">{{ disciplina.codigo }} - {{ disciplina.nome }}</p>
+
+  <div class="toolbar">
+    <form method="get" class="inline-form" action="{{ url_for('disciplinas.alunos', disciplina_id=disciplina.id) }}">
+      <label for="busca" class="sr-only">Buscar aluno</label>
+      <input id="busca" name="q" value="{{ search_term }}" placeholder="Buscar por nome ou e-mail" class="search-input" />
+      <button type="submit" class="button">Buscar</button>
+      {% if search_term %}
+      <a href="{{ url_for('disciplinas.alunos', disciplina_id=disciplina.id) }}" class="button">Limpar</a>
+      {% endif %}
+    </form>
+
+    {% if not read_only %}
+    <button type="button" class="button" data-dialog-open="add-alunos">Adicionar alunos</button>
+    {% endif %}
+  </div>
+
+  {% if not read_only %}
+  <form method="post" action="{{ url_for('disciplinas.remover_alunos', disciplina_id=disciplina.id) }}">
+  {% endif %}
+    <div class="table-wrap stack-gap">
+      <table>
+        <thead>
+          <tr>
+            {% if not read_only %}
+            <th>
+              <input type="checkbox" id="toggle-all" />
+            </th>
+            {% endif %}
+            <th>Aluno</th>
+            <th>E-mail</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for aluno in alunos %}
+          <tr>
+            {% if not read_only %}
+            <td>
+              <input type="checkbox" name="alunos_ids" value="{{ aluno.id }}" />
+            </td>
+            {% endif %}
+            <td>{{ aluno.nome }}</td>
+            <td>{{ aluno.email }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="{% if read_only %}2{% else %}3{% endif %}">Nenhum aluno encontrado.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="toolbar stack-gap">
+      {% if not read_only %}
+      <button type="submit" class="button danger">Remover selecionados</button>
+      <a href="{{ url_for('disciplinas.index') }}" class="button">Voltar</a>
+      {% endif %}
+      <a href="{{ url_for('home') }}" class="button">Voltar</a>
+    </div>
+  {% if not read_only %}
+  </form>
+  {% endif %}
+</section>
+
+{% if not read_only %}
+<dialog id="add-alunos" class="dialog">
+  <form method="post" action="{{ url_for('disciplinas.adicionar_alunos', disciplina_id=disciplina.id) }}">
+    <h3>Adicionar alunos por e-mail</h3>
+    <label for="emails">E-mails dos alunos</label>
+    <textarea id="emails" name="alunos_emails" rows="6" placeholder="Ex: aluno1@exemplo.com, aluno2@exemplo.com"></textarea>
+    <p class="muted">Separe e-mails por vírgula ou linha.</p>
+    <div class="dialog-actions">
+      <button type="button" class="button ghost" data-dialog-close>Cancelar</button>
+      <button type="submit" class="button">Adicionar</button>
+    </div>
+  </form>
+</dialog>
+{% endif %}
+{% endblock %}

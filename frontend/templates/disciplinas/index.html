@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% block title %}Disciplinas - Monitoria App{% endblock %}
+{% block content %}
+<div class="grid-2">
+  <section class="card">
+    <h2>Nova disciplina</h2>
+    <form method="post">
+      <label for="codigo">Código</label>
+      <input id="codigo" name="codigo" maxlength="32" required />
+
+      <label for="nome">Nome</label>
+      <input id="nome" name="nome" maxlength="120" required />
+
+      <label for="professor_id">Professor</label>
+      <select id="professor_id" name="professor_id" required>
+        <option value="">Selecione</option>
+        {% for professor in professores %}
+        <option value="{{ professor.id }}">{{ professor.nome }} ({{ professor.email }})</option>
+        {% else %}
+        <option value="" disabled>Nenhum professor ativo</option>
+        {% endfor %}
+      </select>
+
+      <button type="submit" class="button">Cadastrar disciplina</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Monitorias ativas</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Disciplina</th>
+            <th>Aluno</th>
+            <th>Professor</th>
+            <th>Criado em</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for monitoria in monitorias_ativas %}
+          <tr>
+            <td>{{ monitoria.disciplina_codigo }} - {{ monitoria.disciplina_nome }}</td>
+            <td>{{ monitoria.aluno_nome }}</td>
+            <td>{{ monitoria.professor_nome }}</td>
+            <td>{{ monitoria.criado_em }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4">Nenhuma monitoria ativa.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<section class="card stack-gap">
+  <h2>Gerenciar disciplinas</h2>
+  <p class="muted">Ao definir um monitor, ele deixa de ser aluno matriculado na disciplina.</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 100px;">Código</th>
+          <th style="width: 150px;">Nome</th>
+          <th>Professor</th>
+          <th>Monitor</th>
+          <th>Alunos</th>
+          <th style="white-space: nowrap;">Ver alunos</th>
+          <th>Status</th>
+          <th style="white-space: nowrap;">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for disciplina in disciplinas_admin %}
+        <tr>
+          <td>
+            <input form="disciplina-{{ disciplina.id }}" name="codigo" value="{{ disciplina.codigo }}" style="width: 100%; max-width: 80px;" />
+          </td>
+          <td>
+            <input form="disciplina-{{ disciplina.id }}" name="nome" value="{{ disciplina.nome }}" style="width: 100%; min-width: 150px;"/>
+          </td>
+          <td>
+            <select form="disciplina-{{ disciplina.id }}" name="professor_id" required>
+              {% for professor in professores %}
+              <option value="{{ professor.id }}" {% if professor.id == disciplina.professor_id %}selected{% endif %}>
+                {{ professor.nome }}
+              </option>
+              {% endfor %}
+            </select>
+          </td>
+          <td>
+            <select form="disciplina-{{ disciplina.id }}" name="monitor_id">
+              <option value="">Sem monitor</option>
+              {% for aluno in alunos %}
+              <option value="{{ aluno.id }}" {% if aluno.id == disciplina.monitor_aluno_id %}selected{% endif %}>
+                {{ aluno.nome }}
+              </option>
+              {% endfor %}
+            </select>
+          </td>
+          <td>{{ disciplina.alunos_count }}</td>
+          <td style="white-space: nowrap;">
+            <a href="{{ url_for('disciplinas.alunos', disciplina_id=disciplina.id) }}" class="button outline small">Ver alunos</a>
+          </td>
+          <td>{{ disciplina.status }}</td>
+          <td style="white-space: nowrap;">
+            <form id="disciplina-{{ disciplina.id }}" method="post" action="{{ url_for('disciplinas.editar', disciplina_id=disciplina.id) }}" class="inline-form">
+              <button type="submit" class="button">Salvar</button>
+            </form>
+            {% if disciplina.status == 'ATIVA' %}
+            <form class="inline-form" method="post" action="{{ url_for('disciplinas.desativar', disciplina_id=disciplina.id) }}">
+              <button type="submit" class="button danger">Desativar</button>
+            </form>
+            {% else %}
+            <form class="inline-form" method="post" action="{{ url_for('disciplinas.ativar', disciplina_id=disciplina.id) }}">
+              <button type="submit" class="button">Reativar</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8">Nenhuma disciplina cadastrada.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
