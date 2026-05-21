@@ -20,6 +20,7 @@
           <a href="{{ url_for('home') }}" class="button">Inicio</a>
           {% if current_user.papel == 'ADMIN' %}
           <a href="{{ url_for('usuarios.index') }}" class="button">Usuarios</a>
+          <a href="{{ url_for('disciplinas.index') }}" class="button">Disciplinas</a>
           {% endif %}
           {% if current_user.papel == 'MONITOR' %}
           <a href="{{ url_for('usuarios.my_profile') }}" class="button">Meu perfil</a>

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Disciplinas - Monitoria App{% endblock %}
+{% block content %}
+<section class="card">
+  <h2>Monitorias ativas</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Codigo</th>
+          <th>Disciplina</th>
+          <th>Monitor</th>
+          <th>Professor</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in monitorias %}
+        <tr>
+          <td>{{ m.codigo }}</td>
+          <td>{{ m.disciplina_nome }}</td>
+          <td>{{ m.monitor_nome }}</td>
+          <td>{{ m.professor_nome }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4">Nenhuma monitoria ativa encontrada.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
