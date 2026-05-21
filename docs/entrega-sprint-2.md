@@ -12,14 +12,14 @@
 
 **Credenciais pré-cadastradas** (senha padrão: `monitoria-app`):
 
-| Usuário | E-mail | Papel |
-|---|---|---|
-| Willian Pessoa | willian.pessoa.cs@gmail.com | Admin |
-| Gabriel | gabrielrb@ic.ufrj.br | Admin |
-| Pedro | pedroaac@ic.ufrj.br | Admin |
-| Gustavo | gustavopo@ic.ufrj.br | Admin |
-| João Pedro | joaopmab@ic.ufrj.br | Admin |
-| Product Owner | product-owner@monitoria-app.com.br | Admin |
+| Usuário | E-mail | Papel | Senha |
+|---|---|---|---|
+| Willian Pessoa | willian.pessoa.cs@gmail.com | Admin | `monitoria-app` |
+| Gabriel | gabrielrb@ic.ufrj.br | Admin | `monitoria-app` |
+| Pedro | pedroaac@ic.ufrj.br | Admin | `monitoria-app` |
+| Gustavo | gustavopo@ic.ufrj.br | Admin | `monitoria-app` |
+| João Pedro | joaopmab@ic.ufrj.br | Admin | `monitoria-app` |
+| Product Owner | product-owner@monitoria-app.com.br | Admin | `monitoria-app` |
 
 > Os usuários são criados automaticamente na inicialização da aplicação caso ainda não existam.
 
