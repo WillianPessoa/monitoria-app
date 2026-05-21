@@ -32,6 +32,8 @@
 | Cadastro das disciplinas | US06 — Admin cadastra disciplinas com nome, código e professor responsável | ✅ |
 | Cadastro das bolsas de monitoria disponíveis | US07 + US08 — Professor indica aluno como monitor; admin aprova a indicação, criando o vínculo de monitoria ativo (a bolsa) | ✅ |
 | Associação monitor–disciplina | US07 + US08 — O vínculo entre monitor e disciplina é estabelecido pela indicação do professor e confirmado pela aprovação do admin | ✅ |
+| Listagem de monitorias ativas | US09 — Admin visualiza tabela com todas as monitorias ativas, exibindo disciplina, monitor e professor responsável | ✅ |
+| Publicação em produção | TT06 — Aplicação publicada no Railway com banco MySQL conectado e acessível pela URL pública | ✅ |
 
 ---
 
