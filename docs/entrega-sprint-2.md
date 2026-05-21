@@ -32,19 +32,19 @@ Não houve tarefas rejeitadas pelo Product Owner.
 
 **Bugs foram identificados na entrega final ou durante as revisões semanais? Se sim, quantos e quais?**
 
-Não foram identificados bugs funcionais nas histórias entregues. O QM identificou um problema de integração: a branch da US09 (Admin lista monitorias ativas) foi desenvolvida de forma isolada e não foi integrada à branch principal antes do encerramento da sprint, impossibilitando sua entrega. A tarefa foi devolvida ao Sprint Backlog.
+Não foram identificados bugs funcionais nas histórias entregues. O QM identificou um problema de integração: a branch criada originalmente pelo responsável da US09 estava isolada e não havia sido integrada. Após revisão do QM, constatou-se que João Pedro havia implementado a funcionalidade dentro do trabalho da US07/US08 (PR #32), e a US09 estava integrada e funcional na branch principal.
 
 **Como se deu o levantamento de dúvidas e compartilhamento de conhecimento durante a sprint?**
 
 O compartilhamento de conhecimento ocorreu de forma assíncrona via WhatsApp e por revisão direta do código entre os membros.
 
-**Quantidade de Tarefas Planejadas:** 4 (US06, US07, US08, US09)
+**Quantidade de Tarefas Planejadas:** 4 (US06, US07, US08, US09) + 1 tarefa técnica (TT06)
 
-**Quantidade de Tarefas Concluídas (Done):** 3 (US06, US07, US08)
+**Quantidade de Tarefas Concluídas (Done):** 4 (US06, US07, US08, US09) + TT06
 
 **Outras Observações:**
 
-O Sprint Goal da Sprint 2 — "O admin consegue cadastrar disciplinas e o professor consegue indicar um monitor, que é aprovado pelo admin" — foi atingido. As três histórias centrais do EP02 (US06, US07, US08) foram implementadas e estão funcionando no ambiente de produção (Railway). A US09 não foi integrada a tempo e retornou ao Sprint Backlog para a próxima sprint.
+O Sprint Goal da Sprint 2 — "O admin consegue cadastrar disciplinas e o professor consegue indicar um monitor, que é aprovado pelo admin" — foi atingido. As quatro histórias do EP02 (US06, US07, US08, US09) foram implementadas e estão funcionando no ambiente de produção (Railway), além da tarefa técnica TT06 (publicação no Railway).
 
 Durante a sprint, a Product Owner Bruna identificou uma lacuna no escopo de agendamento: o sistema precisava definir uma regra de cancelamento e cobrir o caso do monitor cancelar um agendamento confirmado. Foi criada a US "Monitor cancela agendamento confirmado" com regra de 6 horas de antecedência (must-have, issue #33), e a US14 existente (Aluno cancela agendamento) foi atualizada com a mesma regra.
 
@@ -62,7 +62,7 @@ Sim. Foram inseridas 4 flags.
   2. Lógica técnica não havia sido formalmente repassada ao QM
   3. US09 entrou em desenvolvimento sem critérios de aceitação definidos (falha no DoR)
   4. Branch da US09 não foi integrada à branch principal antes do encerramento da sprint
-- **Tempo entre inserção e resolução:** As flags de documentação (Sprint Tales e lógica técnica) foram resolvidas ao longo do encerramento da sprint. As flags de US09 permanecem abertas — a história voltou ao Sprint Backlog com os critérios de aceitação agora definidos pelo QM.
+- **Tempo entre inserção e resolução:** Todas as 4 flags foram resolvidas ao encerramento da sprint. As flags de documentação (Sprint Tales e lógica técnica) foram resolvidas durante o fechamento. As flags da US09 foram resolvidas após revisão do QM que confirmou a implementação já integrada via PR #32; os critérios de aceitação foram definidos retroativamente e validados.
 
 **As Histórias de Usuário foram escritas no formato Given-When-Then? Se sim, o formato auxiliou de alguma forma a compreensão de seu objetivo?**
 
@@ -70,7 +70,7 @@ Sim. As histórias US06, US07 e US08 têm critérios de aceitação no formato B
 
 **O Quality Manager validou as tarefas através do checklist do Definition of Ready?**
 
-Sim. O QM aplicou o checklist do DoR nas tarefas. A flag referente à US09 decorreu exatamente dessa validação — a história não possuía critérios de aceitação e não deveria ter entrado em desenvolvimento. Os critérios foram definidos retroativamente pelo QM, e a história retornou ao Sprint Backlog.
+Sim. O QM aplicou o checklist do DoR nas tarefas. A flag referente à US09 decorreu exatamente dessa validação — a história não possuía critérios de aceitação e não deveria ter entrado em desenvolvimento. Os critérios foram definidos retroativamente pelo QM. Após revisão, a implementação foi confirmada como integrada e a história foi fechada como Done.
 
 ---
 
