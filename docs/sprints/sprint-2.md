@@ -95,11 +95,33 @@ POST /monitorias/<id>/rejeitar      (admin only)
 
 ---
 
-### ❌ US09 — Admin lista monitorias ativas por disciplina
+### ✅ US09 — Admin lista monitorias ativas por disciplina
 
-**Status:** Não entregue — branch isolada, não integrada à branch principal antes do encerramento da sprint.
+**Status:** Concluído — implementado por João Pedro dentro do módulo `disciplinas` durante a Sprint 2. Branch integrada ao `dev`/`main` via PR #32.
 
-**Ação tomada pelo QM:** história devolvida ao Sprint Backlog com critérios de aceitação definidos retroativamente. Será replanejada na Sprint 3.
+**O que foi implementado:**
+- Função `list_active_monitorias()` no repository e service de monitorias
+- Exibida como tabela "Monitorias ativas" na tela `GET /disciplinas/` (admin only)
+- Colunas: disciplina (código + nome), monitor (aluno), professor responsável, data do vínculo
+- Mensagem "Nenhuma monitoria ativa." quando não há registros
+
+**Nota do QM:** A história estava marcada como não entregue ao encerramento da sprint porque a branch original do Gabriel estava isolada. O João implementou a funcionalidade dentro do trabalho da US07/US08 e ela estava integrada ao `main` desde o PR #32. Revisão do QM confirmou que os dois cenários BDD foram atendidos.
+
+---
+
+### ✅ TT06 — Publicar aplicação no Railway
+
+**Status:** Concluído
+**Responsável:** Willian
+
+**O que foi implementado:**
+- `Procfile` com comando gunicorn apontando para `backend/app:create_app()`
+- `railpack.json` declarando provider Python e start command
+- `requirements.txt` movido para a raiz do repositório (Railway auto-detect)
+- `backend/config.py` adaptado para aceitar variáveis do plugin MySQL do Railway (`MYSQLHOST`, `MYSQLPORT`, `MYSQLUSER`, `MYSQLPASSWORD`, `MYSQLDATABASE`) sem quebrar o ambiente local
+- `backend/db/connection.py`: schema e migrations aplicados automaticamente na inicialização (`_apply_schema`, `_apply_migrations`); seed de 5 admins do time criados com senha padrão (`_seed_admins`)
+
+**URL pública:** https://web-production-1f724.up.railway.app
 
 ---
 
@@ -164,13 +186,13 @@ CREATE TABLE IF NOT EXISTS disciplina_alunos (
 
 ## 7. Desafios e Decisões
 
-### 1. Branch da US09 não integrada
+### 1. Branch da US09 — resolução após encerramento
 
-**Desafio:** Gabriel desenvolveu a US09 numa branch que não partiu do estado atual do repositório, impossibilitando o merge antes do encerramento.
+**Desafio:** Gabriel desenvolveu a US09 numa branch isolada que não foi integrada antes do encerramento. A história foi devolvida ao Sprint Backlog com critérios de aceitação retroativos.
 
-**Decisão:** QM devolveu a história ao Sprint Backlog. O action item da retrospectiva define que todas as branches devem partir da `dev` e abrir PR antes do encerramento da sprint.
+**Resolução:** Revisão do QM identificou que João Pedro havia implementado a funcionalidade dentro do trabalho da US07/US08 (branch `us07`, PR #32). A US09 estava integrada ao `main` e ao `dev`. A issue #14 foi atualizada e a história fechada como Done.
 
-**Resultado:** Estrutura de branches reformulada ao final da sprint — `main` (estável) e `dev` (desenvolvimento).
+**Resultado:** Estrutura de branches reformulada — `main` (estável) e `dev` (desenvolvimento). Action item da retrospectiva: todas as branches devem partir da `dev` e abrir PR antes do encerramento da sprint.
 
 ---
 
@@ -196,10 +218,10 @@ CREATE TABLE IF NOT EXISTS disciplina_alunos (
 
 | Prioridade | IDs | Status |
 |------------|-----|:------:|
-| **Must** | US06, US07, US08 | ✅ Concluído |
-| **Should** | US09 | ❌ Devolvido ao Sprint Backlog |
+| **Must** | US06, US07, US08, TT06 | ✅ Concluído |
+| **Should** | US09 | ✅ Concluído (integrado via PR #32) |
 
-**Total de histórias:** 3/4 entregues
+**Total de histórias:** 4/4 entregues + 1 tarefa técnica (TT06)
 
 ---
 
@@ -207,7 +229,8 @@ CREATE TABLE IF NOT EXISTS disciplina_alunos (
 
 | Épico | Status | Observação |
 |-------|:------:|-----------|
-| EP02 — Cadastro de Disciplinas e Monitores | ⚠️ **75%** | US09 pendente para Sprint 3 |
+| EP00 — Infraestrutura e Setup | ✅ **TT06 concluído** | Aplicação publicada no Railway |
+| EP02 — Cadastro de Disciplinas e Monitores | ✅ **100%** | US06, US07, US08, US09 entregues |
 
 ---
 
