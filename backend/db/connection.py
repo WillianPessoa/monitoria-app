@@ -83,6 +83,7 @@ _SEED_ADMINS = [
     ("Pedro", "pedroaac@ic.ufrj.br"),
     ("Gustavo", "gustavopo@ic.ufrj.br"),
     ("João Pedro", "joaopmab@ic.ufrj.br"),
+    ("Product Owner", "product-owner@monitoria-app.com.br"),
 ]
 
 _SEED_PASSWORD = "monitoria-app"
