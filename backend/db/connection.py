@@ -4,6 +4,7 @@ import os
 import mysql.connector
 from mysql.connector import errorcode
 from mysql.connector.pooling import MySQLConnectionPool
+from werkzeug.security import generate_password_hash
 
 _pool = None
 
@@ -76,12 +77,36 @@ def _apply_migrations(conn):
                 cursor.close()
 
 
+def _seed_admin(conn):
+    nome = os.getenv("SEED_ADMIN_NAME")
+    email = os.getenv("SEED_ADMIN_EMAIL")
+    senha = os.getenv("SEED_ADMIN_PASSWORD")
+    if not (nome and email and senha):
+        return
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM usuarios WHERE email = %s", (email.lower(),))
+    if cursor.fetchone():
+        cursor.close()
+        return
+    cursor.execute(
+        """
+        INSERT INTO usuarios (nome, email, senha_hash, papel, status, senha_temporaria)
+        VALUES (%s, %s, %s, 'ADMIN', 'ATIVO', FALSE)
+        """,
+        (nome, email.lower(), generate_password_hash(senha)),
+    )
+    conn.commit()
+    cursor.close()
+    logging.info("Admin seed criado: %s", email)
+
+
 def init_db(app):
     try:
         _build_pool(app)
         conn = get_connection()
         _apply_schema(conn)
         _apply_migrations(conn)
+        _seed_admin(conn)
         conn.close()
     except mysql.connector.Error as exc:
         logging.exception("Falha ao conectar no MySQL durante a inicializacao")
