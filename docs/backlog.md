@@ -1,4 +1,4 @@
-# Backlog do Produto — Monitoria App
+	# Backlog do Produto — Monitoria App
 
 **Priorização:** MoSCoW  
 **Sprint 0 — 30/04/2026**
@@ -53,14 +53,14 @@
 
 ### EP03 — Agenda e Agendamento
 
-| ID | Como... | Quero... | Para que... | Depende de | Prioridade |
-|---|---|---|---|---|:---:|
-| US10 | monitor | criar horários de atendimento na minha agenda | os alunos saibam quando estou disponível | US01, TT02 | **Must** |
-| US11 | aluno | ver os horários disponíveis de um monitor | escolher quando ser atendido | US10 | **Must** |
-| US12 | aluno | agendar um horário disponível | garantir minha vaga | US10, US11 | **Must** |
-| US13 | monitor | ver minha agenda com agendamentos confirmados | me organizar | US10 | **Must** |
-| US14 | aluno | cancelar um agendamento | liberar o horário se não puder ir | US12 | Should |
-| US15 | monitor | bloquear um horário da agenda | marcar quando não estou disponível | US10 | Should |
+| ID   | Como... | Quero...                                      | Para que...                              | Depende de | Prioridade |
+| ---- | ------- | --------------------------------------------- | ---------------------------------------- | ---------- | :--------: |
+| US10 | monitor | criar horários de atendimento na minha agenda | os alunos saibam quando estou disponível | US01, TT02 |  **Must**  |
+| US11 | aluno   | ver os horários disponíveis de um monitor     | escolher quando ser atendido             | US10       |  **Must**  |
+| US12 | aluno   | agendar um horário disponível                 | garantir minha vaga                      | US10, US11 |  **Must**  |
+| US13 | monitor | ver minha agenda com agendamentos confirmados | me organizar                             | US10       |  **Must**  |
+| US14 | aluno   | cancelar um agendamento                       | liberar o horário se não puder ir        | US12       |   Should   |
+| US15 | monitor | bloquear um horário da agenda                 | marcar quando não estou disponível       | US10       |   Should   |
 
 ### EP04 — Registro de Atendimentos e Bolsas
 
@@ -73,12 +73,12 @@
 
 ### EP05 — Relatórios e Notificações
 
-| ID | Como... | Quero... | Para que... | Depende de | Prioridade |
-|---|---|---|---|---|:---:|
-| US20 | admin | gerar relatório de participação por disciplina | avaliar o impacto do programa | US16, US18 | **Must** |
-| US21 | aluno | receber confirmação quando agendar | não esquecer o atendimento | US12 | Should |
-| US22 | aluno | receber lembrete antes do atendimento | não perder o horário | US21 | Could |
-| US23 | professor | receber relatório mensal por email | acompanhar sem precisar entrar no sistema | US20 | Could |
+| ID   | Como...   | Quero...                                       | Para que...                               | Depende de | Prioridade |
+| ---- | --------- | ---------------------------------------------- | ----------------------------------------- | ---------- | :--------: |
+| US20 | admin     | gerar relatório de participação por disciplina | avaliar o impacto do programa             | US16, US18 |  **Must**  |
+| US21 | aluno     | receber confirmação quando agendar             | não esquecer o atendimento                | US12       |   Should   |
+| US22 | aluno     | receber lembrete antes do atendimento          | não perder o horário                      | US21       |   Could    |
+| US23 | professor | receber relatório mensal por email             | acompanhar sem precisar entrar no sistema | US20       |   Could    |
 
 ---
 

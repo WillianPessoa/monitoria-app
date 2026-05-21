@@ -18,7 +18,17 @@ Implementar o **cadastro das entidades centrais do sistema**, habilitando:
 
 ---
 
-## 2. Histórias Entregues (EP02)
+## 2. Entregáveis do Enunciado
+
+| Entregável | Implementação | Status |
+|---|---|:---:|
+| Cadastro das disciplinas | US06 — Admin cadastra disciplinas com nome, código e professor | ✅ |
+| Cadastro das bolsas de monitoria disponíveis | US07 + US08 — Indicação pelo professor + aprovação pelo admin criam o vínculo de monitoria ativo (a bolsa) | ✅ |
+| Associação monitor–disciplina | US07 + US08 — Vínculo estabelecido pela indicação e confirmado pela aprovação | ✅ |
+
+---
+
+## 3. Histórias Entregues (EP02)
 
 ### ✅ US06 — Admin cadastra disciplinas
 
@@ -93,7 +103,7 @@ POST /monitorias/<id>/rejeitar      (admin only)
 
 ---
 
-## 3. Restrições de Acesso Implementadas
+## 4. Restrições de Acesso Implementadas
 
 **Matriz de Acesso — Sprint 2:**
 
@@ -111,7 +121,7 @@ POST /monitorias/<id>/rejeitar      (admin only)
 
 ---
 
-## 4. Alterações no Banco de Dados
+## 5. Alterações no Banco de Dados
 
 Duas migrations aplicadas automaticamente na inicialização:
 
@@ -135,7 +145,7 @@ CREATE TABLE IF NOT EXISTS disciplina_alunos (
 
 ---
 
-## 5. Testes Manuais Realizados
+## 6. Testes Manuais Realizados
 
 | Cenário | Resultado | Responsável |
 |---------|-----------|-------------|
@@ -152,7 +162,7 @@ CREATE TABLE IF NOT EXISTS disciplina_alunos (
 
 ---
 
-## 6. Desafios e Decisões
+## 7. Desafios e Decisões
 
 ### 1. Branch da US09 não integrada
 
@@ -182,7 +192,7 @@ CREATE TABLE IF NOT EXISTS disciplina_alunos (
 
 ---
 
-## 7. Quadro de Progresso
+## 8. Quadro de Progresso
 
 | Prioridade | IDs | Status |
 |------------|-----|:------:|
@@ -193,7 +203,7 @@ CREATE TABLE IF NOT EXISTS disciplina_alunos (
 
 ---
 
-## 8. Épicos Completados
+## 9. Épicos Completados
 
 | Épico | Status | Observação |
 |-------|:------:|-----------|
@@ -201,7 +211,7 @@ CREATE TABLE IF NOT EXISTS disciplina_alunos (
 
 ---
 
-## 9. O Que Esperar da Sprint 3
+## 10. O Que Esperar da Sprint 3
 
 **Sprint 3 — Agenda e Agendamento**
 
@@ -222,7 +232,7 @@ Foco no EP03, com as histórias:
 
 ---
 
-## 10. Retrospectiva
+## 11. Retrospectiva
 
 Realizada no formato Easy Retro. Documento completo em `docs/retrospectivas/sprint-2.md`.
 
