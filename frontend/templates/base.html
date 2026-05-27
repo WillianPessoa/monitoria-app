@@ -26,6 +26,9 @@
           {% if current_user.papel == 'PROFESSOR' %}
           <a href="{{ url_for('monitorias.indicar') }}" class="button">Indicar monitor</a>
           {% endif %}
+          {% if current_user.papel == 'ALUNO' or current_user.is_monitor %}
+          <a href="{{ url_for('agenda.index') }}" class="button">Agenda</a>
+          {% endif %}
           {% if current_user.is_monitor %}
           <a href="{{ url_for('usuarios.my_profile') }}" class="button">Meu perfil</a>
           {% endif %}

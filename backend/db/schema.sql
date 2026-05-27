@@ -73,3 +73,32 @@ CREATE TABLE IF NOT EXISTS monitorias (
   CONSTRAINT uq_monitoria_unica
     UNIQUE (disciplina_id, aluno_id)
 );
+
+CREATE TABLE IF NOT EXISTS disponibilidades (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  disciplina_id BIGINT UNSIGNED NOT NULL,
+  monitor_id BIGINT UNSIGNED NOT NULL,
+  data_inicio DATETIME NOT NULL,
+  data_fim DATETIME NOT NULL,
+  status ENUM('DISPONIVEL', 'AGENDADO', 'BLOQUEADO') NOT NULL DEFAULT 'DISPONIVEL',
+  criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_disponibilidade_disciplina
+    FOREIGN KEY (disciplina_id) REFERENCES disciplinas (id),
+  CONSTRAINT fk_disponibilidade_monitor
+    FOREIGN KEY (monitor_id) REFERENCES usuarios (id)
+);
+
+CREATE TABLE IF NOT EXISTS agendamentos (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  disponibilidade_id BIGINT UNSIGNED NOT NULL,
+  aluno_id BIGINT UNSIGNED NOT NULL,
+  status ENUM('CONFIRMADO', 'CANCELADO') NOT NULL DEFAULT 'CONFIRMADO',
+  motivo_cancelamento VARCHAR(255) NULL,
+  criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_agendamento_disponibilidade
+    FOREIGN KEY (disponibilidade_id) REFERENCES disponibilidades (id) ON DELETE CASCADE,
+  CONSTRAINT fk_agendamento_aluno
+    FOREIGN KEY (aluno_id) REFERENCES usuarios (id)
+);

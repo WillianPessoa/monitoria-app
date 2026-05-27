@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}Agenda - Monitoria App{% endblock %}
+{% block content %}
+<section class="card">
+  <h2>Agenda</h2>
+  <p class="muted">Veja horários disponíveis para agendamento e gerencie sua agenda de monitoria.</p>
+</section>
+
+{% if monitoria %}
+<section class="card stack-gap">
+  <h3>Minha agenda como monitor</h3>
+  <p>Disciplina: {{ monitoria.disciplina_codigo }} - {{ monitoria.disciplina_nome }}</p>
+
+  <form method="post" action="{{ url_for('agenda.create_slot') }}" class="stack-gap">
+    <label for="data_inicio">Data e hora</label>
+    <input id="data_inicio" name="data_inicio" type="datetime-local" required />
+
+    <label for="duracao">Duração (minutos)</label>
+    <input id="duracao" name="duracao" type="number" min="15" max="240" value="60" required />
+
+    <button type="submit" class="button">Criar horário disponível</button>
+  </form>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Duração</th>
+          <th>Status</th>
+          <th>Aluno agendado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for slot in own_slots %}
+        <tr>
+          <td>{{ slot.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>{{ (slot.data_fim - slot.data_inicio).seconds // 60 }} min</td>
+          <td>{{ slot.status }}</td>
+          <td>{{ slot.aluno_nome or 'Nenhum' }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4">Ainda não há horários cadastrados.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+<section class="card stack-gap">
+  <h3>Horários disponíveis</h3>
+  {% if available_slots %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Disciplina</th>
+          <th>Monitor</th>
+          <th>Data</th>
+          <th>Duração</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for slot in available_slots %}
+        <tr>
+          <td>{{ slot.disciplina_codigo }} - {{ slot.disciplina_nome }}</td>
+          <td>{{ slot.monitor_nome }}</td>
+          <td>{{ slot.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>{{ (slot.data_fim - slot.data_inicio).seconds // 60 }} min</td>
+          <td>
+            <form method="post" action="{{ url_for('agenda.book_slot', slot_id=slot.disponibilidade_id) }}" class="inline-form">
+              <button type="submit" class="button">Reservar</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted">Nenhum horário disponível para as disciplinas em que você está matriculado.</p>
+  {% endif %}
+</section>
+{% endblock %}
