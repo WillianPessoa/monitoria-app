@@ -1,3 +1,4 @@
+import re
 import secrets
 import string
 
@@ -43,10 +44,39 @@ def reactivate_user(user_id):
     return repository.reactivate_user(user_id)
 
 
-def update_monitor_profile(user_id, contato, disponibilidade):
-    return repository.update_monitor_profile(user_id, contato, disponibilidade)
+def update_monitor_profile(user_id, contato_tipo, contato_valor, disponibilidade_slots):
+    normalized_tipo = (contato_tipo or "").strip().lower()
+    normalized_valor = (contato_valor or "").strip()
+
+    if normalized_valor:
+        if normalized_tipo == "email":
+            if not _is_valid_email(normalized_valor):
+                return False
+        elif normalized_tipo == "celular":
+            if not _is_valid_br_phone(normalized_valor):
+                return False
+        else:
+            return False
+
+    if not repository.update_monitor_profile(user_id, normalized_valor or None, None):
+        return False
+
+    slots_payload = []
+    for slot in disponibilidade_slots or []:
+        slots_payload.append((user_id, slot["weekday"], slot["hora_inicio"]))
+
+    repository.replace_monitor_disponibilidade(user_id, slots_payload)
+    return True
 
 
 def _generate_temp_password(length=10):
     alphabet = string.ascii_letters + string.digits
     return "".join(secrets.choice(alphabet) for _ in range(length))
+
+
+def _is_valid_email(value):
+    return re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", value) is not None
+
+
+def _is_valid_br_phone(value):
+    return re.match(r"^\(\d{2}\) \d{5}-\d{4}$", value) is not None

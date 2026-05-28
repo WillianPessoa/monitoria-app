@@ -217,3 +217,35 @@ def reserve_slot(disponibilidade_id, aluno_id):
     finally:
         cursor.close()
         conn.close()
+
+
+def list_weekly_sessions_for_aluno(aluno_id, now_value):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT s.id AS sessao_id,
+                   s.data_inicio,
+                   s.data_fim,
+                   s.status AS sessao_status,
+                   d.codigo AS disciplina_codigo,
+                   d.nome AS disciplina_nome,
+                   u.nome AS monitor_nome,
+                   p.status AS presenca_status
+            FROM monitoria_sessoes s
+            JOIN disciplinas d ON d.id = s.disciplina_id
+            JOIN monitorias m ON m.disciplina_id = d.id AND m.status = 'ATIVO'
+            JOIN usuarios u ON u.id = m.aluno_id
+            JOIN disciplina_alunos da ON da.disciplina_id = d.id AND da.aluno_id = %s
+            LEFT JOIN presencas p ON p.sessao_id = s.id AND p.aluno_id = %s
+            WHERE s.data_inicio >= %s
+              AND s.status = 'AGENDADA'
+            ORDER BY s.data_inicio ASC
+            """,
+            (aluno_id, aluno_id, now_value),
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()

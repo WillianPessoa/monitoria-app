@@ -198,3 +198,7 @@ def bulk_remove_alunos_from_disciplina(disciplina_id, aluno_ids):
 
 def list_disciplinas_by_aluno(aluno_id):
     return repository.list_disciplinas_by_aluno(aluno_id)
+
+
+def count_alunos_disciplina(disciplina_id):
+    return repository.count_alunos_disciplina(disciplina_id)

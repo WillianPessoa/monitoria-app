@@ -69,4 +69,116 @@ document.addEventListener('DOMContentLoaded', function(){
       });
     });
   }
+
+  const contatoTipo = document.querySelector('[data-contact-type]');
+  const contatoInput = document.querySelector('[data-contact-input]');
+
+  function formatPhone(value){
+    const digits = value.replace(/\D/g, '').slice(0, 11);
+    const ddd = digits.slice(0, 2);
+    const part1 = digits.slice(2, 7);
+    const part2 = digits.slice(7, 11);
+    let formatted = '';
+    if(ddd.length){
+      formatted += '(' + ddd;
+      if(ddd.length === 2){
+        formatted += ') ';
+      }
+    }
+    if(part1.length){
+      formatted += part1;
+    }
+    if(part2.length){
+      formatted += '-' + part2;
+    }
+    return formatted;
+  }
+
+  function applyContactMask(){
+    if(!contatoTipo || !contatoInput){
+      return;
+    }
+    if(contatoTipo.value === 'celular'){
+      contatoInput.value = formatPhone(contatoInput.value);
+    }
+  }
+
+  function deleteDigitAtCursor(input){
+    const value = input.value;
+    const cursor = input.selectionStart || 0;
+    const digits = value.replace(/\D/g, '').split('');
+    if(digits.length === 0){
+      return;
+    }
+
+    let digitIndex = 0;
+    for(let i = 0; i < value.length && i < cursor; i += 1){
+      if(/\d/.test(value[i])){
+        digitIndex += 1;
+      }
+    }
+
+    if(digitIndex <= 0){
+      digits.shift();
+    }else{
+      digits.splice(digitIndex - 1, 1);
+    }
+
+    input.value = formatPhone(digits.join(''));
+    const nextCursor = Math.min(input.value.length, cursor - 1);
+    input.setSelectionRange(nextCursor, nextCursor);
+  }
+
+  if(contatoTipo && contatoInput){
+    contatoTipo.addEventListener('change', function(){
+      contatoInput.value = '';
+      contatoInput.placeholder = contatoTipo.value === 'celular'
+        ? '(DDD) xxxxx-xxxx'
+        : 'email@exemplo.com';
+      applyContactMask();
+    });
+
+    contatoInput.addEventListener('input', function(){
+      if(contatoTipo.value === 'celular'){
+        contatoInput.value = formatPhone(contatoInput.value);
+      }
+    });
+
+    contatoInput.addEventListener('keydown', function(event){
+      if(contatoTipo.value !== 'celular'){
+        return;
+      }
+      if(event.key === 'Backspace'){
+        const cursor = contatoInput.selectionStart || 0;
+        const value = contatoInput.value;
+        if(cursor <= 4 || value[cursor - 1] === ')' || value[cursor - 1] === ' '){
+          event.preventDefault();
+          deleteDigitAtCursor(contatoInput);
+        }
+      }
+    });
+
+    applyContactMask();
+  }
+
+  const voteGrid = document.querySelector('.vote-grid');
+  if(voteGrid){
+    voteGrid.addEventListener('change', function(){
+      const checked = voteGrid.querySelectorAll('input[name="opcao_ids"]:checked');
+      if(checked.length > 2){
+        const last = checked[checked.length - 1];
+        last.checked = false;
+      }
+    });
+  }
+
+  const monitorVoteForm = document.querySelector('[data-monitor-vote-grid]');
+  if(monitorVoteForm){
+    monitorVoteForm.addEventListener('change', function(){
+      const checked = monitorVoteForm.querySelectorAll('input[name="monitor_slots"]:checked');
+      if(checked.length > 2){
+        checked[checked.length - 1].checked = false;
+      }
+    });
+  }
 });

@@ -2,6 +2,7 @@ import datetime
 
 from agenda import repository
 from monitorias import service as monitoria_service
+from utils.time import now_sp_naive
 
 
 def get_active_monitoria_for_user(user_id):
@@ -53,3 +54,7 @@ def book_slot(slot_id, aluno_id):
         return False, error or "Falha ao agendar o horário."
 
     return True, None
+
+
+def list_weekly_sessions_for_aluno(aluno_id):
+    return repository.list_weekly_sessions_for_aluno(aluno_id, now_sp_naive())

@@ -103,3 +103,88 @@ CREATE TABLE IF NOT EXISTS agendamentos (
   CONSTRAINT fk_agendamento_aluno
     FOREIGN KEY (aluno_id) REFERENCES usuarios (id)
 );
+
+CREATE TABLE IF NOT EXISTS monitor_disponibilidade (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  monitor_id BIGINT UNSIGNED NOT NULL,
+  weekday TINYINT NOT NULL,
+  hora_inicio TIME NOT NULL,
+  status ENUM('LIVRE', 'INDISPONIVEL') NOT NULL DEFAULT 'LIVRE',
+  criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_monitor_disponibilidade_monitor
+    FOREIGN KEY (monitor_id) REFERENCES usuarios (id) ON DELETE CASCADE,
+  CONSTRAINT uq_monitor_disponibilidade
+    UNIQUE (monitor_id, weekday, hora_inicio)
+);
+
+CREATE TABLE IF NOT EXISTS votacoes (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  disciplina_id BIGINT UNSIGNED NOT NULL,
+  semana_inicio DATE NOT NULL,
+  semana_fim DATE NOT NULL,
+  status ENUM('ABERTA', 'FECHADA') NOT NULL DEFAULT 'ABERTA',
+  criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_votacao_disciplina
+    FOREIGN KEY (disciplina_id) REFERENCES disciplinas (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS votacao_opcoes (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  votacao_id BIGINT UNSIGNED NOT NULL,
+  modo ENUM('BLOCO_2H', 'DOIS_1H') NOT NULL,
+  slot1_weekday TINYINT NOT NULL,
+  slot1_hora_inicio TIME NOT NULL,
+  slot2_weekday TINYINT NULL,
+  slot2_hora_inicio TIME NULL,
+  criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_votacao_opcao
+    FOREIGN KEY (votacao_id) REFERENCES votacoes (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS votos (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  votacao_id BIGINT UNSIGNED NOT NULL,
+  opcao_id BIGINT UNSIGNED NOT NULL,
+  aluno_id BIGINT UNSIGNED NOT NULL,
+  criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_voto_votacao
+    FOREIGN KEY (votacao_id) REFERENCES votacoes (id) ON DELETE CASCADE,
+  CONSTRAINT fk_voto_opcao
+    FOREIGN KEY (opcao_id) REFERENCES votacao_opcoes (id) ON DELETE CASCADE,
+  CONSTRAINT fk_voto_aluno
+    FOREIGN KEY (aluno_id) REFERENCES usuarios (id),
+  CONSTRAINT uq_voto_unico
+    UNIQUE (votacao_id, aluno_id, opcao_id)
+);
+
+CREATE TABLE IF NOT EXISTS monitoria_sessoes (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  disciplina_id BIGINT UNSIGNED NOT NULL,
+  monitor_id BIGINT UNSIGNED NOT NULL,
+  data_inicio DATETIME NOT NULL,
+  data_fim DATETIME NOT NULL,
+  status ENUM('AGENDADA', 'CANCELADA', 'CONCLUIDA') NOT NULL DEFAULT 'AGENDADA',
+  motivo_cancelamento VARCHAR(255) NULL,
+  criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_monitoria_sessao_disciplina
+    FOREIGN KEY (disciplina_id) REFERENCES disciplinas (id) ON DELETE CASCADE,
+  CONSTRAINT fk_monitoria_sessao_monitor
+    FOREIGN KEY (monitor_id) REFERENCES usuarios (id)
+);
+
+CREATE TABLE IF NOT EXISTS presencas (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  sessao_id BIGINT UNSIGNED NOT NULL,
+  aluno_id BIGINT UNSIGNED NOT NULL,
+  status ENUM('CONFIRMADA', 'AUSENTE', 'CANCELADA') NOT NULL,
+  atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_presenca_sessao
+    FOREIGN KEY (sessao_id) REFERENCES monitoria_sessoes (id) ON DELETE CASCADE,
+  CONSTRAINT fk_presenca_aluno
+    FOREIGN KEY (aluno_id) REFERENCES usuarios (id),
+  CONSTRAINT uq_presenca_unica
+    UNIQUE (sessao_id, aluno_id)
+);

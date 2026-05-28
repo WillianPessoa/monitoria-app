@@ -348,3 +348,489 @@ def set_monitor_for_disciplina(disciplina_id, professor_id, aluno_id):
     finally:
         cursor.close()
         conn.close()
+
+
+def get_active_monitor_for_disciplina(disciplina_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT m.aluno_id AS monitor_id,
+                   u.nome AS monitor_nome
+            FROM monitorias m
+            JOIN usuarios u ON u.id = m.aluno_id
+            WHERE m.disciplina_id = %s
+              AND m.status = 'ATIVO'
+            LIMIT 1
+            """,
+            (disciplina_id,),
+        )
+        return cursor.fetchone()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def list_monitor_disponibilidade_slots(monitor_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT weekday, hora_inicio
+            FROM monitor_disponibilidade
+            WHERE monitor_id = %s
+              AND status = 'LIVRE'
+            ORDER BY weekday ASC, hora_inicio ASC
+            """,
+            (monitor_id,),
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_open_votacao(disciplina_id, semana_inicio, semana_fim):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT id, disciplina_id, semana_inicio, semana_fim, status
+            FROM votacoes
+            WHERE disciplina_id = %s
+              AND semana_inicio = %s
+              AND semana_fim = %s
+              AND status = 'ABERTA'
+            LIMIT 1
+            """,
+            (disciplina_id, semana_inicio, semana_fim),
+        )
+        return cursor.fetchone()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_votacao_by_id(votacao_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT id, disciplina_id, semana_inicio, semana_fim, status
+            FROM votacoes
+            WHERE id = %s
+            """,
+            (votacao_id,),
+        )
+        return cursor.fetchone()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def create_votacao(disciplina_id, semana_inicio, semana_fim):
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            INSERT INTO votacoes (disciplina_id, semana_inicio, semana_fim, status)
+            VALUES (%s, %s, %s, 'ABERTA')
+            """,
+            (disciplina_id, semana_inicio, semana_fim),
+        )
+        conn.commit()
+        return cursor.lastrowid
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def create_votacao_opcoes(votacao_id, opcoes):
+    if not opcoes:
+        return 0
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.executemany(
+            """
+            INSERT INTO votacao_opcoes (
+                votacao_id,
+                modo,
+                slot1_weekday,
+                slot1_hora_inicio,
+                slot2_weekday,
+                slot2_hora_inicio
+            ) VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            opcoes,
+        )
+        conn.commit()
+        return cursor.rowcount
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def replace_votacao_opcoes(votacao_id, opcoes):
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            DELETE FROM votacao_opcoes
+            WHERE votacao_id = %s
+            """,
+            (votacao_id,),
+        )
+
+        if opcoes:
+            cursor.executemany(
+                """
+                INSERT INTO votacao_opcoes (
+                    votacao_id,
+                    modo,
+                    slot1_weekday,
+                    slot1_hora_inicio,
+                    slot2_weekday,
+                    slot2_hora_inicio
+                ) VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                opcoes,
+            )
+
+        conn.commit()
+        return True
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def list_votacao_opcoes(votacao_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT id, modo, slot1_weekday, slot1_hora_inicio, slot2_weekday, slot2_hora_inicio
+            FROM votacao_opcoes
+            WHERE votacao_id = %s
+            ORDER BY modo ASC, slot1_weekday ASC, slot1_hora_inicio ASC
+            """,
+            (votacao_id,),
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_voto_by_aluno(votacao_id, aluno_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT opcao_id
+            FROM votos
+            WHERE votacao_id = %s AND aluno_id = %s
+            """,
+            (votacao_id, aluno_id),
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def upsert_voto(votacao_id, opcao_id, aluno_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            INSERT INTO votos (votacao_id, opcao_id, aluno_id)
+            VALUES (%s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                opcao_id = VALUES(opcao_id),
+                criado_em = CURRENT_TIMESTAMP
+            """,
+            (votacao_id, opcao_id, aluno_id),
+        )
+        conn.commit()
+        return True
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def replace_votos(votacao_id, aluno_id, opcao_ids):
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            DELETE FROM votos
+            WHERE votacao_id = %s AND aluno_id = %s
+            """,
+            (votacao_id, aluno_id),
+        )
+
+        if opcao_ids:
+            payload = [(votacao_id, opcao_id, aluno_id) for opcao_id in opcao_ids]
+            cursor.executemany(
+                """
+                INSERT INTO votos (votacao_id, opcao_id, aluno_id)
+                VALUES (%s, %s, %s)
+                """,
+                payload,
+            )
+
+        conn.commit()
+        return True
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def list_votacao_resultados(votacao_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT o.id AS opcao_id,
+                   o.modo,
+                   o.slot1_weekday,
+                   o.slot1_hora_inicio,
+                   o.slot2_weekday,
+                   o.slot2_hora_inicio,
+                   COUNT(v.id) AS votos
+            FROM votacao_opcoes o
+            LEFT JOIN votos v ON v.opcao_id = o.id
+            WHERE o.votacao_id = %s
+            GROUP BY o.id, o.modo, o.slot1_weekday, o.slot1_hora_inicio, o.slot2_weekday, o.slot2_hora_inicio
+            ORDER BY votos DESC, o.id ASC
+            """,
+            (votacao_id,),
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def close_votacao(votacao_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            UPDATE votacoes
+            SET status = 'FECHADA', atualizado_em = CURRENT_TIMESTAMP
+            WHERE id = %s
+            """,
+            (votacao_id,),
+        )
+        conn.commit()
+        return cursor.rowcount > 0
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def list_sessoes_disciplina_semana(disciplina_id, semana_inicio, semana_fim):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT id, disciplina_id, monitor_id, data_inicio, data_fim, status
+            FROM monitoria_sessoes
+            WHERE disciplina_id = %s
+              AND data_inicio >= %s
+              AND data_inicio <= %s
+              AND status = 'AGENDADA'
+            ORDER BY data_inicio ASC
+            """,
+            (disciplina_id, f"{semana_inicio} 00:00:00", f"{semana_fim} 23:59:59"),
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_next_sessao_disciplina(disciplina_id, now_value):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT id, disciplina_id, monitor_id, data_inicio, data_fim, status
+            FROM monitoria_sessoes
+            WHERE disciplina_id = %s
+              AND data_inicio >= %s
+              AND status = 'AGENDADA'
+            ORDER BY data_inicio ASC
+            LIMIT 1
+            """,
+            (disciplina_id, now_value),
+        )
+        return cursor.fetchone()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_sessao_by_id(sessao_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT id, disciplina_id, monitor_id, data_inicio, data_fim, status
+            FROM monitoria_sessoes
+            WHERE id = %s
+            """,
+            (sessao_id,),
+        )
+        return cursor.fetchone()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def list_sessoes_monitor(monitor_id, now_value):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT s.id,
+                   s.disciplina_id,
+                   d.codigo AS disciplina_codigo,
+                   d.nome AS disciplina_nome,
+                   s.data_inicio,
+                   s.data_fim,
+                   s.status
+            FROM monitoria_sessoes s
+            JOIN disciplinas d ON d.id = s.disciplina_id
+            WHERE s.monitor_id = %s
+              AND s.data_inicio >= %s
+              AND s.status = 'AGENDADA'
+            ORDER BY s.data_inicio ASC
+            """,
+            (monitor_id, now_value),
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def create_sessoes(disciplina_id, monitor_id, sessoes):
+    if not sessoes:
+        return 0
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.executemany(
+            """
+            INSERT INTO monitoria_sessoes (disciplina_id, monitor_id, data_inicio, data_fim, status)
+            VALUES (%s, %s, %s, %s, 'AGENDADA')
+            """,
+            sessoes,
+        )
+        conn.commit()
+        return cursor.rowcount
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def cancel_sessao(sessao_id, motivo):
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            UPDATE monitoria_sessoes
+            SET status = 'CANCELADA',
+                motivo_cancelamento = %s,
+                atualizado_em = CURRENT_TIMESTAMP
+            WHERE id = %s
+              AND status = 'AGENDADA'
+            """,
+            (motivo, sessao_id),
+        )
+        conn.commit()
+        return cursor.rowcount > 0
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def upsert_presenca(sessao_id, aluno_id, status):
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            INSERT INTO presencas (sessao_id, aluno_id, status)
+            VALUES (%s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                status = VALUES(status),
+                atualizado_em = CURRENT_TIMESTAMP
+            """,
+            (sessao_id, aluno_id, status),
+        )
+        conn.commit()
+        return True
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_presenca(sessao_id, aluno_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT status
+            FROM presencas
+            WHERE sessao_id = %s AND aluno_id = %s
+            """,
+            (sessao_id, aluno_id),
+        )
+        return cursor.fetchone()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def list_presencas_for_aluno(aluno_id, sessao_ids):
+    if not sessao_ids:
+        return []
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        placeholders = ", ".join(["%s"] * len(sessao_ids))
+        cursor.execute(
+            f"""
+            SELECT sessao_id, status
+            FROM presencas
+            WHERE aluno_id = %s
+              AND sessao_id IN ({placeholders})
+            """,
+            (aluno_id, *sessao_ids),
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()

@@ -142,6 +142,54 @@ def update_monitor_profile(user_id, contato, disponibilidade):
     return affected > 0
 
 
+def list_monitor_disponibilidade(monitor_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT weekday, hora_inicio
+            FROM monitor_disponibilidade
+            WHERE monitor_id = %s
+              AND status = 'LIVRE'
+            ORDER BY weekday ASC, hora_inicio ASC
+            """,
+            (monitor_id,),
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def replace_monitor_disponibilidade(monitor_id, slots):
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            DELETE FROM monitor_disponibilidade
+            WHERE monitor_id = %s
+            """,
+            (monitor_id,),
+        )
+
+        if slots:
+            cursor.executemany(
+                """
+                INSERT INTO monitor_disponibilidade (monitor_id, weekday, hora_inicio, status)
+                VALUES (%s, %s, %s, 'LIVRE')
+                """,
+                slots,
+            )
+
+        conn.commit()
+        return True
+    finally:
+        cursor.close()
+        conn.close()
+
+
 def list_active_students():
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)

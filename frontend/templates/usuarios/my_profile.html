@@ -5,13 +5,54 @@
   <h2>Meu perfil de monitoria</h2>
   <p class="muted">Essas informacoes sao usadas na sua atuacao como monitor.</p>
   <form method="post">
-    <label for="contato">Contato</label>
-    <input id="contato" name="contato" value="{{ user.contato or '' }}" />
+    <label for="contato_tipo">Contato</label>
+    <div class="stack-gap">
+      <select id="contato_tipo" name="contato_tipo" data-contact-type>
+        <option value="">Selecione o tipo</option>
+        <option value="celular" {% if contato_tipo == 'celular' %}selected{% endif %}>Celular</option>
+        <option value="email" {% if contato_tipo == 'email' %}selected{% endif %}>Email</option>
+      </select>
+      <input
+        id="contato_valor"
+        name="contato_valor"
+        value="{{ contato_valor or '' }}"
+        data-contact-input
+        placeholder="Digite o contato"
+      />
+    </div>
 
-    <label for="disponibilidade">Disponibilidade</label>
-    <textarea id="disponibilidade" name="disponibilidade">{{ user.disponibilidade or '' }}</textarea>
+    <label>Disponibilidade semanal</label>
+    <p class="muted">Selecione os horários livres de segunda a sexta (08:00–22:00).</p>
+    <div class="availability-grid" role="grid" aria-label="Disponibilidade semanal">
+      <div class="availability-row header">
+        <span class="availability-cell"></span>
+        {% set weekdays = [
+          (1, 'Seg'), (2, 'Ter'), (3, 'Qua'), (4, 'Qui'), (5, 'Sex')
+        ] %}
+        {% for weekday, label in weekdays %}
+        <span class="availability-cell">{{ label }}</span>
+        {% endfor %}
+      </div>
+      {% for hour in range(8, 22) %}
+      <div class="availability-row">
+        <span class="availability-cell label">{{ '%02d:00'|format(hour) }} às {{ '%02d:00'|format(hour + 1) }}</span>
+        {% for weekday, label in weekdays %}
+        {% set key = weekday|string + '|' + hour|string %}
+        <label class="availability-cell slot">
+          <input
+            type="checkbox"
+            name="slots"
+            value="{{ key }}"
+            {% if key in selected_keys %}checked{% endif %}
+          />
+        </label>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
 
     <button class="button" type="submit">Salvar</button>
   </form>
 </section>
+
 {% endblock %}

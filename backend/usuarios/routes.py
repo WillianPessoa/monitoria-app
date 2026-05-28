@@ -90,14 +90,50 @@ def my_profile():
         flash("Você não tem permissão para acessar esta página.", "error")
         return redirect(url_for("home"))
 
-    if request.method == "POST":
-        contato = request.form.get("contato", "").strip()
-        disponibilidade = request.form.get("disponibilidade", "").strip()
+    disponibilidade_slots = repository.list_monitor_disponibilidade(user_id)
+    selected_keys = set()
+    for slot in disponibilidade_slots:
+        hora_inicio = slot.get("hora_inicio")
+        if hasattr(hora_inicio, "seconds"):
+            hour_value = int(hora_inicio.seconds / 3600)
+        else:
+            hour_value = int(str(hora_inicio).split(":")[0])
+        selected_keys.add(f"{slot['weekday']}|{hour_value}")
 
-        if service.update_monitor_profile(user_id, contato, disponibilidade):
+    if request.method == "POST":
+        contato_tipo = request.form.get("contato_tipo", "").strip()
+        contato_valor = request.form.get("contato_valor", "").strip()
+        slots_raw = request.form.getlist("slots")
+
+        slots_payload = []
+        for raw in slots_raw:
+            try:
+                weekday_str, hour_str = raw.split("|")
+                weekday = int(weekday_str)
+                hour = int(hour_str)
+            except (ValueError, TypeError):
+                continue
+
+            slots_payload.append({"weekday": weekday, "hora_inicio": f"{hour:02d}:00:00"})
+
+        if service.update_monitor_profile(user_id, contato_tipo, contato_valor, slots_payload):
             flash("Perfil atualizado com sucesso.", "success")
             return redirect(url_for("usuarios.my_profile"))
 
-        flash("Não foi possível atualizar o perfil.", "error")
+        flash("Contato inválido. Informe e-mail ou celular BR válido.", "error")
 
-    return render_template("usuarios/my_profile.html", user=user)
+    contato_tipo = ""
+    contato_valor = user.get("contato") or ""
+    if "@" in contato_valor:
+        contato_tipo = "email"
+    elif contato_valor:
+        contato_tipo = "celular"
+
+    return render_template(
+        "usuarios/my_profile.html",
+        user=user,
+        disponibilidade_slots=disponibilidade_slots,
+        selected_keys=selected_keys,
+        contato_tipo=contato_tipo,
+        contato_valor=contato_valor,
+    )

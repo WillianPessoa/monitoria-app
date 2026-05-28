@@ -4,6 +4,9 @@ from flask import flash, redirect, render_template, request, session, url_for
 
 from auth.decorators import login_required
 from agenda import bp, service
+from disciplinas import service as disciplinas_service
+from monitorias import service as monitoria_service
+from utils.time import now_sp_naive, week_bounds_sp
 
 
 @bp.get("/")
@@ -12,13 +15,79 @@ def index():
     user_id = session.get("user_id")
     monitoria = service.get_active_monitoria_for_user(user_id)
     available_slots = service.list_available_slots_for_aluno(user_id)
+    weekly_sessions = service.list_weekly_sessions_for_aluno(user_id)
     own_slots = []
+    votacao = None
+    votacao_resultados = []
+    monitor_sessions = []
+    total_alunos = 0
+    required_votes = 0
+    votacao_weekdays = []
+    votacao_hours = []
+    votacao_cells = {}
     if monitoria:
         own_slots = service.list_slots_for_monitor(user_id)
+        now_value = now_sp_naive()
+        semana_inicio, semana_fim = week_bounds_sp(now_value)
+        sessoes_semana = monitoria_service.get_weekly_sessions(
+            monitoria["disciplina_id"],
+            semana_inicio,
+            semana_fim,
+        )
+        sessoes_futuras = [
+            sessao for sessao in sessoes_semana if sessao["data_inicio"] >= now_value
+        ]
+        if not sessoes_futuras:
+            votacao = monitoria_service.get_open_or_create_votacao(
+                monitoria["disciplina_id"],
+                semana_inicio,
+                semana_fim,
+                user_id,
+            )
+            if votacao:
+                votacao_resultados = monitoria_service.list_votacao_resultados(votacao["id"])
+                total_alunos = disciplinas_service.count_alunos_disciplina(monitoria["disciplina_id"])
+                required_votes = max(1, (total_alunos + 1) // 2)
+                for opcao in votacao_resultados:
+                    if opcao["votos"] <= 0:
+                        continue
+
+                    slot1_hour = int(str(opcao["slot1_hora_inicio"]).split(":")[0])
+                    slot1_key = (opcao["slot1_weekday"], slot1_hour)
+                    current = votacao_cells.get(slot1_key)
+                    if not current or opcao["votos"] > current["votos"]:
+                        votacao_cells[slot1_key] = {
+                            "opcao_id": opcao["opcao_id"],
+                            "votos": opcao["votos"],
+                        }
+
+                    if opcao.get("slot2_weekday") and opcao.get("slot2_hora_inicio"):
+                        slot2_hour = int(str(opcao["slot2_hora_inicio"]).split(":")[0])
+                        slot2_key = (opcao["slot2_weekday"], slot2_hour)
+                        current = votacao_cells.get(slot2_key)
+                        if not current or opcao["votos"] > current["votos"]:
+                            votacao_cells[slot2_key] = {
+                                "opcao_id": opcao["opcao_id"],
+                                "votos": opcao["votos"],
+                            }
+
+                votacao_weekdays = sorted({key[0] for key in votacao_cells.keys()})
+                votacao_hours = sorted({key[1] for key in votacao_cells.keys()})
+
+        monitor_sessions = monitoria_service.list_monitor_sessions(user_id, now_value)
     return render_template(
         "agenda/index.html",
         monitoria=monitoria,
         available_slots=available_slots,
+        weekly_sessions=weekly_sessions,
+        votacao=votacao,
+        votacao_resultados=votacao_resultados,
+        monitor_sessions=monitor_sessions,
+        total_alunos=total_alunos,
+        required_votes=required_votes,
+        votacao_weekdays=votacao_weekdays,
+        votacao_hours=votacao_hours,
+        votacao_cells=votacao_cells,
         own_slots=own_slots,
     )
 

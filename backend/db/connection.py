@@ -9,6 +9,7 @@ from werkzeug.security import generate_password_hash
 _pool = None
 
 _SCHEMA = os.path.join(os.path.dirname(__file__), "schema.sql")
+_MIGRATIONS_DIR = os.path.join(os.path.dirname(__file__), "migrations")
 
 
 def _build_pool(app):
@@ -39,42 +40,52 @@ def _apply_schema(conn):
 
 
 def _apply_migrations(conn):
-        cursor = conn.cursor()
-        try:
-                try:
-                        cursor.execute(
-                                """
-                                ALTER TABLE disciplinas
-                                    ADD COLUMN status ENUM('ATIVA','INATIVA') NOT NULL DEFAULT 'ATIVA'
-                                """
-                        )
-                        conn.commit()
-                except mysql.connector.Error as exc:
-                        if exc.errno != errorcode.ER_DUP_FIELDNAME:
-                                raise
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS migrations (
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                filename VARCHAR(255) NOT NULL UNIQUE,
+                aplicado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        conn.commit()
 
-                cursor.execute(
-                        """
-                        CREATE TABLE IF NOT EXISTS disciplina_alunos (
-                            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                            disciplina_id BIGINT UNSIGNED NOT NULL,
-                            aluno_id BIGINT UNSIGNED NOT NULL,
-                            criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                            atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                            CONSTRAINT fk_disciplina_aluno_disciplina
-                                FOREIGN KEY (disciplina_id) REFERENCES disciplinas (id)
-                                ON DELETE CASCADE,
-                            CONSTRAINT fk_disciplina_aluno_usuario
-                                FOREIGN KEY (aluno_id) REFERENCES usuarios (id)
-                                ON DELETE CASCADE,
-                            CONSTRAINT uq_disciplina_aluno
-                                UNIQUE (disciplina_id, aluno_id)
-                        )
-                        """
-                )
-                conn.commit()
-        finally:
-                cursor.close()
+        applied = set()
+        cursor.execute("SELECT filename FROM migrations")
+        for (filename,) in cursor.fetchall():
+            applied.add(filename)
+
+        if not os.path.isdir(_MIGRATIONS_DIR):
+            return
+
+        migration_files = sorted(
+            f for f in os.listdir(_MIGRATIONS_DIR) if f.endswith(".sql")
+        )
+        for filename in migration_files:
+            if filename in applied:
+                continue
+
+            path = os.path.join(_MIGRATIONS_DIR, filename)
+            with open(path, encoding="utf-8") as f:
+                sql = f.read()
+
+            statements = [s.strip() for s in sql.split(";") if s.strip()]
+            for stmt in statements:
+                cursor.execute(stmt)
+                if cursor.with_rows:
+                    cursor.fetchall()
+
+            cursor.execute(
+                "INSERT INTO migrations (filename) VALUES (%s)",
+                (filename,),
+            )
+            conn.commit()
+            logging.info("Migration aplicada: %s", filename)
+    finally:
+        cursor.close()
 
 
 _SEED_ADMINS = [

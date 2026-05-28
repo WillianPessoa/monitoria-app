@@ -229,6 +229,23 @@ def list_alunos_by_disciplina_filtered(disciplina_id, term):
     return rows
 
 
+def count_alunos_disciplina(disciplina_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT COUNT(*)
+        FROM disciplina_alunos
+        WHERE disciplina_id = %s
+        """,
+        (disciplina_id,),
+    )
+    count = cursor.fetchone()[0]
+    cursor.close()
+    conn.close()
+    return count
+
+
 def list_disciplinas_by_aluno(aluno_id):
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
