@@ -11,6 +11,25 @@
   <h3>Minha agenda como monitor</h3>
   <p>Disciplina: {{ monitoria.disciplina_codigo }} - {{ monitoria.disciplina_nome }}</p>
 
+  <section class="stack-gap">
+    <h4>Adicionar horário de atendimento</h4>
+    <form method="post" action="{{ url_for('agenda.create_slot') }}" class="stack-gap">
+      <div>
+        <label for="data_inicio">Data e hora de início</label>
+        <input type="datetime-local" id="data_inicio" name="data_inicio" required />
+      </div>
+      <div>
+        <label for="duracao">Duração (minutos)</label>
+        <input type="number" id="duracao" name="duracao" value="60" min="30" max="180" required />
+      </div>
+      <div>
+        <label for="local">Local (opcional)</label>
+        <input type="text" id="local" name="local" placeholder="Ex: Sala 101, Lab 3..." />
+      </div>
+      <button type="submit" class="button">Criar horário</button>
+    </form>
+  </section>
+
   {% if votacao %}
   <section class="stack-gap">
     <h4>Votação da semana</h4>
