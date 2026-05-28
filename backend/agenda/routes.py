@@ -16,6 +16,7 @@ def index():
     monitoria = service.get_active_monitoria_for_user(user_id)
     available_slots = service.list_available_slots_for_aluno(user_id)
     weekly_sessions = service.list_weekly_sessions_for_aluno(user_id)
+    student_agendamentos = service.list_agendamentos_for_aluno(user_id)
     own_slots = []
     votacao = None
     votacao_resultados = []
@@ -80,6 +81,7 @@ def index():
         monitoria=monitoria,
         available_slots=available_slots,
         weekly_sessions=weekly_sessions,
+        student_agendamentos=student_agendamentos,
         votacao=votacao,
         votacao_resultados=votacao_resultados,
         monitor_sessions=monitor_sessions,
@@ -127,6 +129,45 @@ def book_slot(slot_id):
     success, error = service.book_slot(slot_id, user_id)
     if success:
         flash("Horário agendado com sucesso.", "success")
+    else:
+        flash(error, "error")
+    return redirect(url_for("agenda.index"))
+
+
+@bp.post("/agendamentos/<int:agendamento_id>/cancelar")
+@login_required
+def cancel_agendamento(agendamento_id):
+    user_id = session.get("user_id")
+    success, error = service.cancel_agendamento(agendamento_id, user_id)
+    if success:
+        flash("Agendamento cancelado. O horário voltou a estar disponível.", "success")
+    else:
+        flash(error, "error")
+    return redirect(url_for("agenda.index"))
+
+
+@bp.post("/slots/<int:slot_id>/bloquear")
+@login_required
+def block_slot(slot_id):
+    user_id = session.get("user_id")
+    success, error = service.block_slot(slot_id, user_id)
+    if success:
+        flash("Horário bloqueado.", "success")
+    else:
+        if error == "INDISPONIVEL":
+            flash("Só é possível bloquear horários disponíveis (sem agendamento ativo).", "error")
+        else:
+            flash("Não foi possível bloquear o horário.", "error")
+    return redirect(url_for("agenda.index"))
+
+
+@bp.post("/slots/<int:slot_id>/desbloquear")
+@login_required
+def unblock_slot(slot_id):
+    user_id = session.get("user_id")
+    success, error = service.unblock_slot(slot_id, user_id)
+    if success:
+        flash("Horário desbloqueado.", "success")
     else:
         flash(error, "error")
     return redirect(url_for("agenda.index"))

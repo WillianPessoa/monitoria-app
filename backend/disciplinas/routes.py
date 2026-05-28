@@ -203,7 +203,13 @@ def detalhe(disciplina_id):
     sessoes_futuras = [
         sessao for sessao in sessoes_semana if sessao["data_inicio"] >= now_value
     ]
-    next_session = monitoria_service.get_next_session(disciplina_id, now_value)
+    sessoes_passadas = [
+        sessao for sessao in sessoes_semana if sessao["data_inicio"] < now_value
+    ]
+    can_cancel_map = {
+        sessao["id"]: hours_until(sessao["data_inicio"], now_value) > 6
+        for sessao in sessoes_futuras
+    }
 
     votacao = None
     opcoes = []
@@ -233,13 +239,7 @@ def detalhe(disciplina_id):
                 voto_atual = monitoria_service.get_voto_by_aluno(votacao["id"], user_id)
                 voto_ids = {item["opcao_id"] for item in voto_atual}
 
-    presenca = None
-    can_cancel = False
     presenca_map = {}
-    if next_session and is_aluno:
-        presenca = monitoria_service.get_presenca(next_session["id"], user_id)
-        can_cancel = hours_until(next_session["data_inicio"], now_value) > 6
-
     if is_aluno and sessoes_semana:
         sessao_ids = [sessao["id"] for sessao in sessoes_semana]
         presencas = monitoria_service.list_presencas_for_aluno(user_id, sessao_ids)
@@ -251,10 +251,9 @@ def detalhe(disciplina_id):
         section_title=title,
         disciplina=disciplina,
         monitor=monitor,
-        sessoes_semana=sessoes_semana,
-        next_session=next_session,
-        presenca=presenca,
-        can_cancel=can_cancel,
+        sessoes_futuras=sessoes_futuras,
+        sessoes_passadas=sessoes_passadas,
+        can_cancel_map=can_cancel_map,
         presenca_map=presenca_map,
         votacao=votacao,
         opcoes=opcoes_display,
@@ -266,6 +265,33 @@ def detalhe(disciplina_id):
         is_aluno=is_aluno,
         is_monitor=is_monitor_for_disciplina,
     )
+
+
+@bp.get("/<int:disciplina_id>/sessoes/<int:sessao_id>")
+@login_required
+def sessao_detalhe(disciplina_id, sessao_id):
+    disciplina = service.get_disciplina_by_id(disciplina_id)
+    if not disciplina:
+        flash("Disciplina não encontrada.", "error")
+        return redirect(url_for("home"))
+
+    user_id = session.get("user_id")
+    role = session.get("papel")
+    monitor = monitoria_service.get_active_monitor_for_disciplina(disciplina_id)
+    is_monitor_for_disciplina = monitor and monitor.get("monitor_id") == user_id
+    is_aluno = role == "ALUNO" and repository.is_aluno_matriculado(disciplina_id, user_id)
+
+    if not (is_aluno or is_monitor_for_disciplina):
+        flash("Você não tem permissão para acessar esta disciplina.", "error")
+        return redirect(url_for("home"))
+
+    sessao = monitoria_service.get_session_by_id(sessao_id)
+    if not sessao or sessao["disciplina_id"] != disciplina_id:
+        flash("Sessão não encontrada.", "error")
+        return redirect(url_for("disciplinas.detalhe", disciplina_id=disciplina_id))
+
+    title = f"Detalhes da monitoria — {disciplina['codigo']} {disciplina['nome']}"
+    return render_template("placeholder.html", section_title=title)
 
 
 def _build_opcao_display(opcao, semana_inicio):

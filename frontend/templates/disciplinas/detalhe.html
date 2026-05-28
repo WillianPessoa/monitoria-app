@@ -10,39 +10,66 @@
   {% endif %}
 </section>
 
-{% if next_session %}
+{% if sessoes_futuras %}
 <section class="card stack-gap">
-  <h3>Próxima monitoria</h3>
-  <p>{{ next_session.data_inicio.strftime('%d/%m/%Y %H:%M') }} - {{ next_session.data_fim.strftime('%H:%M') }}</p>
-
-  {% if is_aluno %}
-  {% set next_status = presenca.status if presenca else '' %}
-  {% if next_status == 'CONFIRMADA' %}
-  <span class="status-pill success">Presença confirmada</span>
-  {% elif next_status == 'AUSENTE' %}
-  <span class="status-pill error">Ausência informada</span>
-  {% endif %}
-  <form method="post" action="{{ url_for('disciplinas.presenca', disciplina_id=disciplina.id) }}" class="inline-form">
-    <input type="hidden" name="sessao_id" value="{{ next_session.id }}" />
-    <input type="hidden" name="status" value="CONFIRMADA" />
-    <button type="submit" class="button" {% if next_status == 'CONFIRMADA' %}disabled{% endif %}>
-      Confirmar presença
-    </button>
-  </form>
-  <form method="post" action="{{ url_for('disciplinas.presenca', disciplina_id=disciplina.id) }}" class="inline-form">
-    <input type="hidden" name="sessao_id" value="{{ next_session.id }}" />
-    <input type="hidden" name="status" value="AUSENTE" />
-    <button type="submit" class="button outline" {% if next_status == 'AUSENTE' %}disabled{% endif %}>
-      Informar ausência
-    </button>
-  </form>
-  <form method="post" action="{{ url_for('disciplinas.cancelar_presenca', disciplina_id=disciplina.id) }}" class="inline-form">
-    <input type="hidden" name="sessao_id" value="{{ next_session.id }}" />
-    <button type="submit" class="button danger" {% if not can_cancel or not presenca or presenca.status != 'CONFIRMADA' %}disabled{% endif %}>
-      Cancelar presença
-    </button>
-  </form>
-  {% endif %}
+  <h3>Próximas monitorias</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Duração</th>
+          <th>Status</th>
+          {% if is_aluno %}
+          <th>Ações</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for sessao in sessoes_futuras %}
+        {% set pstatus = presenca_map.get(sessao.id) %}
+        <tr>
+          <td>{{ sessao.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>{{ (sessao.data_fim - sessao.data_inicio).seconds // 60 }} min</td>
+          <td>
+            {% if pstatus == 'CONFIRMADA' %}
+              <span class="status-pill success">Presença confirmada</span>
+            {% elif pstatus == 'AUSENTE' %}
+              <span class="status-pill error">Ausência informada</span>
+            {% elif pstatus == 'CANCELADA' %}
+              <span class="status-pill error">Ausência confirmada</span>
+            {% else %}
+              <span class="status-pill">Agendada</span>
+            {% endif %}
+          </td>
+          {% if is_aluno %}
+          <td>
+            {% if pstatus == 'CONFIRMADA' %}
+              <form method="post" action="{{ url_for('disciplinas.cancelar_presenca', disciplina_id=disciplina.id) }}" class="inline-form">
+                <input type="hidden" name="sessao_id" value="{{ sessao.id }}" />
+                <button type="submit" class="button danger" {% if not can_cancel_map.get(sessao.id) %}disabled{% endif %}>
+                  Cancelar presença
+                </button>
+              </form>
+            {% elif not pstatus or pstatus == 'AUSENTE' %}
+              <form method="post" action="{{ url_for('disciplinas.presenca', disciplina_id=disciplina.id) }}" class="inline-form">
+                <input type="hidden" name="sessao_id" value="{{ sessao.id }}" />
+                <input type="hidden" name="status" value="CONFIRMADA" />
+                <button type="submit" class="button">Confirmar presença</button>
+              </form>
+              <form method="post" action="{{ url_for('disciplinas.presenca', disciplina_id=disciplina.id) }}" class="inline-form">
+                <input type="hidden" name="sessao_id" value="{{ sessao.id }}" />
+                <input type="hidden" name="status" value="AUSENTE" />
+                <button type="submit" class="button outline">Informar ausência</button>
+              </form>
+            {% endif %}
+          </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </section>
 {% endif %}
 
@@ -93,9 +120,9 @@
 </section>
 {% endif %}
 
-{% if sessoes_semana %}
+{% if sessoes_passadas %}
 <section class="card stack-gap">
-  <h3>Monitorias desta semana</h3>
+  <h3>Histórico de monitorias</h3>
   <div class="table-wrap">
     <table>
       <thead>
@@ -103,38 +130,18 @@
           <th>Data</th>
           <th>Duração</th>
           <th>Status</th>
-          {% if is_aluno %}
           <th>Ações</th>
-          {% endif %}
         </tr>
       </thead>
       <tbody>
-        {% for sessao in sessoes_semana %}
+        {% for sessao in sessoes_passadas %}
         <tr>
           <td>{{ sessao.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
           <td>{{ (sessao.data_fim - sessao.data_inicio).seconds // 60 }} min</td>
-          <td>{{ sessao.status }}</td>
-          {% if is_aluno %}
+          <td><span class="status-pill">Finalizada</span></td>
           <td>
-            {% set status = presenca_map.get(sessao.id) %}
-            {% if status == 'CONFIRMADA' %}
-              <span class="status-pill success">Confirmada</span>
-            {% elif status == 'AUSENTE' %}
-              <span class="status-pill error">Ausente</span>
-            {% else %}
-              <form method="post" action="{{ url_for('disciplinas.presenca', disciplina_id=disciplina.id) }}" class="inline-form">
-                <input type="hidden" name="sessao_id" value="{{ sessao.id }}" />
-                <input type="hidden" name="status" value="CONFIRMADA" />
-                <button type="submit" class="button">Confirmar</button>
-              </form>
-              <form method="post" action="{{ url_for('disciplinas.presenca', disciplina_id=disciplina.id) }}" class="inline-form">
-                <input type="hidden" name="sessao_id" value="{{ sessao.id }}" />
-                <input type="hidden" name="status" value="AUSENTE" />
-                <button type="submit" class="button outline">Ausência</button>
-              </form>
-            {% endif %}
+            <a href="{{ url_for('disciplinas.sessao_detalhe', disciplina_id=disciplina.id, sessao_id=sessao.id) }}" class="button outline small">Ver detalhes</a>
           </td>
-          {% endif %}
         </tr>
         {% endfor %}
       </tbody>

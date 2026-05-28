@@ -90,6 +90,58 @@
     <p class="muted">Nenhuma monitoria confirmada.</p>
     {% endif %}
   </section>
+
+  <section class="stack-gap">
+    <h4>Meus horários de atendimento</h4>
+    {% if own_slots %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Duração</th>
+            <th>Local</th>
+            <th>Status</th>
+            <th>Aluno</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for slot in own_slots %}
+          <tr>
+            <td>{{ slot.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
+            <td>{{ (slot.data_fim - slot.data_inicio).seconds // 60 }} min</td>
+            <td>{{ slot.local or '—' }}</td>
+            <td>
+              {% if slot.status == 'AGENDADO' %}
+                <span class="status-pill success">Agendado</span>
+              {% elif slot.status == 'BLOQUEADO' %}
+                <span class="status-pill error">Bloqueado</span>
+              {% else %}
+                <span class="status-pill">Disponível</span>
+              {% endif %}
+            </td>
+            <td>{{ slot.aluno_nome or '—' }}</td>
+            <td>
+              {% if slot.status == 'DISPONIVEL' %}
+                <form method="post" action="{{ url_for('agenda.block_slot', slot_id=slot.disponibilidade_id) }}" class="inline-form">
+                  <button type="submit" class="button outline small">Bloquear</button>
+                </form>
+              {% elif slot.status == 'BLOQUEADO' %}
+                <form method="post" action="{{ url_for('agenda.unblock_slot', slot_id=slot.disponibilidade_id) }}" class="inline-form">
+                  <button type="submit" class="button outline small">Desbloquear</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted">Nenhum horário cadastrado.</p>
+    {% endif %}
+  </section>
 </section>
 {% endif %}
 
@@ -126,6 +178,44 @@
   </div>
   {% else %}
   <p class="muted">Nenhum horário disponível para as disciplinas em que você está matriculado.</p>
+  {% endif %}
+</section>
+
+<section class="card stack-gap">
+  <h3>Meus agendamentos</h3>
+  {% if student_agendamentos %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Disciplina</th>
+          <th>Monitor</th>
+          <th>Data</th>
+          <th>Duração</th>
+          <th>Local</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ag in student_agendamentos %}
+        <tr>
+          <td>{{ ag.disciplina_codigo }} - {{ ag.disciplina_nome }}</td>
+          <td>{{ ag.monitor_nome }}</td>
+          <td>{{ ag.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>{{ (ag.data_fim - ag.data_inicio).seconds // 60 }} min</td>
+          <td>{{ ag.local or '—' }}</td>
+          <td>
+            <form method="post" action="{{ url_for('agenda.cancel_agendamento', agendamento_id=ag.agendamento_id) }}" class="inline-form">
+              <button type="submit" class="button danger small">Cancelar</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted">Nenhum agendamento futuro.</p>
   {% endif %}
 </section>
 
