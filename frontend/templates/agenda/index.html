@@ -18,6 +18,9 @@
     <label for="duracao">Duração (minutos)</label>
     <input id="duracao" name="duracao" type="number" min="15" max="240" value="60" required />
 
+    <label for="local">Local</label>
+    <input id="local" name="local" type="text" maxlength="255" placeholder="Sala, laboratório ou link online" />
+
     <button type="submit" class="button">Criar horário disponível</button>
   </form>
 
@@ -27,6 +30,7 @@
         <tr>
           <th>Data</th>
           <th>Duração</th>
+          <th>Local</th>
           <th>Status</th>
           <th>Aluno agendado</th>
         </tr>
@@ -36,12 +40,13 @@
         <tr>
           <td>{{ slot.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
           <td>{{ (slot.data_fim - slot.data_inicio).seconds // 60 }} min</td>
+          <td>{{ slot.local or '-' }}</td>
           <td>{{ slot.status }}</td>
           <td>{{ slot.aluno_nome or 'Nenhum' }}</td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="4">Ainda não há horários cadastrados.</td>
+          <td colspan="5">Ainda não há horários cadastrados.</td>
         </tr>
         {% endfor %}
       </tbody>

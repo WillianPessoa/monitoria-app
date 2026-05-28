@@ -29,6 +29,7 @@ def create_slot():
     user_id = session.get("user_id")
     data_inicio_raw = request.form.get("data_inicio", "").strip()
     duracao_raw = request.form.get("duracao", "60").strip()
+    local = request.form.get("local", "").strip() or None
 
     try:
         data_inicio = datetime.fromisoformat(data_inicio_raw)
@@ -42,7 +43,7 @@ def create_slot():
         flash("Duração inválida.", "error")
         return redirect(url_for("agenda.index"))
 
-    success, error = service.create_slot(user_id, data_inicio, duracao_minutes)
+    success, error = service.create_slot(user_id, data_inicio, duracao_minutes, local)
     if success:
         flash("Horário disponível criado com sucesso.", "success")
     else:

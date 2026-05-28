@@ -16,7 +16,7 @@ def list_slots_for_monitor(monitor_id):
     return repository.list_slots_for_monitor(monitor_id)
 
 
-def create_slot(monitor_id, data_inicio, duracao_minutes):
+def create_slot(monitor_id, data_inicio, duracao_minutes, local=None):
     monitoria = monitoria_service.get_active_by_aluno(monitor_id)
     if not monitoria:
         return False, "Você não tem monitoria ativa para criar horários."
@@ -28,7 +28,11 @@ def create_slot(monitor_id, data_inicio, duracao_minutes):
         return False, "Duração inválida."
 
     data_fim = data_inicio + datetime.timedelta(minutes=duracao_minutes)
-    repository.create_disponibilidade(monitor_id, monitoria["disciplina_id"], data_inicio, data_fim)
+
+    if repository.monitor_has_overlap(monitor_id, data_inicio, data_fim):
+        return False, "Já existe um horário que se sobrepõe a este período."
+
+    repository.create_disponibilidade(monitor_id, monitoria["disciplina_id"], data_inicio, data_fim, local)
     return True, None
 
 

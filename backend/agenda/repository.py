@@ -14,7 +14,8 @@ def list_available_slots_for_aluno(aluno_id):
                    ds.monitor_id,
                    u.nome AS monitor_nome,
                    ds.data_inicio,
-                   ds.data_fim
+                   ds.data_fim,
+                   ds.local
             FROM disponibilidades ds
             JOIN disciplinas di ON di.id = ds.disciplina_id
             JOIN usuarios u ON u.id = ds.monitor_id
@@ -48,6 +49,7 @@ def list_slots_for_monitor(monitor_id):
                    di.nome AS disciplina_nome,
                    ds.data_inicio,
                    ds.data_fim,
+                   ds.local,
                    ds.status,
                    a.id AS agendamento_id,
                    a.aluno_id,
@@ -110,16 +112,39 @@ def student_has_conflict(aluno_id, data_inicio, data_fim):
         conn.close()
 
 
-def create_disponibilidade(monitor_id, disciplina_id, data_inicio, data_fim):
+def monitor_has_overlap(monitor_id, data_inicio, data_fim, exclude_id=None):
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        query = """
+            SELECT 1
+            FROM disponibilidades
+            WHERE monitor_id = %s
+              AND data_inicio < %s
+              AND data_fim > %s
+        """
+        params = [monitor_id, data_fim, data_inicio]
+        if exclude_id is not None:
+            query += " AND id != %s"
+            params.append(exclude_id)
+        query += " LIMIT 1"
+        cursor.execute(query, params)
+        return cursor.fetchone() is not None
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def create_disponibilidade(monitor_id, disciplina_id, data_inicio, data_fim, local=None):
     conn = get_connection()
     cursor = conn.cursor()
     try:
         cursor.execute(
             """
-            INSERT INTO disponibilidades (disciplina_id, monitor_id, data_inicio, data_fim, status)
-            VALUES (%s, %s, %s, %s, 'DISPONIVEL')
+            INSERT INTO disponibilidades (disciplina_id, monitor_id, data_inicio, data_fim, local, status)
+            VALUES (%s, %s, %s, %s, %s, 'DISPONIVEL')
             """,
-            (disciplina_id, monitor_id, data_inicio, data_fim),
+            (disciplina_id, monitor_id, data_inicio, data_fim, local),
         )
         conn.commit()
         return cursor.lastrowid
