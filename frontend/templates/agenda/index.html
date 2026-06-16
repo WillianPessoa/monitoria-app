@@ -15,8 +15,12 @@
   <section class="stack-gap">
     <h4>Votação da semana</h4>
     {% if votacao_resultados %}
-    <p class="muted">Selecione 1 horário (2h seguidas) ou 2 horários (1h cada) após ao menos {{ required_votes }} votos.</p>
-    <form method="post" action="{{ url_for('monitorias.confirmar_votacao', votacao_id=votacao.id) }}" data-monitor-vote-grid>
+    {% if votacao_max_select == 1 %}
+    <p class="muted">Selecione 1 horário de {{ votacao_slot_duration }}h após ao menos {{ required_votes }} votos.</p>
+    {% else %}
+    <p class="muted">Selecione até 2 horários de 1h após ao menos {{ required_votes }} votos.</p>
+    {% endif %}
+    <form method="post" action="{{ url_for('monitorias.confirmar_votacao', votacao_id=votacao.id) }}" data-monitor-vote-grid data-max-select="{{ votacao_max_select }}">
       <div class="vote-grid" role="grid" aria-label="Agenda semanal de votação">
         {% set weekday_labels = {1: 'Seg', 2: 'Ter', 3: 'Qua', 4: 'Qui', 5: 'Sex'} %}
         <div class="vote-row header">
@@ -27,7 +31,7 @@
         </div>
         {% for hour in votacao_hours %}
         <div class="vote-row">
-          <span class="vote-cell label">{{ '%02d:00'|format(hour) }} às {{ '%02d:00'|format(hour + 1) }}</span>
+          <span class="vote-cell label">{{ '%02d:00'|format(hour) }} às {{ '%02d:00'|format(hour + votacao_slot_duration) }}</span>
           {% for weekday in votacao_weekdays %}
           {% set cell = votacao_cells.get((weekday, hour)) %}
           <div class="vote-cell slot">

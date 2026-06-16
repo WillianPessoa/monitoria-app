@@ -21,14 +21,31 @@
       />
     </div>
 
+    <label>Configuração de monitoria</label>
+    <p class="muted">Defina a carga horária semanal e o formato quando for 2h.</p>
+    <div class="stack-gap" data-profile-config>
+      <select name="carga_horaria" data-carga-horaria>
+        <option value="1" {% if carga_horaria == 1 %}selected{% endif %}>1h por semana</option>
+        <option value="2" {% if carga_horaria == 2 %}selected{% endif %}>2h por semana</option>
+      </select>
+      <select name="modo_2h" data-modo-2h {% if carga_horaria != 2 %}hidden{% endif %}>
+        <option value="CONSECUTIVAS" {% if modo_2h == 'CONSECUTIVAS' %}selected{% endif %}>
+          Uma sessão de 2h
+        </option>
+        <option value="SEPARADAS" {% if modo_2h == 'SEPARADAS' %}selected{% endif %}>
+          Duas sessões de 1h
+        </option>
+      </select>
+    </div>
+
     <label>Disponibilidade semanal</label>
     <p class="muted">Selecione os horários livres de segunda a sexta (08:00–22:00).</p>
-    <div class="availability-grid" role="grid" aria-label="Disponibilidade semanal">
+    {% set weekdays = [
+      (1, 'Seg'), (2, 'Ter'), (3, 'Qua'), (4, 'Qui'), (5, 'Sex')
+    ] %}
+    <div class="availability-grid" role="grid" aria-label="Disponibilidade semanal" data-grid-1h {% if carga_horaria == 2 and modo_2h == 'CONSECUTIVAS' %}hidden{% endif %}>
       <div class="availability-row header">
         <span class="availability-cell"></span>
-        {% set weekdays = [
-          (1, 'Seg'), (2, 'Ter'), (3, 'Qua'), (4, 'Qui'), (5, 'Sex')
-        ] %}
         {% for weekday, label in weekdays %}
         <span class="availability-cell">{{ label }}</span>
         {% endfor %}
@@ -44,6 +61,35 @@
             name="slots"
             value="{{ key }}"
             {% if key in selected_keys %}checked{% endif %}
+            data-initial="{{ 'true' if key in selected_keys else 'false' }}"
+          />
+        </label>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="availability-grid" role="grid" aria-label="Disponibilidade semanal" data-grid-2h {% if carga_horaria != 2 or modo_2h != 'CONSECUTIVAS' %}hidden{% endif %}>
+      <div class="availability-row header">
+        <span class="availability-cell"></span>
+        {% for weekday, label in weekdays %}
+        <span class="availability-cell">{{ label }}</span>
+        {% endfor %}
+      </div>
+      {% for hour in range(8, 21) %}
+      <div class="availability-row">
+        <span class="availability-cell label">{{ '%02d:00'|format(hour) }} às {{ '%02d:00'|format(hour + 2) }}</span>
+        {% for weekday, label in weekdays %}
+        {% set key1 = weekday|string + '|' + hour|string %}
+        {% set key2 = weekday|string + '|' + (hour + 1)|string %}
+        <label class="availability-cell slot">
+          <input
+            type="checkbox"
+            name="slots"
+            value="{{ weekday }}|{{ hour }}|2"
+            {% if key1 in selected_keys and key2 in selected_keys %}checked{% endif %}
+            data-initial="{{ 'true' if key1 in selected_keys and key2 in selected_keys else 'false' }}"
+            data-weekday="{{ weekday }}"
+            data-hour="{{ hour }}"
           />
         </label>
         {% endfor %}
@@ -51,8 +97,14 @@
       {% endfor %}
     </div>
 
-    <button class="button" type="submit">Salvar</button>
+    <div class="stack-gap" data-profile-actions hidden>
+      <button class="button" type="submit">Salvar</button>
+      <button class="button outline" type="button" data-profile-cancel>Cancelar</button>
+    </div>
+
+    <button class="button" type="submit" data-profile-save>Salvar</button>
   </form>
 </section>
+
 
 {% endblock %}

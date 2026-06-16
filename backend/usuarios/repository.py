@@ -6,7 +6,16 @@ def list_users():
     cursor = conn.cursor(dictionary=True)
     cursor.execute(
         """
-        SELECT id, nome, email, papel, status, contato, disponibilidade, criado_em
+        SELECT id,
+               nome,
+               email,
+               papel,
+               status,
+               contato,
+               disponibilidade,
+               carga_horaria_semanal,
+               modo_2h,
+               criado_em
         FROM usuarios
         ORDER BY criado_em DESC
         """
@@ -22,7 +31,15 @@ def get_user_by_id(user_id):
     cursor = conn.cursor(dictionary=True)
     cursor.execute(
         """
-        SELECT id, nome, email, papel, status, contato, disponibilidade
+         SELECT id,
+             nome,
+             email,
+             papel,
+             status,
+             contato,
+             disponibilidade,
+             carga_horaria_semanal,
+             modo_2h
         FROM usuarios
         WHERE id = %s
         """,
@@ -121,7 +138,7 @@ def reset_user_password(user_id, password_hash):
     return affected > 0
 
 
-def update_monitor_profile(user_id, contato, disponibilidade):
+def update_monitor_profile(user_id, contato, disponibilidade, carga_horaria, modo_2h):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
@@ -129,11 +146,13 @@ def update_monitor_profile(user_id, contato, disponibilidade):
         UPDATE usuarios
         SET contato = %s,
             disponibilidade = %s,
+            carga_horaria_semanal = %s,
+            modo_2h = %s,
             atualizado_em = CURRENT_TIMESTAMP
         WHERE id = %s
           AND papel IN ('MONITOR', 'ALUNO')
         """,
-        (contato, disponibilidade, user_id),
+        (contato, disponibilidade, carga_horaria, modo_2h, user_id),
     )
     affected = cursor.rowcount
     conn.commit()
@@ -157,6 +176,24 @@ def list_monitor_disponibilidade(monitor_id):
             (monitor_id,),
         )
         return cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_monitor_preferences(monitor_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT carga_horaria_semanal, modo_2h
+            FROM usuarios
+            WHERE id = %s
+            """,
+            (monitor_id,),
+        )
+        return cursor.fetchone()
     finally:
         cursor.close()
         conn.close()

@@ -104,19 +104,50 @@ def my_profile():
         contato_tipo = request.form.get("contato_tipo", "").strip()
         contato_valor = request.form.get("contato_valor", "").strip()
         slots_raw = request.form.getlist("slots")
+        carga_raw = request.form.get("carga_horaria", "1")
+        modo_2h = request.form.get("modo_2h", "CONSECUTIVAS").upper()
+
+        try:
+            carga_horaria = int(carga_raw)
+        except (TypeError, ValueError):
+            carga_horaria = 1
 
         slots_payload = []
+        slot_keys = set()
         for raw in slots_raw:
             try:
-                weekday_str, hour_str = raw.split("|")
+                parts = raw.split("|")
+                weekday_str = parts[0]
+                hour_str = parts[1]
+                duration_str = parts[2] if len(parts) > 2 else "1"
                 weekday = int(weekday_str)
                 hour = int(hour_str)
+                duration = int(duration_str)
             except (ValueError, TypeError):
                 continue
 
+            primary_key = (weekday, hour)
+            if primary_key in slot_keys:
+                flash("Selecione horários sem sobreposição.", "error")
+                return redirect(url_for("usuarios.my_profile"))
+            slot_keys.add(primary_key)
             slots_payload.append({"weekday": weekday, "hora_inicio": f"{hour:02d}:00:00"})
+            if duration == 2:
+                next_key = (weekday, hour + 1)
+                if next_key in slot_keys:
+                    flash("Selecione horários sem sobreposição.", "error")
+                    return redirect(url_for("usuarios.my_profile"))
+                slot_keys.add(next_key)
+                slots_payload.append({"weekday": weekday, "hora_inicio": f"{hour + 1:02d}:00:00"})
 
-        if service.update_monitor_profile(user_id, contato_tipo, contato_valor, slots_payload):
+        if service.update_monitor_profile(
+            user_id,
+            contato_tipo,
+            contato_valor,
+            slots_payload,
+            carga_horaria,
+            modo_2h,
+        ):
             flash("Perfil atualizado com sucesso.", "success")
             return redirect(url_for("usuarios.my_profile"))
 
@@ -129,6 +160,9 @@ def my_profile():
     elif contato_valor:
         contato_tipo = "celular"
 
+    carga_horaria = user.get("carga_horaria_semanal") or 1
+    modo_2h = user.get("modo_2h") or "CONSECUTIVAS"
+
     return render_template(
         "usuarios/my_profile.html",
         user=user,
@@ -136,4 +170,8 @@ def my_profile():
         selected_keys=selected_keys,
         contato_tipo=contato_tipo,
         contato_valor=contato_valor,
+        carga_horaria=carga_horaria,
+        modo_2h=modo_2h,
     )
+
+

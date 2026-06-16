@@ -398,7 +398,13 @@ def get_open_votacao(disciplina_id, semana_inicio, semana_fim):
     try:
         cursor.execute(
             """
-            SELECT id, disciplina_id, semana_inicio, semana_fim, status
+                        SELECT id,
+                                     disciplina_id,
+                                     semana_inicio,
+                                     semana_fim,
+                                     status,
+                                     carga_horaria_semanal,
+                                     modo_2h
             FROM votacoes
             WHERE disciplina_id = %s
               AND semana_inicio = %s
@@ -420,7 +426,13 @@ def get_votacao_by_id(votacao_id):
     try:
         cursor.execute(
             """
-            SELECT id, disciplina_id, semana_inicio, semana_fim, status
+            SELECT id,
+                   disciplina_id,
+                   semana_inicio,
+                   semana_fim,
+                   status,
+                   carga_horaria_semanal,
+                   modo_2h
             FROM votacoes
             WHERE id = %s
             """,
@@ -432,19 +444,47 @@ def get_votacao_by_id(votacao_id):
         conn.close()
 
 
-def create_votacao(disciplina_id, semana_inicio, semana_fim):
+def create_votacao(disciplina_id, semana_inicio, semana_fim, carga_horaria=1, modo_2h="CONSECUTIVAS"):
     conn = get_connection()
     cursor = conn.cursor()
     try:
         cursor.execute(
             """
-            INSERT INTO votacoes (disciplina_id, semana_inicio, semana_fim, status)
-            VALUES (%s, %s, %s, 'ABERTA')
+            INSERT INTO votacoes (
+                disciplina_id,
+                semana_inicio,
+                semana_fim,
+                status,
+                carga_horaria_semanal,
+                modo_2h
+            )
+            VALUES (%s, %s, %s, 'ABERTA', %s, %s)
             """,
-            (disciplina_id, semana_inicio, semana_fim),
+            (disciplina_id, semana_inicio, semana_fim, carga_horaria, modo_2h),
         )
         conn.commit()
         return cursor.lastrowid
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def update_votacao_config(votacao_id, carga_horaria, modo_2h):
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            UPDATE votacoes
+            SET carga_horaria_semanal = %s,
+                modo_2h = %s,
+                atualizado_em = CURRENT_TIMESTAMP
+            WHERE id = %s
+            """,
+            (carga_horaria, modo_2h, votacao_id),
+        )
+        conn.commit()
+        return cursor.rowcount > 0
     finally:
         cursor.close()
         conn.close()

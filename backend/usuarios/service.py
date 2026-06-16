@@ -4,6 +4,9 @@ import string
 
 from werkzeug.security import generate_password_hash
 
+from monitorias import service as monitoria_service
+from utils.time import now_sp_naive, week_bounds_for_votacao
+
 from usuarios import repository
 
 VALID_ROLES = {"ALUNO", "PROFESSOR", "ADMIN"}
@@ -44,7 +47,14 @@ def reactivate_user(user_id):
     return repository.reactivate_user(user_id)
 
 
-def update_monitor_profile(user_id, contato_tipo, contato_valor, disponibilidade_slots):
+def update_monitor_profile(
+    user_id,
+    contato_tipo,
+    contato_valor,
+    disponibilidade_slots,
+    carga_horaria,
+    modo_2h,
+):
     normalized_tipo = (contato_tipo or "").strip().lower()
     normalized_valor = (contato_valor or "").strip()
 
@@ -58,7 +68,20 @@ def update_monitor_profile(user_id, contato_tipo, contato_valor, disponibilidade
         else:
             return False
 
-    if not repository.update_monitor_profile(user_id, normalized_valor or None, None):
+    if carga_horaria not in {1, 2}:
+        carga_horaria = 1
+    if modo_2h not in {"CONSECUTIVAS", "SEPARADAS"}:
+        modo_2h = "CONSECUTIVAS"
+    if carga_horaria == 1:
+        modo_2h = "CONSECUTIVAS"
+
+    if not repository.update_monitor_profile(
+        user_id,
+        normalized_valor or None,
+        None,
+        carga_horaria,
+        modo_2h,
+    ):
         return False
 
     slots_payload = []
@@ -66,6 +89,28 @@ def update_monitor_profile(user_id, contato_tipo, contato_valor, disponibilidade
         slots_payload.append((user_id, slot["weekday"], slot["hora_inicio"]))
 
     repository.replace_monitor_disponibilidade(user_id, slots_payload)
+
+    monitoria = monitoria_service.get_active_by_aluno(user_id)
+    if monitoria:
+        now_value = now_sp_naive()
+        semana_inicio, semana_fim = week_bounds_for_votacao(now_value)
+        votacao = monitoria_service.get_open_votacao(
+            monitoria["disciplina_id"],
+            semana_inicio,
+            semana_fim,
+        )
+        if votacao:
+            monitoria_service.update_votacao_config(
+                votacao["id"],
+                carga_horaria,
+                modo_2h,
+            )
+        monitoria_service.sync_open_votacao_opcoes_for_monitor(
+            monitoria["disciplina_id"],
+            user_id,
+            semana_inicio,
+            semana_fim,
+        )
     return True
 
 

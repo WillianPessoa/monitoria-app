@@ -6,7 +6,7 @@ from auth.decorators import login_required
 from agenda import bp, service
 from disciplinas import service as disciplinas_service
 from monitorias import service as monitoria_service
-from utils.time import now_sp_naive, week_bounds_sp
+from utils.time import now_sp_naive, week_bounds_for_votacao
 
 
 @bp.get("/")
@@ -25,10 +25,12 @@ def index():
     votacao_weekdays = []
     votacao_hours = []
     votacao_cells = {}
+    votacao_slot_duration = 1
+    votacao_max_select = 1
     if monitoria:
         own_slots = service.list_slots_for_monitor(user_id)
         now_value = now_sp_naive()
-        semana_inicio, semana_fim = week_bounds_sp(now_value)
+        semana_inicio, semana_fim = week_bounds_for_votacao(now_value)
         sessoes_semana = monitoria_service.get_weekly_sessions(
             monitoria["disciplina_id"],
             semana_inicio,
@@ -45,10 +47,20 @@ def index():
                 user_id,
             )
             if votacao:
+                weekly_hours, split_mode = monitoria_service.get_votacao_config(votacao)
+                votacao_slot_duration = 2 if weekly_hours == 2 and split_mode == "CONSECUTIVAS" else 1
+                votacao_max_select = 1 if weekly_hours == 1 or split_mode == "CONSECUTIVAS" else 2
                 votacao_resultados = monitoria_service.list_votacao_resultados(votacao["id"])
                 total_alunos = disciplinas_service.count_alunos_disciplina(monitoria["disciplina_id"])
                 required_votes = max(1, (total_alunos + 1) // 2)
                 for opcao in votacao_resultados:
+                    modo = opcao.get("modo")
+                    if weekly_hours == 2 and split_mode == "CONSECUTIVAS" and modo != "BLOCO_2H":
+                        continue
+                    # For other cases, only single-hour slots are considered
+                    if modo != "SLOT_1H" and modo != "BLOCO_2H":
+                        continue
+
                     if opcao["votos"] <= 0:
                         continue
 
@@ -60,16 +72,6 @@ def index():
                             "opcao_id": opcao["opcao_id"],
                             "votos": opcao["votos"],
                         }
-
-                    if opcao.get("slot2_weekday") and opcao.get("slot2_hora_inicio"):
-                        slot2_hour = int(str(opcao["slot2_hora_inicio"]).split(":")[0])
-                        slot2_key = (opcao["slot2_weekday"], slot2_hour)
-                        current = votacao_cells.get(slot2_key)
-                        if not current or opcao["votos"] > current["votos"]:
-                            votacao_cells[slot2_key] = {
-                                "opcao_id": opcao["opcao_id"],
-                                "votos": opcao["votos"],
-                            }
 
                 votacao_weekdays = sorted({key[0] for key in votacao_cells.keys()})
                 votacao_hours = sorted({key[1] for key in votacao_cells.keys()})
@@ -88,6 +90,8 @@ def index():
         votacao_weekdays=votacao_weekdays,
         votacao_hours=votacao_hours,
         votacao_cells=votacao_cells,
+        votacao_slot_duration=votacao_slot_duration,
+        votacao_max_select=votacao_max_select,
         own_slots=own_slots,
     )
 

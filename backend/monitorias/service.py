@@ -1,6 +1,7 @@
 from datetime import datetime, time, timedelta
 
 from monitorias import repository
+from usuarios import repository as usuarios_repository
 from utils.time import add_hours, combine_date_time
 
 
@@ -68,22 +69,29 @@ def get_open_or_create_votacao(disciplina_id, semana_inicio, semana_fim, monitor
     votacao = repository.get_open_votacao(disciplina_id, semana_inicio, semana_fim)
     if votacao:
         if monitor_id:
-            existing_opcoes = repository.list_votacao_opcoes(votacao["id"])
-            if not existing_opcoes:
-                opcoes = _build_votacao_opcoes(monitor_id)
-                if opcoes:
-                    payload = [(votacao["id"], *opcao) for opcao in opcoes]
-                    repository.replace_votacao_opcoes(votacao["id"], payload)
+            _sync_votacao_opcoes(votacao, monitor_id)
         return votacao
 
     if not monitor_id:
         return None
 
-    votacao_id = repository.create_votacao(disciplina_id, semana_inicio, semana_fim)
-    opcoes = _build_votacao_opcoes(monitor_id)
-    payload = [(votacao_id, *opcao) for opcao in opcoes]
-    repository.create_votacao_opcoes(votacao_id, payload)
-    return {"id": votacao_id, "disciplina_id": disciplina_id}
+    carga_horaria = 1
+    modo_2h = "CONSECUTIVAS"
+    preferences = usuarios_repository.get_monitor_preferences(monitor_id)
+    if preferences:
+        carga_horaria = int(preferences.get("carga_horaria_semanal") or 1)
+        modo_2h = preferences.get("modo_2h") or "CONSECUTIVAS"
+
+    votacao_id = repository.create_votacao(
+        disciplina_id,
+        semana_inicio,
+        semana_fim,
+        carga_horaria,
+        modo_2h,
+    )
+    votacao = repository.get_votacao_by_id(votacao_id)
+    _sync_votacao_opcoes(votacao, monitor_id)
+    return votacao
 
 
 def list_votacao_opcoes(votacao_id):
@@ -96,6 +104,14 @@ def get_open_votacao(disciplina_id, semana_inicio, semana_fim):
 
 def get_votacao_by_id(votacao_id):
     return repository.get_votacao_by_id(votacao_id)
+
+
+def get_votacao_config(votacao):
+    return _get_votacao_config(votacao)
+
+
+def update_votacao_config(votacao_id, carga_horaria, modo_2h):
+    return repository.update_votacao_config(votacao_id, carga_horaria, modo_2h)
 
 
 def get_voto_by_aluno(votacao_id, aluno_id):
@@ -122,7 +138,16 @@ def confirm_votacao(votacao_id, opcao_id, disciplina_id, monitor_id, semana_inic
     return True
 
 
-def confirm_votacao_slots(votacao_id, disciplina_id, monitor_id, semana_inicio, slots, required_votes):
+def confirm_votacao_slots(
+    votacao_id,
+    disciplina_id,
+    monitor_id,
+    semana_inicio,
+    slots,
+    required_votes,
+    weekly_hours,
+    split_mode,
+):
     resultados = repository.list_votacao_resultados(votacao_id)
     votos_map = {}
     for opcao in resultados:
@@ -137,12 +162,25 @@ def confirm_votacao_slots(votacao_id, disciplina_id, monitor_id, semana_inicio, 
     if not slots:
         return False, "OPCAO_INVALIDA"
 
-    if len(slots) == 1:
-        weekday, hour = slots[0]
-        next_key = (weekday, hour + 1)
-        if (weekday, hour) not in votos_map or next_key not in votos_map:
+    if weekly_hours == 1:
+        if len(slots) != 1:
             return False, "OPCAO_INVALIDA"
-        if votos_map[(weekday, hour)] < required_votes or votos_map[next_key] < required_votes:
+        weekday, hour = slots[0]
+        if (weekday, hour) not in votos_map:
+            return False, "OPCAO_INVALIDA"
+        if votos_map[(weekday, hour)] < required_votes:
+            return False, "VOTOS_INSUFICIENTES"
+
+        slot_date = semana_inicio + timedelta(days=weekday - 1)
+        start_dt = combine_date_time(slot_date, time(hour=hour))
+        sessoes = [(disciplina_id, monitor_id, start_dt, add_hours(start_dt, 1))]
+    elif split_mode == "CONSECUTIVAS":
+        if len(slots) != 1:
+            return False, "OPCAO_INVALIDA"
+        weekday, hour = slots[0]
+        if (weekday, hour) not in votos_map:
+            return False, "OPCAO_INVALIDA"
+        if votos_map[(weekday, hour)] < required_votes:
             return False, "VOTOS_INSUFICIENTES"
 
         slot_date = semana_inicio + timedelta(days=weekday - 1)
@@ -157,16 +195,11 @@ def confirm_votacao_slots(votacao_id, disciplina_id, monitor_id, semana_inicio, 
                 return False, "VOTOS_INSUFICIENTES"
 
         (w1, h1), (w2, h2) = slots_sorted
-        if w1 == w2 and h2 - h1 == 1:
-            slot_date = semana_inicio + timedelta(days=w1 - 1)
-            start_dt = combine_date_time(slot_date, time(hour=h1))
-            sessoes = [(disciplina_id, monitor_id, start_dt, add_hours(start_dt, 2))]
-        else:
-            sessoes = []
-            for weekday, hour in slots_sorted:
-                slot_date = semana_inicio + timedelta(days=weekday - 1)
-                start_dt = combine_date_time(slot_date, time(hour=hour))
-                sessoes.append((disciplina_id, monitor_id, start_dt, add_hours(start_dt, 1)))
+        sessoes = []
+        for weekday, hour in slots_sorted:
+            slot_date = semana_inicio + timedelta(days=weekday - 1)
+            start_dt = combine_date_time(slot_date, time(hour=hour))
+            sessoes.append((disciplina_id, monitor_id, start_dt, add_hours(start_dt, 1)))
     else:
         return False, "OPCAO_INVALIDA"
 
@@ -195,7 +228,14 @@ def list_presencas_for_aluno(aluno_id, sessao_ids):
     return repository.list_presencas_for_aluno(aluno_id, sessao_ids)
 
 
-def _build_votacao_opcoes(monitor_id):
+def sync_open_votacao_opcoes_for_monitor(disciplina_id, monitor_id, semana_inicio, semana_fim):
+    votacao = repository.get_open_votacao(disciplina_id, semana_inicio, semana_fim)
+    if not votacao:
+        return 0
+    return _sync_votacao_opcoes(votacao, monitor_id)
+
+
+def _build_votacao_opcoes(monitor_id, weekly_hours, split_mode):
     disponibilidade = repository.list_monitor_disponibilidade_slots(monitor_id)
     by_weekday = {}
     for slot in disponibilidade:
@@ -205,22 +245,18 @@ def _build_votacao_opcoes(monitor_id):
 
     opcoes = []
 
-    # 2h consecutivas
-    for weekday, horas in by_weekday.items():
-        sorted_horas = sorted(horas)
-        for idx in range(len(sorted_horas) - 1):
-            h1 = sorted_horas[idx]
-            h2 = sorted_horas[idx + 1]
-            if _hora_is_consecutive(h1, h2):
-                opcoes.append(("BLOCO_2H", weekday, h1, None, None))
-
-    # dois dias diferentes (1h cada)
-    weekdays = sorted(by_weekday.keys())
-    for i, day_a in enumerate(weekdays):
-        for day_b in weekdays[i + 1:]:
-            for hora_a in by_weekday[day_a]:
-                for hora_b in by_weekday[day_b]:
-                    opcoes.append(("DOIS_1H", day_a, hora_a, day_b, hora_b))
+    if weekly_hours == 1 or split_mode == "SEPARADAS":
+        for weekday, horas in by_weekday.items():
+            for hora in sorted(horas):
+                opcoes.append(("SLOT_1H", weekday, hora, None, None))
+    else:
+        for weekday, horas in by_weekday.items():
+            sorted_horas = sorted(horas)
+            for idx in range(len(sorted_horas) - 1):
+                h1 = sorted_horas[idx]
+                h2 = sorted_horas[idx + 1]
+                if _hora_is_consecutive(h1, h2):
+                    opcoes.append(("BLOCO_2H", weekday, h1, None, None))
 
     return opcoes
 
@@ -231,6 +267,8 @@ def _build_sessoes_from_opcao(disciplina_id, monitor_id, opcao, semana_inicio):
     slot1_dt = combine_date_time(slot1_date, _parse_time(opcao["slot1_hora_inicio"]))
     if opcao["modo"] == "BLOCO_2H":
         sessoes.append((disciplina_id, monitor_id, slot1_dt, add_hours(slot1_dt, 2)))
+    elif opcao["modo"] == "SLOT_1H":
+        sessoes.append((disciplina_id, monitor_id, slot1_dt, add_hours(slot1_dt, 1)))
     else:
         slot2_date = semana_inicio + timedelta(days=opcao["slot2_weekday"] - 1)
         slot2_dt = combine_date_time(slot2_date, _parse_time(opcao["slot2_hora_inicio"]))
@@ -264,3 +302,58 @@ def _parse_time(value):
         return value
     parts = str(value).split(":")
     return time(hour=int(parts[0]), minute=int(parts[1]))
+
+
+def _opcao_key(modo, slot1_weekday, slot1_hora_inicio, slot2_weekday, slot2_hora_inicio):
+    slot1 = _time_to_str(slot1_hora_inicio) if slot1_hora_inicio else None
+    slot2 = _time_to_str(slot2_hora_inicio) if slot2_hora_inicio else None
+    return (modo, slot1_weekday, slot1, slot2_weekday, slot2)
+
+
+def _get_votacao_config(votacao):
+    weekly_hours = int(votacao.get("carga_horaria_semanal") or 1)
+    split_mode = votacao.get("modo_2h") or "CONSECUTIVAS"
+    if split_mode not in {"CONSECUTIVAS", "SEPARADAS"}:
+        split_mode = "CONSECUTIVAS"
+    return weekly_hours, split_mode
+
+
+def _sync_votacao_opcoes(votacao, monitor_id):
+    weekly_hours, split_mode = _get_votacao_config(votacao)
+    opcoes = _build_votacao_opcoes(monitor_id, weekly_hours, split_mode)
+    if not opcoes:
+        return 0
+
+    existentes = repository.list_votacao_opcoes(votacao["id"])
+    existentes_keys = {
+        _opcao_key(
+            item["modo"],
+            item["slot1_weekday"],
+            item["slot1_hora_inicio"],
+            item.get("slot2_weekday"),
+            item.get("slot2_hora_inicio"),
+        )
+        for item in existentes
+    }
+
+    novos = []
+    for modo, slot1_weekday, slot1_hora_inicio, slot2_weekday, slot2_hora_inicio in opcoes:
+        key = _opcao_key(modo, slot1_weekday, slot1_hora_inicio, slot2_weekday, slot2_hora_inicio)
+        if key in existentes_keys:
+            continue
+        novos.append(
+            (
+                votacao["id"],
+                modo,
+                slot1_weekday,
+                slot1_hora_inicio,
+                slot2_weekday,
+                slot2_hora_inicio,
+            )
+        )
+
+    if not novos:
+        return 0
+
+    repository.create_votacao_opcoes(votacao["id"], novos)
+    return len(novos)

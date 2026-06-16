@@ -1,9 +1,9 @@
 from flask import render_template, flash, redirect, url_for, request, session
 
 from auth.decorators import login_required, require_role
+from disciplinas import repository as disciplinas_repository
 from disciplinas import service as disciplinas_service
 from monitorias import bp, service
-from disciplinas import service as disciplinas_service
 from utils.time import hours_until, now_sp_naive, week_bounds_sp
 from usuarios import repository as usuarios_repository
 
@@ -103,6 +103,9 @@ def confirmar_votacao(votacao_id):
         flash("Votação inválida.", "error")
         return redirect(url_for("agenda.index"))
 
+    weekly_hours, split_mode = service.get_votacao_config(votacao)
+    max_select = 1 if weekly_hours == 1 or split_mode == "CONSECUTIVAS" else 2
+
     monitor = service.get_active_monitor_for_disciplina(votacao["disciplina_id"])
     if not monitor or monitor["monitor_id"] != user_id:
         flash("Você não tem permissão para confirmar esta votação.", "error")
@@ -112,11 +115,13 @@ def confirmar_votacao(votacao_id):
     required_votes = max(1, (total_alunos + 1) // 2)
 
     if not slots:
-        flash("Selecione uma ou duas opções de horário.", "error")
+        empty_message = "Selecione uma opção de horário." if max_select == 1 else "Selecione uma ou duas opções de horário."
+        flash(empty_message, "error")
         return redirect(url_for("agenda.index"))
 
-    if len(slots) > 2:
-        flash("Selecione no máximo duas opções de horário.", "error")
+    if len(slots) > max_select:
+        message = "Selecione apenas 1 opção de horário." if max_select == 1 else "Selecione no máximo duas opções de horário."
+        flash(message, "error")
         return redirect(url_for("agenda.index"))
 
     success, error = service.confirm_votacao_slots(
@@ -126,6 +131,8 @@ def confirmar_votacao(votacao_id):
         votacao["semana_inicio"],
         slots,
         required_votes,
+        weekly_hours,
+        split_mode,
     )
     if success:
         flash("Monitoria confirmada para a semana.", "success")
@@ -136,6 +143,51 @@ def confirmar_votacao(votacao_id):
             flash("Seleção inválida. Escolha horários válidos na grade.", "error")
         else:
             flash("Não foi possível confirmar a votação.", "error")
+    return redirect(url_for("agenda.index"))
+
+
+@bp.post("/votacao/<int:votacao_id>/configurar")
+@login_required
+def configurar_votacao(votacao_id):
+    user_id = session.get("user_id")
+    carga_raw = request.form.get("carga_horaria", "1")
+    modo_2h = request.form.get("modo_2h", "CONSECUTIVAS").upper()
+
+    try:
+        carga_horaria = int(carga_raw)
+    except (TypeError, ValueError):
+        carga_horaria = 1
+
+    if carga_horaria not in {1, 2}:
+        flash("Carga horária inválida.", "error")
+        return redirect(url_for("agenda.index"))
+
+    if modo_2h not in {"CONSECUTIVAS", "SEPARADAS"}:
+        modo_2h = "CONSECUTIVAS"
+
+    votacao = service.get_votacao_by_id(votacao_id)
+    if not votacao or votacao["status"] != "ABERTA":
+        flash("Votação inválida.", "error")
+        return redirect(url_for("agenda.index"))
+
+    monitor = service.get_active_monitor_for_disciplina(votacao["disciplina_id"])
+    if not monitor or monitor["monitor_id"] != user_id:
+        flash("Você não tem permissão para configurar esta votação.", "error")
+        return redirect(url_for("agenda.index"))
+
+    if carga_horaria == 1:
+        modo_2h = "CONSECUTIVAS"
+
+    if service.update_votacao_config(votacao_id, carga_horaria, modo_2h):
+        service.sync_open_votacao_opcoes_for_monitor(
+            votacao["disciplina_id"],
+            user_id,
+            votacao["semana_inicio"],
+            votacao["semana_fim"],
+        )
+        flash("Configuração de votação atualizada.", "success")
+    else:
+        flash("Não foi possível atualizar a votação.", "error")
     return redirect(url_for("agenda.index"))
 
 
@@ -168,3 +220,27 @@ def cancelar_sessao(sessao_id):
     else:
         flash("Não foi possível cancelar a sessão.", "error")
     return redirect(url_for("agenda.index"))
+
+
+@bp.get("/sessoes/<int:sessao_id>")
+@login_required
+def sessao_detalhe(sessao_id):
+    user_id = session.get("user_id")
+    role = session.get("papel")
+    sessao = service.get_session_by_id(sessao_id)
+    if not sessao:
+        flash("Sessão não encontrada.", "error")
+        return redirect(url_for("home"))
+
+    monitor = service.get_active_monitor_for_disciplina(sessao["disciplina_id"])
+    is_monitor = monitor and monitor.get("monitor_id") == user_id
+    is_aluno = role == "ALUNO" and disciplinas_repository.is_aluno_matriculado(
+        sessao["disciplina_id"],
+        user_id,
+    )
+
+    if role not in {"ADMIN", "PROFESSOR"} and not (is_monitor or is_aluno):
+        flash("Você não tem permissão para acessar esta sessão.", "error")
+        return redirect(url_for("home"))
+
+    return render_template("placeholder.html", section_title="Detalhes da monitoria")
