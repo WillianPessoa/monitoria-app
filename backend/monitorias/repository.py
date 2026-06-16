@@ -757,17 +757,93 @@ def list_sessoes_monitor(monitor_id, now_value):
                    d.nome AS disciplina_nome,
                    s.data_inicio,
                    s.data_fim,
-                   s.status
+                   s.status,
+                   s.assunto
             FROM monitoria_sessoes s
             JOIN disciplinas d ON d.id = s.disciplina_id
             WHERE s.monitor_id = %s
-              AND s.data_inicio >= %s
-              AND s.status = 'AGENDADA'
+              AND s.status IN ('AGENDADA', 'CONCLUIDA')
             ORDER BY s.data_inicio ASC
             """,
-            (monitor_id, now_value),
+            (monitor_id,),
         )
         return cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_monitor_hours_count(monitor_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT COALESCE(
+                ROUND(
+                    SUM(TIMESTAMPDIFF(MINUTE, s.data_inicio, s.data_fim)) / 60,
+                    2
+                ),
+                0
+            ) AS total_horas
+            FROM monitoria_sessoes s
+            WHERE s.monitor_id = %s
+              AND s.status = 'CONCLUIDA'
+              AND EXISTS (
+                  SELECT 1
+                  FROM presencas p
+                  WHERE p.sessao_id = s.id
+                    AND p.status = 'CONFIRMADA'
+              )
+            """,
+            (monitor_id,),
+        )
+        row = cursor.fetchone()
+        return float(row["total_horas"]) if row and row["total_horas"] is not None else 0.0
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def list_session_participants(sessao_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT p.aluno_id,
+                   u.nome AS aluno_nome,
+                   p.status
+            FROM presencas p
+            JOIN usuarios u ON u.id = p.aluno_id
+            WHERE p.sessao_id = %s
+              AND p.status IN ('CONFIRMADA', 'AUSENTE')
+            ORDER BY u.nome ASC
+            """,
+            (sessao_id,),
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def save_session_report(sessao_id, assunto):
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            UPDATE monitoria_sessoes
+            SET assunto = %s,
+                status = 'CONCLUIDA',
+                atualizado_em = CURRENT_TIMESTAMP
+            WHERE id = %s
+            """,
+            (assunto, sessao_id),
+        )
+        conn.commit()
+        return cursor.rowcount > 0
     finally:
         cursor.close()
         conn.close()

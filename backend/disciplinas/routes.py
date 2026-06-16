@@ -242,9 +242,6 @@ def detalhe(disciplina_id):
             resultados = monitoria_service.list_votacao_resultados(votacao["id"])
             for opcao in resultados:
                 modo = opcao.get("modo")
-                if weekly_hours == 2 and split_mode == "CONSECUTIVAS" and modo != "BLOCO_2H":
-                    continue
-                # For all other cases, only single-hour slots (SLOT_1H) are relevant.
                 if modo != "SLOT_1H" and modo != "BLOCO_2H":
                     continue
 
@@ -305,10 +302,7 @@ def detalhe(disciplina_id):
 
 
 def _build_opcoes_display(opcoes, semana_inicio, weekly_hours, split_mode):
-    if weekly_hours == 2 and split_mode == "CONSECUTIVAS":
-        allowed_modes = {"BLOCO_2H"}
-    else:
-        allowed_modes = {"SLOT_1H"}
+    allowed_modes = {"SLOT_1H", "BLOCO_2H"}
 
     display = []
     for opcao in opcoes:
@@ -488,7 +482,7 @@ def cancelar_presenca(disciplina_id):
         return redirect(url_for("disciplinas.detalhe", disciplina_id=disciplina_id))
 
     if hours_until(sessao["data_inicio"], now_sp_naive()) <= 6:
-        flash("Cancelamento permitido somente com mais de 6 horas de antecedência.", "error")
+        flash("Cancelamento não permitido com menos de 6 horas de antecedência", "error")
         return redirect(url_for("disciplinas.detalhe", disciplina_id=disciplina_id))
 
     presenca = monitoria_service.get_presenca(sessao_id, user_id)

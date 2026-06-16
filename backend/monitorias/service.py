@@ -212,6 +212,18 @@ def list_monitor_sessions(monitor_id, now_value):
     return repository.list_sessoes_monitor(monitor_id, now_value)
 
 
+def get_monitor_hours_count(monitor_id):
+    return repository.get_monitor_hours_count(monitor_id)
+
+
+def list_session_participants(sessao_id):
+    return repository.list_session_participants(sessao_id)
+
+
+def save_session_report(sessao_id, assunto):
+    return repository.save_session_report(sessao_id, assunto)
+
+
 def cancel_session(sessao_id, motivo):
     return repository.cancel_sessao(sessao_id, motivo)
 
@@ -252,11 +264,17 @@ def _build_votacao_opcoes(monitor_id, weekly_hours, split_mode):
     else:
         for weekday, horas in by_weekday.items():
             sorted_horas = sorted(horas)
+            used_horas = set()
             for idx in range(len(sorted_horas) - 1):
                 h1 = sorted_horas[idx]
                 h2 = sorted_horas[idx + 1]
                 if _hora_is_consecutive(h1, h2):
                     opcoes.append(("BLOCO_2H", weekday, h1, None, None))
+                    used_horas.add(h1)
+                    used_horas.add(h2)
+            for hora in sorted_horas:
+                if hora not in used_horas:
+                    opcoes.append(("SLOT_1H", weekday, hora, None, None))
 
     return opcoes
 

@@ -205,7 +205,7 @@ def cancelar_sessao(sessao_id):
         return redirect(url_for("agenda.index"))
 
     if hours_until(sessao["data_inicio"], now_sp_naive()) <= 6:
-        flash("Cancelamento permitido somente com mais de 6 horas de antecedência.", "error")
+        flash("Cancelamento não permitido com menos de 6 horas de antecedência", "error")
         return redirect(url_for("agenda.index"))
 
     if service.cancel_session(sessao_id, "Cancelado pelo monitor."):
@@ -219,6 +219,45 @@ def cancelar_sessao(sessao_id):
         flash("Sessão cancelada e nova votação aberta.", "success")
     else:
         flash("Não foi possível cancelar a sessão.", "error")
+    return redirect(url_for("agenda.index"))
+
+
+@bp.post("/sessoes/<int:sessao_id>/registrar")
+@login_required
+def registrar_sessao(sessao_id):
+    user_id = session.get("user_id")
+    sessao = service.get_session_by_id(sessao_id)
+    if not sessao or sessao["monitor_id"] != user_id:
+        flash("Você não tem permissão para registrar esta sessão.", "error")
+        return redirect(url_for("agenda.index"))
+
+    if sessao["data_fim"] > now_sp_naive():
+        flash("Só é possível registrar monitorias já realizadas.", "error")
+        return redirect(url_for("agenda.index"))
+
+    assunto = request.form.get("assunto", "").strip()
+    if not assunto:
+        flash("Informe o assunto abordado na monitoria.", "error")
+        return redirect(url_for("agenda.index"))
+
+    presentes_raw = request.form.getlist("presentes")
+    presentes = set()
+    for raw in presentes_raw:
+        try:
+            presentes.add(int(raw))
+        except (TypeError, ValueError):
+            continue
+
+    participantes = service.list_session_participants(sessao_id)
+    for participante in participantes:
+        aluno_id = participante["aluno_id"]
+        status = "CONFIRMADA" if aluno_id in presentes else "AUSENTE"
+        service.set_presenca(sessao_id, aluno_id, status)
+
+    if service.save_session_report(sessao_id, assunto):
+        flash("Registro da monitoria salvo com sucesso.", "success")
+    else:
+        flash("Não foi possível salvar o registro da monitoria.", "error")
     return redirect(url_for("agenda.index"))
 
 

@@ -10,6 +10,7 @@
 <section class="card stack-gap">
   <h3>Minha agenda como monitor</h3>
   <p>Disciplina: {{ monitoria.disciplina_codigo }} - {{ monitoria.disciplina_nome }}</p>
+  <p class="muted">Horas contabilizadas: {{ "%.2f"|format(monitor_hours_total) }}h</p>
 
   {% if votacao %}
   <section class="stack-gap">
@@ -71,6 +72,7 @@
             <th>Disciplina</th>
             <th>Data</th>
             <th>Duração</th>
+            <th>Status</th>
             <th>Ações</th>
           </tr>
         </thead>
@@ -80,10 +82,15 @@
             <td>{{ sessao.disciplina_codigo }} - {{ sessao.disciplina_nome }}</td>
             <td>{{ sessao.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
             <td>{{ (sessao.data_fim - sessao.data_inicio).seconds // 60 }} min</td>
+            <td>{{ 'Concluída' if sessao.status == 'CONCLUIDA' else 'Agendada' }}</td>
             <td>
+              {% if sessao.status != 'CONCLUIDA' and sessao.data_inicio > now_value %}
               <form method="post" action="{{ url_for('monitorias.cancelar_sessao', sessao_id=sessao.id) }}" class="inline-form">
                 <button type="submit" class="button danger">Cancelar</button>
               </form>
+              {% else %}
+              <span class="muted">-</span>
+              {% endif %}
             </td>
           </tr>
           {% endfor %}
@@ -92,6 +99,77 @@
     </div>
     {% else %}
     <p class="muted">Nenhuma monitoria confirmada.</p>
+    {% endif %}
+  </section>
+
+  <section class="stack-gap">
+    <h4>Registrar presença e assunto</h4>
+    {% if monitor_sessions %}
+    {% for sessao in monitor_sessions %}
+    {% if sessao.data_fim <= now_value %}
+    <section class="card stack-gap">
+      <h5>{{ sessao.disciplina_codigo }} - {{ sessao.data_inicio.strftime('%d/%m/%Y %H:%M') }}</h5>
+      {% set participantes = session_participants_map.get(sessao.id, []) %}
+      {% if participantes %}
+      <form method="post" action="{{ url_for('monitorias.registrar_sessao', sessao_id=sessao.id) }}">
+        <fieldset>
+          <legend>Presença dos alunos</legend>
+          {% for participante in participantes %}
+          <label>
+            <input type="checkbox" name="presentes" value="{{ participante.aluno_id }}" {% if participante.status == 'CONFIRMADA' %}checked{% endif %}>
+            {{ participante.aluno_nome }}
+          </label>
+          {% endfor %}
+        </fieldset>
+        <label for="assunto-{{ sessao.id }}">Assunto abordado</label>
+        <textarea id="assunto-{{ sessao.id }}" name="assunto" rows="3" required>{{ sessao.assunto or '' }}</textarea>
+        <button type="submit" class="button">Salvar registro</button>
+      </form>
+      {% else %}
+      <p class="muted">Nenhum aluno confirmado para esta sessão.</p>
+      {% endif %}
+    </section>
+    {% endif %}
+    {% endfor %}
+    {% else %}
+    <p class="muted">Nenhuma monitoria concluída para registrar.</p>
+    {% endif %}
+  </section>
+
+  <section class="stack-gap">
+    <h4>Log de monitorias</h4>
+    {% if monitor_sessions %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Data/Hora</th>
+            <th>Disciplina</th>
+            <th>Presenças confirmadas</th>
+            <th>Assunto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sessao in monitor_sessions if sessao.status == 'CONCLUIDA' %}
+          <tr>
+            <td>{{ sessao.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
+            <td>{{ sessao.disciplina_codigo }}</td>
+            <td>
+              {% set participantes = session_participants_map.get(sessao.id, []) %}
+              {% for participante in participantes %}
+              {% if participante.status == 'CONFIRMADA' %}
+              {{ participante.aluno_nome }}{% if not loop.last %}, {% endif %}
+              {% endif %}
+              {% endfor %}
+            </td>
+            <td>{{ sessao.assunto or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted">Ainda não há registros de monitorias.</p>
     {% endif %}
   </section>
 </section>

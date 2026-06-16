@@ -61,6 +61,7 @@
             name="slots"
             value="{{ key }}"
             {% if key in selected_keys %}checked{% endif %}
+            {% if carga_horaria == 2 and modo_2h == 'CONSECUTIVAS' %}disabled{% endif %}
             data-initial="{{ 'true' if key in selected_keys else 'false' }}"
           />
         </label>
@@ -86,8 +87,9 @@
             type="checkbox"
             name="slots"
             value="{{ weekday }}|{{ hour }}|2"
-            {% if key1 in selected_keys and key2 in selected_keys %}checked{% endif %}
-            data-initial="{{ 'true' if key1 in selected_keys and key2 in selected_keys else 'false' }}"
+            {% if weekday|string + '|' + hour|string in selected_block_keys %}checked{% endif %}
+            {% if not (carga_horaria == 2 and modo_2h == 'CONSECUTIVAS') %}disabled{% endif %}
+            data-initial="{{ 'true' if weekday|string + '|' + hour|string in selected_block_keys else 'false' }}"
             data-weekday="{{ weekday }}"
             data-hour="{{ hour }}"
           />

@@ -242,10 +242,26 @@ document.addEventListener('DOMContentLoaded', function(){
         if(mode === '2h'){
           grid1h.hidden = true;
           grid2h.hidden = false;
+          disableGrid(grid1h);
+          enableGrid(grid2h);
         }else{
           grid1h.hidden = false;
           grid2h.hidden = true;
+          enableGrid(grid1h);
+          disableGrid(grid2h);
         }
+      }
+
+      function disableGrid(grid){
+        grid.querySelectorAll('input[name="slots"]').forEach(function(cb){
+          cb.disabled = true;
+        });
+      }
+
+      function enableGrid(grid){
+        grid.querySelectorAll('input[name="slots"]').forEach(function(cb){
+          cb.disabled = false;
+        });
       }
 
       function clearCheckboxes(){
@@ -339,6 +355,8 @@ document.addEventListener('DOMContentLoaded', function(){
       grid2h.addEventListener('change', function(){
         update2hOverlaps();
       });
+
+      applySelection(false);
 
       cancelBtn.addEventListener('click', function(){
         cargaSelect.value = initialCarga;

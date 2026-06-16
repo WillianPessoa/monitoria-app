@@ -84,13 +84,9 @@
   {% if votacao and opcoes %}
   {% set weekday_labels = {1: 'Seg', 2: 'Ter', 3: 'Qua', 4: 'Qui', 5: 'Sex'} %}
   {% if votacao_max_select == 1 %}
-  {% if votacao_slot_duration == 2 %}
-  <p class="muted">Selecione uma sessão de 2h.</p>
+  <p class="muted">Selecione um horário disponível.</p>
   {% else %}
-  <p class="muted">Selecione uma sessão de 1h.</p>
-  {% endif %}
-  {% else %}
-  <p class="muted">Selecione duas sessões de 1h.</p>
+  <p class="muted">Selecione dois horários.</p>
   {% endif %}
   {% set has_vote = voto_ids|length > 0 %}
   <form
@@ -110,7 +106,21 @@
       </div>
       {% for hour in votacao_hours %}
       <div class="vote-row">
-        <span class="vote-cell label">{{ '%02d:00'|format(hour) }} às {{ '%02d:00'|format(hour + votacao_slot_duration) }}</span>
+        <span class="vote-cell label">
+          {% set min_duration = 1 %}
+          {% for opcao in opcoes %}
+            {% if opcao.weekday is defined %}
+              {% if opcao.hour == hour %}
+                {% if opcao.duration is defined %}
+                  {% if opcao.duration > min_duration %}
+                    {% set min_duration = opcao.duration %}
+                  {% endif %}
+                {% endif %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+          {{ '%02d:00'|format(hour) }} às {{ '%02d:00'|format(hour + min_duration) }}
+        </span>
         {% for weekday in votacao_weekdays %}
         <div class="vote-cell slot">
           {% for opcao in opcoes %}

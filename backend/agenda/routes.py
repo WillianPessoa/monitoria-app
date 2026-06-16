@@ -20,6 +20,8 @@ def index():
     votacao = None
     votacao_resultados = []
     monitor_sessions = []
+    session_participants_map = {}
+    monitor_hours_total = 0.0
     total_alunos = 0
     required_votes = 0
     votacao_weekdays = []
@@ -27,9 +29,10 @@ def index():
     votacao_cells = {}
     votacao_slot_duration = 1
     votacao_max_select = 1
+    now_value = now_sp_naive()
     if monitoria:
         own_slots = service.list_slots_for_monitor(user_id)
-        now_value = now_sp_naive()
+        monitor_hours_total = monitoria_service.get_monitor_hours_count(user_id)
         semana_inicio, semana_fim = week_bounds_for_votacao(now_value)
         sessoes_semana = monitoria_service.get_weekly_sessions(
             monitoria["disciplina_id"],
@@ -55,9 +58,6 @@ def index():
                 required_votes = max(1, (total_alunos + 1) // 2)
                 for opcao in votacao_resultados:
                     modo = opcao.get("modo")
-                    if weekly_hours == 2 and split_mode == "CONSECUTIVAS" and modo != "BLOCO_2H":
-                        continue
-                    # For other cases, only single-hour slots are considered
                     if modo != "SLOT_1H" and modo != "BLOCO_2H":
                         continue
 
@@ -77,6 +77,9 @@ def index():
                 votacao_hours = sorted({key[1] for key in votacao_cells.keys()})
 
         monitor_sessions = monitoria_service.list_monitor_sessions(user_id, now_value)
+        for sessao in monitor_sessions:
+            participantes = monitoria_service.list_session_participants(sessao["id"])
+            session_participants_map[sessao["id"]] = participantes
     return render_template(
         "agenda/index.html",
         monitoria=monitoria,
@@ -85,6 +88,8 @@ def index():
         votacao=votacao,
         votacao_resultados=votacao_resultados,
         monitor_sessions=monitor_sessions,
+        session_participants_map=session_participants_map,
+        monitor_hours_total=monitor_hours_total,
         total_alunos=total_alunos,
         required_votes=required_votes,
         votacao_weekdays=votacao_weekdays,
@@ -93,6 +98,7 @@ def index():
         votacao_slot_duration=votacao_slot_duration,
         votacao_max_select=votacao_max_select,
         own_slots=own_slots,
+        now_value=now_value,
     )
 
 
