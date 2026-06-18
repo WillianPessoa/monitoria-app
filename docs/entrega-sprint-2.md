@@ -12,28 +12,24 @@
 
 **Credenciais pré-cadastradas** (senha padrão: `monitoria-app`):
 
-| Usuário | E-mail | Papel | Senha |
-|---|---|---|---|
-| Willian Pessoa | willian.pessoa.cs@gmail.com | Admin | `monitoria-app` |
-| Gabriel | gabrielrb@ic.ufrj.br | Admin | `monitoria-app` |
-| Pedro | pedroaac@ic.ufrj.br | Admin | `monitoria-app` |
-| Gustavo | gustavopo@ic.ufrj.br | Admin | `monitoria-app` |
-| João Pedro | joaopmab@ic.ufrj.br | Admin | `monitoria-app` |
-| Product Owner | product-owner@monitoria-app.com.br | Admin | `monitoria-app` |
+- Willian Pessoa — willian.pessoa.cs@gmail.com (Admin)
+- Gabriel — gabrielrb@ic.ufrj.br (Admin)
+- Pedro — pedroaac@ic.ufrj.br (Admin)
+- Gustavo — gustavopo@ic.ufrj.br (Admin)
+- Joao Pedro — joaopmab@ic.ufrj.br (Admin)
+- Product Owner — product-owner@monitoria-app.com.br (Admin)
 
-> Os usuários são criados automaticamente na inicialização da aplicação caso ainda não existam.
+Os usuarios sao criados automaticamente na inicializacao da aplicacao caso ainda nao existam.
 
 ---
 
 ## Entregáveis da Sprint
 
-| Entregável (enunciado) | Implementação | Status |
-|---|---|:---:|
-| Cadastro das disciplinas | US06 — Admin cadastra disciplinas com nome, código e professor responsável | ✅ |
-| Cadastro das bolsas de monitoria disponíveis | US07 + US08 — Professor indica aluno como monitor; admin aprova a indicação, criando o vínculo de monitoria ativo (a bolsa) | ✅ |
-| Associação monitor–disciplina | US07 + US08 — O vínculo entre monitor e disciplina é estabelecido pela indicação do professor e confirmado pela aprovação do admin | ✅ |
-| Listagem de monitorias ativas | US09 — Admin visualiza tabela com todas as monitorias ativas, exibindo disciplina, monitor e professor responsável | ✅ |
-| Publicação em produção | TT06 — Aplicação publicada no Railway com banco MySQL conectado e acessível pela URL pública | ✅ |
+- **Cadastro das disciplinas** — US06: admin cadastra disciplinas com nome, codigo e professor responsavel. Concluido.
+- **Cadastro das bolsas de monitoria** — US07 + US08: professor indica aluno como monitor; admin aprova a indicacao, criando o vinculo de monitoria ativo. Concluido.
+- **Associacao monitor-disciplina** — US07 + US08: o vinculo entre monitor e disciplina e estabelecido pela indicacao do professor e confirmado pela aprovacao do admin. Concluido.
+- **Listagem de monitorias ativas** — US09: admin visualiza todas as monitorias ativas com disciplina, monitor e professor responsavel. Concluido.
+- **Publicacao em producao** — TT06: aplicacao publicada no Railway com banco MySQL conectado e acessivel pela URL publica. Concluido.
 
 ---
 
@@ -114,13 +110,35 @@ Sim. O QM aplicou o checklist do DoR nas tarefas. A flag referente à US09 decor
 
 ---
 
-| ID | Prioridade | Solução adotada | Quem resolveu | Alterado depois? | Tempo suficiente? | Arquivos alterados | Impacto em qual artefato |
-|---|---|---|---|---|---|---|---|
-| US06 | must-have | CRUD de disciplinas com nome, código e professor responsável. Validação de código único e de papel do professor. Operações de ativar/desativar e matrícula de alunos em lote (por email) ou individual. | Gustavo | Não | Sim | `backend/disciplinas/repository.py`, `backend/disciplinas/routes.py`, `backend/disciplinas/service.py`, `frontend/templates/disciplinas/index.html` | Gestão de disciplinas pelo admin — base do EP02 |
-| US07 | must-have | Tela `GET/POST /monitorias/indicar` para professor selecionar uma das suas disciplinas e um aluno ativo. Validação de propriedade da disciplina e de papel do aluno. Indicação criada com status `PENDENTE_APROVACAO`. Professor acompanha suas indicações na mesma tela. | João Pedro | Não | Sim | `backend/monitorias/routes.py`, `backend/monitorias/service.py`, `backend/monitorias/repository.py`, `frontend/templates/monitorias/indicar.html` | Fluxo de indicação de monitores |
-| US08 | must-have | `GET /monitorias/pendentes` lista indicações aguardando aprovação. `POST /monitorias/<id>/aprovar` ativa o vínculo; `POST /monitorias/<id>/rejeitar` registra o motivo. Validação: aluno já com monitoria ativa em qualquer disciplina é bloqueado na aprovação. | Pedro | Não | Sim | `backend/monitorias/routes.py`, `backend/monitorias/service.py`, `backend/monitorias/repository.py`, `frontend/templates/monitorias/pending.html`, `docs/adr/0006-admin-aprovacao-indicacao-monitor.md` | Controle de aprovação de monitores pelo admin |
-| US09 | should-have | Função `list_active_monitorias()` retorna todos os vínculos com `status = 'ATIVO'`. Exibida como tabela "Monitorias ativas" na tela de admin de disciplinas. Mensagem de vazio quando não há registros. | João Pedro | Não | Sim | `backend/monitorias/repository.py`, `backend/monitorias/service.py`, `backend/disciplinas/routes.py`, `frontend/templates/disciplinas/index.html` | Visibilidade das monitorias ativas para o admin — completa EP02 |
-| TT06 | must-have | Publicação da aplicação no Railway. Configuração do `Procfile` (gunicorn), `railpack.json` e `requirements.txt` na raiz. `config.py` adaptado para aceitar as variáveis de ambiente do plugin MySQL do Railway (`MYSQLHOST`, `MYSQLPORT`, etc.). Schema e seed de admins aplicados automaticamente na inicialização. | Willian | Não | Sim | `Procfile`, `railpack.json`, `requirements.txt`, `backend/config.py`, `backend/db/connection.py` | Aplicação acessível para as POs sem depender de ambiente local |
+**US06 — Admin cadastra disciplinas**
+Prioridade: Must. Responsavel: Gustavo. Alterado depois: Nao. Tempo suficiente: Sim.
+Solucao adotada: CRUD de disciplinas com nome, codigo e professor responsavel. Validacao de codigo unico e de papel do professor. Operacoes de ativar/desativar e matricula de alunos em lote (por email) ou individual.
+Arquivos alterados: `backend/disciplinas/repository.py`, `routes.py`, `service.py`, `frontend/templates/disciplinas/index.html`.
+Impacto: Gestao de disciplinas pelo admin — base do EP02.
+
+**US07 — Professor indica aluno como monitor**
+Prioridade: Must. Responsavel: Joao Pedro. Alterado depois: Nao. Tempo suficiente: Sim.
+Solucao adotada: Tela `GET/POST /monitorias/indicar` para professor selecionar uma das suas disciplinas e um aluno ativo. Validacao de propriedade da disciplina e de papel do aluno. Indicacao criada com status `PENDENTE_APROVACAO`. Professor acompanha suas indicacoes na mesma tela.
+Arquivos alterados: `backend/monitorias/routes.py`, `service.py`, `repository.py`, `frontend/templates/monitorias/indicar.html`.
+Impacto: Fluxo de indicacao de monitores.
+
+**US08 — Admin aprova ou rejeita indicacao de monitor**
+Prioridade: Must. Responsavel: Pedro. Alterado depois: Nao. Tempo suficiente: Sim.
+Solucao adotada: `GET /monitorias/pendentes` lista indicacoes aguardando aprovacao. `POST /monitorias/<id>/aprovar` ativa o vinculo; `POST /monitorias/<id>/rejeitar` registra o motivo. Validacao: aluno ja com monitoria ativa em qualquer disciplina e bloqueado na aprovacao.
+Arquivos alterados: `backend/monitorias/routes.py`, `service.py`, `repository.py`, `frontend/templates/monitorias/pending.html`, `docs/adr/0006-admin-aprovacao-indicacao-monitor.md`.
+Impacto: Controle de aprovacao de monitores pelo admin.
+
+**US09 — Admin lista monitorias ativas**
+Prioridade: Should. Responsavel: Joao Pedro. Alterado depois: Nao. Tempo suficiente: Sim.
+Solucao adotada: Funcao `list_active_monitorias()` retorna todos os vinculos com `status = 'ATIVO'`. Exibida como tabela na tela de admin de disciplinas. Mensagem de vazio quando nao ha registros.
+Arquivos alterados: `backend/monitorias/repository.py`, `service.py`, `backend/disciplinas/routes.py`, `frontend/templates/disciplinas/index.html`.
+Impacto: Visibilidade das monitorias ativas para o admin — completa EP02.
+
+**TT06 — Publicacao no Railway**
+Prioridade: Must. Responsavel: Willian. Alterado depois: Nao. Tempo suficiente: Sim.
+Solucao adotada: Publicacao da aplicacao no Railway. Configuracao do `Procfile` (gunicorn), `railpack.json` e `requirements.txt` na raiz. `config.py` adaptado para aceitar as variaveis de ambiente do plugin MySQL do Railway. Schema e seed de admins aplicados automaticamente na inicializacao.
+Arquivos alterados: `Procfile`, `railpack.json`, `requirements.txt`, `backend/config.py`, `backend/db/connection.py`.
+Impacto: Aplicacao acessivel para as POs sem depender de ambiente local.
 
 ---
 

@@ -1,46 +1,44 @@
 {% extends 'base.html' %}
-{% block title %}{{ section_title }} - Monitoria App{% endblock %}
+{% block title %}Histórico — Monitoria App{% endblock %}
+{% block page_kicker %}Professor{% endblock %}
+{% block page_title %}{{ section_title }}{% endblock %}
+{% block page_sub %}{{ disciplina.codigo }} — {{ disciplina.nome }}{% endblock %}
+
+{% block page_action %}
+<a href="{{ url_for('disciplinas.detalhe', disciplina_id=disciplina.id) }}" class="button btn-outline" style="flex:none;align-self:flex-end;text-decoration:none;">
+  ← Voltar para disciplina
+</a>
+{% endblock %}
+
 {% block content %}
-<section class="card stack-gap">
-  <h2>{{ section_title }}</h2>
-
-  <a href="{{ url_for('disciplinas.detalhe', disciplina_id=disciplina.id) }}" class="button outline">
-    Voltar para disciplina
-  </a>
-
-  {% if registros %}
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Data</th>
-          <th>Monitor</th>
-          <th>Aluno</th>
-          <th>Status</th>
-          <th>Assunto</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for registro in registros %}
-        <tr>
-          <td>{{ registro.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
-          <td>{{ registro.monitor_nome }}</td>
-          <td>{{ registro.aluno_nome }}</td>
-          <td>
-            {% if registro.presenca_status == 'CONFIRMADA' %}
-            <span class="status-pill success">Presente</span>
-            {% else %}
-            <span class="status-pill error">Ausente</span>
-            {% endif %}
-          </td>
-          <td>{{ registro.assunto }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+{% if registros %}
+<div class="history-list">
+  <div class="history-head">
+    <span style="flex:none;width:130px;">Data</span>
+    <span style="flex:1;">Monitor</span>
+    <span style="flex:1;">Aluno</span>
+    <span style="flex:none;width:90px;">Status</span>
+    <span style="flex:1;">Assunto</span>
   </div>
-  {% else %}
+  {% for r in registros %}
+  <div class="history-row">
+    <span style="flex:none;width:130px;font-weight:700;">{{ r.data_inicio.strftime('%d/%m/%Y %H:%M') }}</span>
+    <span style="flex:1;color:var(--muted);">{{ r.monitor_nome }}</span>
+    <span style="flex:1;">{{ r.aluno_nome }}</span>
+    <span style="flex:none;width:90px;">
+      {% if r.presenca_status == 'CONFIRMADA' %}
+      <span class="status-pill success">Presente</span>
+      {% else %}
+      <span class="status-pill error">Ausente</span>
+      {% endif %}
+    </span>
+    <span style="flex:1;color:var(--muted);">{{ r.assunto or '—' }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card">
   <p class="muted">Nenhum atendimento registrado nesta disciplina.</p>
-  {% endif %}
-</section>
+</div>
+{% endif %}
 {% endblock %}
