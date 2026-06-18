@@ -4,6 +4,15 @@ from datetime import date
 from relatorios import repository
 
 
+def get_relatorio_participacao(disciplina_id, data_inicio, data_fim):
+    sumario = repository.get_sumario_participacao(disciplina_id, data_inicio, data_fim)
+    monitores = repository.get_detalhes_por_monitor(disciplina_id, data_inicio, data_fim)
+    return {
+        "sumario": sumario,
+        "monitores": monitores,
+    }
+
+
 def get_painel_horas(disciplina_id=None):
     hoje = date.today()
     primeiro_dia = hoje.replace(day=1)

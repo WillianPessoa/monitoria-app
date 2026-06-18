@@ -3,6 +3,11 @@
 {% block content %}
 <section class="card stack-gap">
   <h2>Total de horas por monitor</h2>
+
+  <nav class="tab-bar">
+    <a href="{{ url_for('relatorios.index') }}" class="button active">Horas por monitor</a>
+    <a href="{{ url_for('relatorios.participacao') }}" class="button">Participação por disciplina</a>
+  </nav>
   <p class="muted">{{ painel.mes }}/{{ painel.ano }} — mínimo esperado: {{ painel.minimo_horas }}h (1h/semana)</p>
 
   <form method="get" class="toolbar">
