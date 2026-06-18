@@ -9,17 +9,29 @@
     <a href="{{ url_for('relatorios.participacao') }}" class="button active">Participação por disciplina</a>
   </nav>
 
-  <form method="get" class="toolbar">
-    <select name="disciplina_id" required>
-      <option value="">Selecione uma disciplina</option>
-      {% for disciplina in disciplinas %}
-      <option value="{{ disciplina.id }}" {% if filtro_disciplina_id == disciplina.id %}selected{% endif %}>
-        {{ disciplina.codigo }} - {{ disciplina.nome }}
-      </option>
-      {% endfor %}
-    </select>
-    <input type="date" name="data_inicio" value="{{ data_inicio }}" />
-    <input type="date" name="data_fim"    value="{{ data_fim }}" />
+  <form method="get" class="filter-bar">
+    <div class="filter-field">
+      <label for="disciplina_id">Disciplina</label>
+      <select id="disciplina_id" name="disciplina_id" required>
+        <option value="">Selecione uma disciplina</option>
+        {% for disciplina in disciplinas %}
+        <option value="{{ disciplina.id }}" {% if filtro_disciplina_id == disciplina.id %}selected{% endif %}>
+          {{ disciplina.codigo }} — {{ disciplina.nome }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="filter-field">
+      <label for="data_inicio">De</label>
+      <input id="data_inicio" type="date" name="data_inicio" value="{{ data_inicio }}" />
+    </div>
+
+    <div class="filter-field">
+      <label for="data_fim">Até</label>
+      <input id="data_fim" type="date" name="data_fim" value="{{ data_fim }}" />
+    </div>
+
     <button type="submit" class="button">Gerar</button>
   </form>
 
@@ -27,8 +39,7 @@
     {% set s = relatorio.sumario %}
     {% if s %}
     <p class="muted">
-      {{ s.disciplina_codigo }} — {{ s.disciplina_nome }} &nbsp;|&nbsp;
-      {{ data_inicio }} a {{ data_fim }}
+      {{ s.disciplina_codigo }} — {{ s.disciplina_nome }} &nbsp;|&nbsp; {{ data_inicio }} a {{ data_fim }}
     </p>
 
     <div class="stat-grid">
