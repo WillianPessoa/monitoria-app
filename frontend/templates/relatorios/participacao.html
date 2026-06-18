@@ -38,7 +38,8 @@
   {% if relatorio %}
     {% set s = relatorio.sumario %}
     {% if s %}
-    <p class="muted">
+    <div style="margin-top:2rem;display:flex;flex-direction:column;gap:2rem">
+    <p class="muted" style="margin:0">
       {{ s.disciplina_codigo }} — {{ s.disciplina_nome }} &nbsp;|&nbsp; {{ data_inicio }} a {{ data_fim }}
     </p>
 
@@ -88,10 +89,14 @@
     <p class="muted">Nenhum atendimento registrado no período.</p>
     {% endif %}
 
-    <a
-      href="{{ url_for('relatorios.participacao_csv', disciplina_id=filtro_disciplina_id, data_inicio=data_inicio, data_fim=data_fim) }}"
-      class="button"
-    >Exportar CSV</a>
+    <div style="display:flex;justify-content:center">
+      <a
+        href="{{ url_for('relatorios.participacao_csv', disciplina_id=filtro_disciplina_id, data_inicio=data_inicio, data_fim=data_fim) }}"
+        class="button"
+      >Exportar CSV</a>
+    </div>
+
+    </div>
 
     {% else %}
     <p class="muted">Disciplina não encontrada ou inativa.</p>
