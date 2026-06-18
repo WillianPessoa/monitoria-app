@@ -22,6 +22,7 @@
           <a href="{{ url_for('usuarios.index') }}" class="button">Usuários</a>
           <a href="{{ url_for('disciplinas.index') }}" class="button">Disciplinas</a>
           <a href="{{ url_for('monitorias.pendentes') }}" class="button">Indicações</a>
+          <a href="{{ url_for('relatorios.index') }}" class="button">Relatórios</a>
           {% endif %}
           {% if current_user.papel == 'PROFESSOR' %}
           <a href="{{ url_for('monitorias.indicar') }}" class="button">Indicar monitor</a>
