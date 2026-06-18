@@ -1,245 +1,257 @@
 {% extends 'base.html' %}
-{% block title %}Agenda - Monitoria App{% endblock %}
-{% block content %}
-<section class="card">
-  <h2>Agenda</h2>
-  <p class="muted">Veja horários disponíveis para agendamento e gerencie sua agenda de monitoria.</p>
-</section>
+{% block title %}Agenda — Monitoria App{% endblock %}
 
+{% block page_kicker %}{% if monitoria %}Monitor{% else %}Aluno{% endif %}{% endblock %}
+{% block page_title %}{% if monitoria %}Minha agenda{% else %}Agenda{% endif %}{% endblock %}
+{% block page_sub %}
 {% if monitoria %}
-<section class="card stack-gap">
-  <h3>Minha agenda como monitor</h3>
-  <p>Disciplina: {{ monitoria.disciplina_codigo }} - {{ monitoria.disciplina_nome }}</p>
-  <p class="muted">Horas contabilizadas: {{ "%.2f"|format(monitor_hours_total) }}h</p>
+  {{ monitoria.disciplina_codigo }} — {{ monitoria.disciplina_nome }} · {{ "%.1f"|format(monitor_hours_total) }}h registradas no mês
+{% else %}
+  Busque horários disponíveis e veja seus agendamentos.
+{% endif %}
+{% endblock %}
 
-  {% if votacao %}
-  <section class="stack-gap">
-    <h4>Votação da semana</h4>
-    {% if votacao_resultados %}
-    {% if votacao_max_select == 1 %}
-    <p class="muted">Selecione 1 horário de {{ votacao_slot_duration }}h após ao menos {{ required_votes }} votos.</p>
-    {% else %}
-    <p class="muted">Selecione até 2 horários de 1h após ao menos {{ required_votes }} votos.</p>
+{% block content %}
+
+{# ══════════════════ MONITOR ══════════════════ #}
+{% if monitoria %}
+<div class="stack">
+
+  {# ─ Pendências ─ #}
+  {% set pendentes_passadas = [] %}
+  {% for s in monitor_sessions %}
+    {% if s.data_fim <= now_value and s.status != 'CONCLUIDA' %}
+      {% set _ = pendentes_passadas.append(s) %}
     {% endif %}
-    <form method="post" action="{{ url_for('monitorias.confirmar_votacao', votacao_id=votacao.id) }}" data-monitor-vote-grid data-max-select="{{ votacao_max_select }}">
-      <div class="vote-grid" role="grid" aria-label="Agenda semanal de votação">
-        {% set weekday_labels = {1: 'Seg', 2: 'Ter', 3: 'Qua', 4: 'Qui', 5: 'Sex'} %}
-        <div class="vote-row header">
-          <span class="vote-cell"></span>
-          {% for weekday in votacao_weekdays %}
-          <span class="vote-cell">{{ weekday_labels[weekday] }}</span>
-          {% endfor %}
+  {% endfor %}
+
+  {% if pendentes_passadas %}
+  <section>
+    <div class="section-head">
+      <span class="section-dot" style="background:var(--warning);"></span>
+      <h3>Precisa de ação agora</h3>
+      <span class="section-badge" style="background:var(--warning-bg);color:var(--warning);">{{ pendentes_passadas | length }}</span>
+    </div>
+    <div class="stack-sm">
+      {% for sessao in pendentes_passadas %}
+      {% set participantes = session_participants_map.get(sessao.id, []) %}
+      <div class="card" style="border:1px solid var(--warning);">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+          <div style="flex:none;width:42px;height:42px;border-radius:11px;background:var(--warning-bg);display:flex;align-items:center;justify-content:center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:14.5px;">{{ sessao.disciplina_codigo }} — {{ sessao.disciplina_nome }}</div>
+            <div style="font-size:12.5px;color:var(--muted);">{{ sessao.data_inicio.strftime('%d/%m/%Y %H:%M') }} · {{ (sessao.data_fim - sessao.data_inicio).seconds // 60 }} min</div>
+          </div>
         </div>
-        {% for hour in votacao_hours %}
-        <div class="vote-row">
-          <span class="vote-cell label">{{ '%02d:00'|format(hour) }} às {{ '%02d:00'|format(hour + votacao_slot_duration) }}</span>
-          {% for weekday in votacao_weekdays %}
-          {% set cell = votacao_cells.get((weekday, hour)) %}
-          <div class="vote-cell slot">
-            {% if cell %}
-            <label class="vote-option">
-              <input
-                type="checkbox"
-                name="monitor_slots"
-                value="{{ weekday }}|{{ hour }}"
-                {% if cell.votos < required_votes %}disabled{% endif %}
-              />
-              <span class="vote-count">{{ cell.votos }} votos</span>
-            </label>
-            {% endif %}
+        {% if participantes %}
+        <form method="post" action="{{ url_for('monitorias.registrar_sessao', sessao_id=sessao.id) }}" style="display:flex;flex-direction:column;gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+          <fieldset style="border:none;padding:0;margin:0;">
+            <legend style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px;">Presença dos alunos</legend>
+            <div class="stack-sm">
+              {% for p in participantes %}
+              <label style="flex-direction:row;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:9px;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--text);">
+                <input type="checkbox" name="presentes" value="{{ p.aluno_id }}" {% if p.status == 'CONFIRMADA' %}checked{% endif %} style="width:16px;height:16px;flex:none;" />
+                {{ p.aluno_nome }}
+              </label>
+              {% endfor %}
+            </div>
+          </fieldset>
+          <label for="assunto-{{ sessao.id }}">Assunto abordado
+            <textarea id="assunto-{{ sessao.id }}" name="assunto" rows="2" required style="resize:vertical;">{{ sessao.assunto or '' }}</textarea>
+          </label>
+          <button type="submit" style="align-self:flex-start;background:var(--warning);color:#231a00;">Salvar registro</button>
+        </form>
+        {% else %}
+        <p class="muted" style="margin-top:10px;font-size:13px;">Nenhum aluno confirmado para esta sessão.</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ─ Votação ─ #}
+  {% if votacao %}
+  <section>
+    <div class="section-head">
+      <span class="section-dot" style="background:var(--accent);"></span>
+      <h3>Votação da semana</h3>
+    </div>
+    <div class="card">
+      {% if votacao_resultados %}
+      <p class="muted" style="margin-bottom:12px;">
+        {% if votacao_max_select == 1 %}Selecione 1 horário de {{ votacao_slot_duration }}h após ao menos {{ required_votes }} votos.
+        {% else %}Selecione até 2 horários de 1h após ao menos {{ required_votes }} votos.{% endif %}
+      </p>
+      <form method="post" action="{{ url_for('monitorias.confirmar_votacao', votacao_id=votacao.id) }}" data-monitor-vote-grid data-max-select="{{ votacao_max_select }}">
+        <div class="vote-grid" role="grid" aria-label="Agenda semanal de votação">
+          {% set weekday_labels = {1:'Seg',2:'Ter',3:'Qua',4:'Qui',5:'Sex'} %}
+          <div class="vote-row header">
+            <span class="vote-cell"></span>
+            {% for weekday in votacao_weekdays %}<span class="vote-cell">{{ weekday_labels[weekday] }}</span>{% endfor %}
+          </div>
+          {% for hour in votacao_hours %}
+          <div class="vote-row">
+            <span class="vote-cell label">{{ '%02d:00'|format(hour) }} às {{ '%02d:00'|format(hour + votacao_slot_duration) }}</span>
+            {% for weekday in votacao_weekdays %}
+            {% set cell = votacao_cells.get((weekday, hour)) %}
+            <div class="vote-cell slot">
+              {% if cell %}
+              <label class="vote-option">
+                <input type="checkbox" name="monitor_slots" value="{{ weekday }}|{{ hour }}" {% if cell.votos < required_votes %}disabled{% endif %} />
+                <span class="vote-count">{{ cell.votos }} votos</span>
+              </label>
+              {% endif %}
+            </div>
+            {% endfor %}
           </div>
           {% endfor %}
         </div>
-        {% endfor %}
-      </div>
-      <button type="submit" class="button">Confirmar monitoria</button>
-    </form>
-    {% else %}
-    <p class="muted">Ainda não há votos registrados.</p>
-    {% endif %}
-  </section>
-  {% else %}
-  <p class="muted">Nenhuma votação aberta para esta semana.</p>
-  {% endif %}
-
-  <section class="stack-gap">
-    <h4>Monitorias confirmadas</h4>
-    {% if monitor_sessions %}
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Disciplina</th>
-            <th>Data</th>
-            <th>Duração</th>
-            <th>Status</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for sessao in monitor_sessions %}
-          <tr>
-            <td>{{ sessao.disciplina_codigo }} - {{ sessao.disciplina_nome }}</td>
-            <td>{{ sessao.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
-            <td>{{ (sessao.data_fim - sessao.data_inicio).seconds // 60 }} min</td>
-            <td>{{ 'Concluída' if sessao.status == 'CONCLUIDA' else 'Agendada' }}</td>
-            <td>
-              {% if sessao.status != 'CONCLUIDA' and sessao.data_inicio > now_value %}
-              <form method="post" action="{{ url_for('monitorias.cancelar_sessao', sessao_id=sessao.id) }}" class="inline-form">
-                <button type="submit" class="button danger">Cancelar</button>
-              </form>
-              {% else %}
-              <span class="muted">-</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <p class="muted">Nenhuma monitoria confirmada.</p>
-    {% endif %}
-  </section>
-
-  <section class="stack-gap">
-    <h4>Registrar presença e assunto</h4>
-    {% if monitor_sessions %}
-    {% for sessao in monitor_sessions %}
-    {% if sessao.data_fim <= now_value %}
-    <section class="card stack-gap">
-      <h5>{{ sessao.disciplina_codigo }} - {{ sessao.data_inicio.strftime('%d/%m/%Y %H:%M') }}</h5>
-      {% set participantes = session_participants_map.get(sessao.id, []) %}
-      {% if participantes %}
-      <form method="post" action="{{ url_for('monitorias.registrar_sessao', sessao_id=sessao.id) }}">
-        <fieldset>
-          <legend>Presença dos alunos</legend>
-          {% for participante in participantes %}
-          <label>
-            <input type="checkbox" name="presentes" value="{{ participante.aluno_id }}" {% if participante.status == 'CONFIRMADA' %}checked{% endif %}>
-            {{ participante.aluno_nome }}
-          </label>
-          {% endfor %}
-        </fieldset>
-        <label for="assunto-{{ sessao.id }}">Assunto abordado</label>
-        <textarea id="assunto-{{ sessao.id }}" name="assunto" rows="3" required>{{ sessao.assunto or '' }}</textarea>
-        <button type="submit" class="button">Salvar registro</button>
+        <button type="submit" style="margin-top:12px;">Confirmar monitoria</button>
       </form>
       {% else %}
-      <p class="muted">Nenhum aluno confirmado para esta sessão.</p>
+      <p class="muted">Ainda não há votos registrados.</p>
       {% endif %}
-    </section>
-    {% endif %}
-    {% endfor %}
-    {% else %}
-    <p class="muted">Nenhuma monitoria concluída para registrar.</p>
-    {% endif %}
+    </div>
   </section>
+  {% endif %}
 
-  <section class="stack-gap">
-    <h4>Log de monitorias</h4>
-    {% if monitor_sessions %}
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Data/Hora</th>
-            <th>Disciplina</th>
-            <th>Presenças confirmadas</th>
-            <th>Assunto</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for sessao in monitor_sessions if sessao.status == 'CONCLUIDA' %}
-          <tr>
-            <td>{{ sessao.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
-            <td>{{ sessao.disciplina_codigo }}</td>
-            <td>
-              {% set participantes = session_participants_map.get(sessao.id, []) %}
-              {% for participante in participantes %}
-              {% if participante.status == 'CONFIRMADA' %}
-              {{ participante.aluno_nome }}{% if not loop.last %}, {% endif %}
-              {% endif %}
-              {% endfor %}
-            </td>
-            <td>{{ sessao.assunto or '—' }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+  {# ─ Próximas sessões ─ #}
+  {% set proximas = [] %}
+  {% for s in monitor_sessions %}
+    {% if s.data_inicio > now_value %}{% set _ = proximas.append(s) %}{% endif %}
+  {% endfor %}
+
+  <section>
+    <div class="section-head">
+      <span class="section-dot" style="background:var(--success);"></span>
+      <h3>Próximas sessões</h3>
+    </div>
+    {% if proximas %}
+    <div class="agenda-list">
+      {% for sessao in proximas %}
+      <div class="agenda-row">
+        <div class="agenda-date">
+          <div class="agenda-day">{{ sessao.data_inicio.strftime('%d') }}</div>
+          <div class="agenda-mon">{{ sessao.data_inicio.strftime('%b') }}</div>
+        </div>
+        <div class="agenda-body">
+          <div class="agenda-disc">{{ sessao.disciplina_codigo }} — {{ sessao.disciplina_nome }}</div>
+          <div class="agenda-meta">{{ sessao.data_inicio.strftime('%H:%M') }} — {{ sessao.data_fim.strftime('%H:%M') }} · {{ (sessao.data_fim - sessao.data_inicio).seconds // 60 }} min</div>
+        </div>
+        <span class="status-pill success">Agendada</span>
+        <form method="post" action="{{ url_for('monitorias.cancelar_sessao', sessao_id=sessao.id) }}" class="inline-form">
+          <button type="submit" class="button btn-danger btn-sm">Cancelar</button>
+        </form>
+      </div>
+      {% endfor %}
     </div>
     {% else %}
-    <p class="muted">Ainda não há registros de monitorias.</p>
+    <div class="card"><p class="muted">Nenhuma sessão agendada para os próximos dias.</p></div>
     {% endif %}
   </section>
-</section>
+
+  {# ─ Histórico ─ #}
+  {% set concluidas = monitor_sessions | selectattr('status', 'equalto', 'CONCLUIDA') | list %}
+  {% if concluidas %}
+  <details class="card">
+    <summary style="cursor:pointer;font-weight:700;font-size:14px;list-style:none;">
+      Histórico de sessões ({{ concluidas | length }})
+    </summary>
+    <div style="margin-top:12px;">
+      {% for sessao in concluidas %}
+      {% set participantes = session_participants_map.get(sessao.id, []) %}
+      <div style="display:flex;align-items:flex-start;gap:14px;padding:12px 0;border-top:1px solid var(--border);">
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:13px;">{{ sessao.disciplina_codigo }} · {{ sessao.data_inicio.strftime('%d/%m/%Y %H:%M') }}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">{{ sessao.assunto or '—' }}</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">
+            {% for p in participantes %}{% if p.status == 'CONFIRMADA' %}{{ p.aluno_nome }}{% if not loop.last %}, {% endif %}{% endif %}{% endfor %}
+          </div>
+        </div>
+        <span class="status-pill success">Concluída</span>
+      </div>
+      {% endfor %}
+    </div>
+  </details>
+  {% endif %}
+
+</div>
+
+{# ══════════════════ ALUNO ══════════════════ #}
+{% else %}
+<div class="stack">
+
+  <section>
+    <div class="section-head">
+      <span class="section-dot" style="background:var(--primary);"></span>
+      <h3>Horários disponíveis</h3>
+    </div>
+    {% if available_slots %}
+    <div class="slot-grid">
+      {% for slot in available_slots %}
+      <div class="slot-card">
+        <div class="slot-card-head">
+          <div class="slot-disc-code">{{ slot.disciplina_codigo[:4] }}</div>
+          <div>
+            <div class="slot-disc-name">{{ slot.disciplina_nome }}</div>
+            <div class="slot-monitor">Monitor {{ slot.monitor_nome }}</div>
+          </div>
+        </div>
+        <div class="slot-info">
+          <div class="slot-info-row">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v16H4zM4 9h16M8 3v4M16 3v4"/></svg>
+            {{ slot.data_inicio.strftime('%d/%m/%Y · %H:%M') }} — {{ slot.data_fim.strftime('%H:%M') }}
+          </div>
+          <div class="slot-info-row">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l2.5 2"/></svg>
+            {{ (slot.data_fim - slot.data_inicio).seconds // 60 }} min
+          </div>
+        </div>
+        <form method="post" action="{{ url_for('agenda.book_slot', slot_id=slot.disponibilidade_id) }}">
+          <button type="submit" style="width:100%;justify-content:center;">Agendar</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card">
+      <p class="muted">Nenhum horário disponível para as disciplinas em que você está matriculado.</p>
+    </div>
+    {% endif %}
+  </section>
+
+  <section>
+    <div class="section-head">
+      <span class="section-dot" style="background:var(--accent);"></span>
+      <h3>Meus agendamentos</h3>
+    </div>
+    {% if weekly_sessions %}
+    <div class="agenda-list">
+      {% for sessao in weekly_sessions %}
+      <div class="agenda-row">
+        <div class="agenda-date">
+          <div class="agenda-day">{{ sessao.data_inicio.strftime('%d') }}</div>
+          <div class="agenda-mon">{{ sessao.data_inicio.strftime('%b') }}</div>
+        </div>
+        <div class="agenda-body">
+          <div class="agenda-disc">{{ sessao.disciplina_codigo }} — {{ sessao.disciplina_nome }}</div>
+          <div class="agenda-meta">{{ sessao.monitor_nome }} · {{ sessao.data_inicio.strftime('%H:%M') }} — {{ sessao.data_fim.strftime('%H:%M') }}</div>
+        </div>
+        {% if sessao.presenca_status == 'CONFIRMADA' %}<span class="status-pill success">Presente</span>
+        {% elif sessao.presenca_status == 'AUSENTE' %}<span class="status-pill error">Ausente</span>
+        {% else %}<span class="status-pill warning">Agendado</span>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card"><p class="muted">Você não tem nenhum atendimento agendado.</p></div>
+    {% endif %}
+  </section>
+
+</div>
 {% endif %}
 
-<section class="card stack-gap">
-  <h3>Horários disponíveis</h3>
-  {% if available_slots %}
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Disciplina</th>
-          <th>Monitor</th>
-          <th>Data</th>
-          <th>Duração</th>
-          <th>Ação</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for slot in available_slots %}
-        <tr>
-          <td>{{ slot.disciplina_codigo }} - {{ slot.disciplina_nome }}</td>
-          <td>{{ slot.monitor_nome }}</td>
-          <td>{{ slot.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
-          <td>{{ (slot.data_fim - slot.data_inicio).seconds // 60 }} min</td>
-          <td>
-            <form method="post" action="{{ url_for('agenda.book_slot', slot_id=slot.disponibilidade_id) }}" class="inline-form">
-              <button type="submit" class="button">Reservar</button>
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <p class="muted">Nenhum horário disponível para as disciplinas em que você está matriculado.</p>
-  {% endif %}
-</section>
-
-<section class="card stack-gap">
-  <h3>Minhas monitorias agendadas</h3>
-  {% if weekly_sessions %}
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Disciplina</th>
-          <th>Monitor</th>
-          <th>Data</th>
-          <th>Duração</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for sessao in weekly_sessions %}
-        <tr>
-          <td>{{ sessao.disciplina_codigo }} - {{ sessao.disciplina_nome }}</td>
-          <td>{{ sessao.monitor_nome }}</td>
-          <td>{{ sessao.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
-          <td>{{ (sessao.data_fim - sessao.data_inicio).seconds // 60 }} min</td>
-          <td>{{ sessao.presenca_status or 'Sem confirmacao' }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <p class="muted">Nenhuma monitoria agendada para suas disciplinas.</p>
-  {% endif %}
-</section>
 {% endblock %}

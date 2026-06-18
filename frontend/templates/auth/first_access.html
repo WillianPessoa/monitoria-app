@@ -1,14 +1,26 @@
-{% extends 'base.html' %}
-{% block title %}Primeiro acesso{% endblock %}
+{% extends 'base_auth.html' %}
+{% block title %}Primeiro acesso — Monitoria App{% endblock %}
 {% block content %}
-<section class="card" style="max-width:480px;margin:0 auto;">
-  <h2>Primeiro acesso</h2>
-  <form method="post">
-    <label for="senha">Nova senha</label>
-    <input id="senha" name="senha" type="password" required />
-    <label for="confirmar_senha">Confirmar senha</label>
-    <input id="confirmar_senha" name="confirmar_senha" type="password" required />
-    <button class="button" type="submit">Salvar</button>
+<div class="auth-card">
+  <div class="auth-logo">
+    <span class="auth-logo-mark" aria-hidden="true"></span>
+    <span class="auth-logo-name">Monitoria App</span>
+  </div>
+  <h1 class="auth-title">Defina sua senha</h1>
+  <p class="auth-sub">Por segurança, crie uma nova senha antes de continuar.</p>
+
+  <div class="alert warning" style="margin-bottom:16px;border-radius:11px;">
+    Esta é a sua senha temporária de primeiro acesso. Ela não poderá ser usada novamente após a troca.
+  </div>
+
+  <form method="post" class="form-stack">
+    <label for="senha">Nova senha
+      <input id="senha" name="senha" type="password" placeholder="••••••••" required autocomplete="new-password" />
+    </label>
+    <label for="confirmar_senha">Confirmar nova senha
+      <input id="confirmar_senha" name="confirmar_senha" type="password" placeholder="••••••••" required autocomplete="new-password" />
+    </label>
+    <button type="submit" style="margin-top:6px;justify-content:center;">Salvar e continuar</button>
   </form>
-</section>
+</div>
 {% endblock %}

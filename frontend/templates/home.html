@@ -1,106 +1,222 @@
 {% extends 'base.html' %}
-{% block title %}Início - Monitoria App{% endblock %}
+{% block title %}Início — Monitoria App{% endblock %}
+
+{% block page_kicker %}
+{% if role == 'ADMIN' %}Administração
+{% elif role == 'PROFESSOR' %}Professor
+{% elif current_user.is_monitor %}Monitor
+{% elif role == 'ALUNO' %}Aluno
+{% endif %}
+{% endblock %}
+
+{% block page_title %}
+{% if role == 'ADMIN' %}Painel
+{% elif role == 'PROFESSOR' %}Minhas disciplinas
+{% else %}Início
+{% endif %}
+{% endblock %}
+
+{% block page_sub %}
+{% if role == 'ADMIN' %}Gerencie usuários, disciplinas e monitores do programa.
+{% elif role == 'PROFESSOR' %}Acompanhe suas disciplinas e gerencie indicações de monitores.
+{% elif current_user.is_monitor and monitoria %}{{ monitoria.disciplina_codigo }} — {{ monitoria.disciplina_nome }}
+{% elif role == 'ALUNO' %}Encontre monitores e agende seus atendimentos.
+{% endif %}
+{% endblock %}
+
 {% block content %}
-<section class="card">
-  <h2>Bem-vindo</h2>
-  <p class="muted">Painel inicial.</p>
-</section>
 
-{% if role == 'PROFESSOR' %}
-<section class="card stack-gap">
-  <h2>Minhas disciplinas</h2>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Disciplina</th>
-          <th>Status</th>
-          <th>Monitor</th>
-          <th>Alunos</th>
-          <th>Ver alunos</th>
-          <th>Indicar monitor</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for disciplina in professor_disciplinas %}
-        <tr>
-          <td>
-            <a href="{{ url_for('disciplinas.detalhe', disciplina_id=disciplina.id) }}" class="button">
-              {{ disciplina.codigo }} - {{ disciplina.nome }}
-            </a>
-          </td>
-          <td>{{ disciplina.status }}</td>
-          <td>{{ disciplina.monitor_nome or 'Sem monitor' }}</td>
-          <td>{{ disciplina.alunos_count }}</td>
-          <td>
-            <a href="{{ url_for('disciplinas.alunos', disciplina_id=disciplina.id) }}" class="button outline small">Ver alunos</a>
-          </td>
-          <td>
-            <form class="inline-form" method="post" action="{{ url_for('monitorias.indicar') }}">
-              <input type="hidden" name="disciplina_id" value="{{ disciplina.id }}" />
-              <select name="aluno_id" {% if disciplina.status != 'ATIVA' %}disabled{% else %}required{% endif %}>
-                <option value="">Selecione um aluno</option>
-                {% for aluno in disciplina.alunos_nao_matriculados %}
-                <option value="{{ aluno.id }}">{{ aluno.nome }}</option>
-                {% else %}
-                <option value="" disabled>Nenhum aluno disponível</option>
-                {% endfor %}
-              </select>
-              <button type="submit" class="button" {% if disciplina.status != 'ATIVA' %}disabled{% endif %}>
-                Indicar
-              </button>
-            </form>
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="6">Nenhuma disciplina vinculada.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</section>
-{% endif %}
-
-{% if role in ['ALUNO', 'MONITOR'] %}
-<section class="card stack-gap">
-  <h2>Disciplina em que você é monitor</h2>
-  {% if monitoria %}
-  <a href="{{ url_for('disciplinas.detalhe', disciplina_id=monitoria.disciplina_id) }}" class="button">
-    {{ monitoria.disciplina_codigo }} - {{ monitoria.disciplina_nome }}
+{# ══════════════════ ADMIN ══════════════════ #}
+{% if role == 'ADMIN' %}
+<div class="nav-card-grid">
+  <a href="{{ url_for('usuarios.index') }}" class="nav-card">
+    <div class="nav-card-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11a3 3 0 100-6 3 3 0 000 6zM3 20a6 6 0 0112 0M17 11a3 3 0 100-6M16.5 20a6 6 0 015.5 0"/></svg>
+    </div>
+    <div>
+      <div class="nav-card-title">Usuários</div>
+      <div class="nav-card-sub">Cadastrar e gerenciar todos os usuários.</div>
+    </div>
   </a>
-  {% else %}
-  <p class="muted">Você não é monitor de nenhuma disciplina.</p>
-  {% endif %}
-</section>
+  <a href="{{ url_for('disciplinas.index') }}" class="nav-card">
+    <div class="nav-card-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h12a1 1 0 011 1v15l-7-3-7 3V5a1 1 0 011-1z"/></svg>
+    </div>
+    <div>
+      <div class="nav-card-title">Disciplinas</div>
+      <div class="nav-card-sub">Cadastrar disciplinas e associar professores.</div>
+    </div>
+  </a>
+  <a href="{{ url_for('monitorias.pendentes') }}" class="nav-card">
+    <div class="nav-card-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    </div>
+    <div>
+      <div class="nav-card-title">Indicações</div>
+      <div class="nav-card-sub">Aprovar ou rejeitar indicações de monitores.</div>
+    </div>
+  </a>
+  <a href="{{ url_for('relatorios.index') }}" class="nav-card">
+    <div class="nav-card-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+    </div>
+    <div>
+      <div class="nav-card-title">Relatórios</div>
+      <div class="nav-card-sub">Horas por monitor e participação por disciplina.</div>
+    </div>
+  </a>
+</div>
 
-<section class="card stack-gap">
-  <h2>Disciplinas em que você é aluno</h2>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Disciplina</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for disciplina in aluno_disciplinas %}
-        <tr>
-          <td>
-            <a href="{{ url_for('disciplinas.detalhe', disciplina_id=disciplina.id) }}" class="button">
-              {{ disciplina.codigo }} - {{ disciplina.nome }}
-            </a>
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td>Nenhuma disciplina matriculada.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+{# ══════════════════ PROFESSOR ══════════════════ #}
+{% elif role == 'PROFESSOR' %}
+{% set total = professor_disciplinas | length %}
+{% set com_monitor = professor_disciplinas | selectattr('monitor_nome') | list | length %}
+
+<div class="stack">
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">Disciplinas</div>
+      <div class="stat-value">{{ total }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Com monitor ativo</div>
+      <div class="stat-value">{{ com_monitor }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Sem monitor</div>
+      <div class="stat-value {% if (total - com_monitor) > 0 %}warning{% endif %}">{{ total - com_monitor }}</div>
+    </div>
   </div>
-</section>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="section-head"><h3>Suas disciplinas</h3></div>
+      <div class="stack-sm">
+        {% for d in professor_disciplinas %}
+        <div style="display:flex;align-items:center;gap:14px;padding:13px 14px;border-radius:12px;background:var(--surface2);">
+          <div class="disc-code">{{ d.codigo[:4] }}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:13.5px;">{{ d.nome }}</div>
+            <div style="font-size:12px;color:var(--muted);">{{ d.monitor_nome or 'Sem monitor' }} · {{ d.alunos_count }} alunos</div>
+          </div>
+          {% if d.monitor_nome %}<span class="status-pill success">Monitor ativo</span>
+          {% elif d.status == 'ATIVA' %}<span class="status-pill warning">Sem monitor</span>
+          {% else %}<span class="status-pill muted">Inativa</span>{% endif %}
+          <a href="{{ url_for('disciplinas.detalhe', disciplina_id=d.id) }}" class="section-link">Abrir →</a>
+        </div>
+        {% else %}
+        <p class="muted" style="padding:12px 0;">Nenhuma disciplina vinculada a você.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <a href="{{ url_for('monitorias.indicar') }}" class="cta-dashed">
+      <div style="width:42px;height:42px;border-radius:12px;background:var(--primary);display:flex;align-items:center;justify-content:center;flex:none;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary-fg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      </div>
+      <span style="font-weight:800;font-size:16px;">Indicar um monitor</span>
+      <span style="font-size:13px;color:var(--muted);">Selecione um aluno e a disciplina. A indicação segue para aprovação do admin.</span>
+    </a>
+  </div>
+</div>
+
+{# ══════════════════ MONITOR ══════════════════ #}
+{% elif current_user.is_monitor %}
+<div class="stack">
+  {% if monitoria %}
+  <div class="two-col">
+    <div class="card" style="border-left:4px solid var(--primary);">
+      <div style="font-size:11.5px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;">Sua monitoria</div>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;margin:8px 0 4px;">{{ monitoria.disciplina_codigo }} — {{ monitoria.disciplina_nome }}</div>
+      <p class="muted" style="font-size:13.5px;">Você é monitor ativo nesta disciplina.</p>
+      <a href="{{ url_for('agenda.index') }}" class="button" style="margin-top:16px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v16H4zM4 9h16M8 3v4M16 3v4"/></svg>
+        Ver minha agenda
+      </a>
+    </div>
+
+    {% if aluno_disciplinas %}
+    <div class="card">
+      <div class="section-head"><h3>Disciplinas como aluno</h3></div>
+      <div class="stack-sm">
+        {% for d in aluno_disciplinas %}
+        <a href="{{ url_for('disciplinas.detalhe', disciplina_id=d.id) }}" style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;background:var(--surface2);color:var(--text);text-decoration:none;">
+          <div class="disc-code" style="width:34px;height:34px;font-size:10px;">{{ d.codigo[:4] }}</div>
+          <span style="font-weight:700;font-size:13px;flex:1;min-width:0;">{{ d.nome }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  {% else %}
+  <div class="card"><p class="muted">Você não está vinculado a nenhuma monitoria ativa no momento.</p></div>
+  {% if aluno_disciplinas %}
+  <div class="card">
+    <div class="section-head"><h3>Suas disciplinas</h3></div>
+    <div class="stack-sm">
+      {% for d in aluno_disciplinas %}
+      <a href="{{ url_for('disciplinas.detalhe', disciplina_id=d.id) }}" style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;background:var(--surface2);color:var(--text);text-decoration:none;">
+        <div class="disc-code" style="width:34px;height:34px;font-size:10px;">{{ d.codigo[:4] }}</div>
+        <span style="font-weight:700;font-size:13px;">{{ d.nome }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  {% endif %}
+</div>
+
+{# ══════════════════ ALUNO ══════════════════ #}
+{% elif role == 'ALUNO' %}
+<div class="two-col">
+  <div class="stack">
+    {% if aluno_disciplinas %}
+    <div class="card">
+      <div class="section-head">
+        <h3>Suas disciplinas</h3>
+        <span class="muted" style="font-size:12px;">{{ aluno_disciplinas | length }}</span>
+      </div>
+      <div class="stack-sm">
+        {% for d in aluno_disciplinas %}
+        <a href="{{ url_for('disciplinas.detalhe', disciplina_id=d.id) }}" style="display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:11px;background:var(--surface2);color:var(--text);text-decoration:none;">
+          <div class="disc-code" style="width:34px;height:34px;font-size:10px;">{{ d.codigo[:4] }}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:13px;">{{ d.nome }}</div>
+            <div style="font-size:11.5px;color:var(--muted);">{{ d.codigo }}</div>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </a>
+        {% else %}
+        <p class="muted">Você não está matriculado em nenhuma disciplina.</p>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    <a href="{{ url_for('agenda.index') }}" class="button btn-outline" style="justify-content:center;text-decoration:none;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v16H4zM4 9h16M8 3v4M16 3v4"/></svg>
+      Ver meus agendamentos
+    </a>
+  </div>
+
+  <div>
+    <a href="{{ url_for('agenda.index') }}" class="cta-card">
+      <div class="cta-card-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary-fg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      </div>
+      <div class="cta-card-title">Buscar monitoria</div>
+      <div class="cta-card-sub">Encontre horários livres nas suas disciplinas →</div>
+    </a>
+  </div>
+</div>
+
+{# ══════════════════ SEM SESSÃO ══════════════════ #}
+{% else %}
+<div class="card" style="max-width:480px;">
+  <p class="muted">Faça login para acessar o sistema de monitoria.</p>
+  <a href="{{ url_for('auth.login') }}" class="button" style="margin-top:12px;text-decoration:none;">Entrar</a>
+</div>
 {% endif %}
+
 {% endblock %}

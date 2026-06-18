@@ -1,133 +1,159 @@
 {% extends 'base.html' %}
-{% block title %}Disciplinas - Monitoria App{% endblock %}
+{% block title %}Disciplinas — Monitoria App{% endblock %}
+{% block page_kicker %}Administração{% endblock %}
+{% block page_title %}Disciplinas{% endblock %}
+{% block page_sub %}Gerencie as disciplinas e seus vínculos de monitoria.{% endblock %}
+
+{% block page_action %}
+<button onclick="document.getElementById('dlg-nova-disc').showModal()" class="button" style="flex:none;align-self:flex-end;">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+  Nova disciplina
+</button>
+{% endblock %}
+
 {% block content %}
-<div class="grid-2">
-  <section class="card">
-    <h2>Nova disciplina</h2>
-    <form method="post">
-      <label for="codigo">Código</label>
-      <input id="codigo" name="codigo" maxlength="32" required />
+<div class="stack">
 
-      <label for="nome">Nome</label>
-      <input id="nome" name="nome" maxlength="120" required />
+  {# ─ Cards de disciplinas ─ #}
+  {% if disciplinas_admin %}
+  <div class="disc-grid">
+    {% for d in disciplinas_admin %}
+    <div class="disc-card">
+      <div class="disc-card-top">
+        <div class="disc-code">{{ d.codigo[:4] }}</div>
+        {% if d.status == 'ATIVA' %}
+        <span class="status-pill success">Ativa</span>
+        {% else %}
+        <span class="status-pill muted">Inativa</span>
+        {% endif %}
+      </div>
+      <div>
+        <div class="disc-card-name">{{ d.nome }}</div>
+        <div class="disc-card-meta">
+          {% for professor in professores %}{% if professor.id == d.professor_id %}{{ professor.nome }}{% endif %}{% endfor %}
+          · {{ d.alunos_count }} alunos
+        </div>
+      </div>
+      <div class="disc-card-foot">
+        <span>
+          {% if d.monitor_aluno_id %}
+          {% for aluno in alunos %}{% if aluno.id == d.monitor_aluno_id %}Monitor: {{ aluno.nome }}{% endif %}{% endfor %}
+          {% else %}Sem monitor{% endif %}
+        </span>
+        <button type="button" class="button btn-outline btn-sm"
+          onclick="document.getElementById('dlg-edit-{{ d.id }}').showModal()">Editar</button>
+      </div>
+    </div>
 
-      <label for="professor_id">Professor</label>
+    {# Dialog editar disciplina #}
+    <dialog id="dlg-edit-{{ d.id }}" class="dialog" style="max-width:520px;">
+      <div class="dialog-head">
+        <div class="dialog-icon" style="background:var(--surface2);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h12a1 1 0 011 1v15l-7-3-7 3V5a1 1 0 011-1z"/></svg>
+        </div>
+        <h3>{{ d.codigo }} — {{ d.nome }}</h3>
+      </div>
+      <form id="disciplina-{{ d.id }}" method="post" action="{{ url_for('disciplinas.editar', disciplina_id=d.id) }}" class="form-stack">
+        <label>Código
+          <input name="codigo" value="{{ d.codigo }}" required />
+        </label>
+        <label>Nome
+          <input name="nome" value="{{ d.nome }}" required />
+        </label>
+        <label>Professor responsável
+          <select name="professor_id" required>
+            {% for professor in professores %}
+            <option value="{{ professor.id }}" {% if professor.id == d.professor_id %}selected{% endif %}>{{ professor.nome }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Monitor
+          <select name="monitor_id">
+            <option value="">Sem monitor</option>
+            {% for aluno in alunos %}
+            <option value="{{ aluno.id }}" {% if aluno.id == d.monitor_aluno_id %}selected{% endif %}>{{ aluno.nome }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:6px;">
+          <button type="submit" class="button">Salvar alterações</button>
+          {% if d.status == 'ATIVA' %}
+          <button type="submit" form="form-desativar-{{ d.id }}" class="button btn-danger">Desativar</button>
+          {% else %}
+          <button type="submit" form="form-ativar-{{ d.id }}" class="button btn-outline">Reativar</button>
+          {% endif %}
+          <button type="button" class="button btn-outline" style="margin-left:auto;" onclick="this.closest('dialog').close()">Fechar</button>
+        </div>
+      </form>
+      {% if d.status == 'ATIVA' %}
+      <form id="form-desativar-{{ d.id }}" method="post" action="{{ url_for('disciplinas.desativar', disciplina_id=d.id) }}" style="display:none;"></form>
+      {% else %}
+      <form id="form-ativar-{{ d.id }}" method="post" action="{{ url_for('disciplinas.ativar', disciplina_id=d.id) }}" style="display:none;"></form>
+      {% endif %}
+    </dialog>
+
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="card"><p class="muted">Nenhuma disciplina cadastrada ainda.</p></div>
+  {% endif %}
+
+  {# ─ Monitorias ativas ─ #}
+  {% if monitorias_ativas %}
+  <div class="card">
+    <div class="section-head"><h3>Monitorias ativas</h3></div>
+    <div class="user-list" style="box-shadow:none;border:none;">
+      <div class="user-list-head" style="padding:8px 0;">
+        <span style="flex:1;">Disciplina</span>
+        <span style="flex:1;">Monitor</span>
+        <span style="flex:1;">Professor</span>
+        <span style="flex:none;width:100px;">Desde</span>
+      </div>
+      {% for m in monitorias_ativas %}
+      <div style="display:flex;gap:14px;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);font-size:13.5px;">
+        <div style="flex:1;font-weight:600;">{{ m.disciplina_codigo }} — {{ m.disciplina_nome }}</div>
+        <div style="flex:1;color:var(--muted);">{{ m.aluno_nome }}</div>
+        <div style="flex:1;color:var(--muted);">{{ m.professor_nome }}</div>
+        <div style="flex:none;width:100px;font-size:12px;color:var(--muted);">{{ m.criado_em }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+{# ─ Dialog: nova disciplina ─ #}
+<dialog id="dlg-nova-disc" class="dialog" style="max-width:480px;">
+  <div class="dialog-head">
+    <div class="dialog-icon" style="background:var(--success-bg);">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+    </div>
+    <h3>Nova disciplina</h3>
+  </div>
+  <form method="post" class="form-stack">
+    <label for="codigo">Código
+      <input id="codigo" name="codigo" placeholder="MAB123" maxlength="32" required />
+    </label>
+    <label for="nome">Nome da disciplina
+      <input id="nome" name="nome" placeholder="Cálculo I" maxlength="120" required />
+    </label>
+    <label for="professor_id">Professor responsável
       <select id="professor_id" name="professor_id" required>
         <option value="">Selecione</option>
         {% for professor in professores %}
-        <option value="{{ professor.id }}">{{ professor.nome }} ({{ professor.email }})</option>
+        <option value="{{ professor.id }}">{{ professor.nome }}</option>
         {% else %}
         <option value="" disabled>Nenhum professor ativo</option>
         {% endfor %}
       </select>
-
-      <button type="submit" class="button">Cadastrar disciplina</button>
-    </form>
-  </section>
-
-  <section class="card">
-    <h2>Monitorias ativas</h2>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Disciplina</th>
-            <th>Aluno</th>
-            <th>Professor</th>
-            <th>Criado em</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for monitoria in monitorias_ativas %}
-          <tr>
-            <td>{{ monitoria.disciplina_codigo }} - {{ monitoria.disciplina_nome }}</td>
-            <td>{{ monitoria.aluno_nome }}</td>
-            <td>{{ monitoria.professor_nome }}</td>
-            <td>{{ monitoria.criado_em }}</td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="4">Nenhuma monitoria ativa.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    </label>
+    <div class="dialog-actions" style="padding:0;margin-top:6px;">
+      <button type="button" class="button btn-outline" onclick="this.closest('dialog').close()">Cancelar</button>
+      <button type="submit">Cadastrar</button>
     </div>
-  </section>
-</div>
+  </form>
+</dialog>
 
-<section class="card stack-gap">
-  <h2>Gerenciar disciplinas</h2>
-  <p class="muted">Ao definir um monitor, ele deixa de ser aluno matriculado na disciplina.</p>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th style="width: 100px;">Código</th>
-          <th style="width: 150px;">Nome</th>
-          <th>Professor</th>
-          <th>Monitor</th>
-          <th>Alunos</th>
-          <th style="white-space: nowrap;">Ver alunos</th>
-          <th>Status</th>
-          <th style="white-space: nowrap;">Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for disciplina in disciplinas_admin %}
-        <tr>
-          <td>
-            <input form="disciplina-{{ disciplina.id }}" name="codigo" value="{{ disciplina.codigo }}" style="width: 100%; max-width: 80px;" />
-          </td>
-          <td>
-            <input form="disciplina-{{ disciplina.id }}" name="nome" value="{{ disciplina.nome }}" style="width: 100%; min-width: 150px;"/>
-          </td>
-          <td>
-            <select form="disciplina-{{ disciplina.id }}" name="professor_id" required>
-              {% for professor in professores %}
-              <option value="{{ professor.id }}" {% if professor.id == disciplina.professor_id %}selected{% endif %}>
-                {{ professor.nome }}
-              </option>
-              {% endfor %}
-            </select>
-          </td>
-          <td>
-            <select form="disciplina-{{ disciplina.id }}" name="monitor_id">
-              <option value="">Sem monitor</option>
-              {% for aluno in alunos %}
-              <option value="{{ aluno.id }}" {% if aluno.id == disciplina.monitor_aluno_id %}selected{% endif %}>
-                {{ aluno.nome }}
-              </option>
-              {% endfor %}
-            </select>
-          </td>
-          <td>{{ disciplina.alunos_count }}</td>
-          <td style="white-space: nowrap;">
-            <a href="{{ url_for('disciplinas.alunos', disciplina_id=disciplina.id) }}" class="button outline small">Ver alunos</a>
-          </td>
-          <td>{{ disciplina.status }}</td>
-          <td style="white-space: nowrap;">
-            <form id="disciplina-{{ disciplina.id }}" method="post" action="{{ url_for('disciplinas.editar', disciplina_id=disciplina.id) }}" class="inline-form">
-              <button type="submit" class="button">Salvar</button>
-            </form>
-            {% if disciplina.status == 'ATIVA' %}
-            <form class="inline-form" method="post" action="{{ url_for('disciplinas.desativar', disciplina_id=disciplina.id) }}">
-              <button type="submit" class="button danger">Desativar</button>
-            </form>
-            {% else %}
-            <form class="inline-form" method="post" action="{{ url_for('disciplinas.ativar', disciplina_id=disciplina.id) }}">
-              <button type="submit" class="button">Reativar</button>
-            </form>
-            {% endif %}
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="8">Nenhuma disciplina cadastrada.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</section>
 {% endblock %}

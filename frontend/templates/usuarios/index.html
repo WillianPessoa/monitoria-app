@@ -1,75 +1,122 @@
 {% extends 'base.html' %}
-{% block title %}Usuários - Monitoria App{% endblock %}
+{% block title %}Usuários — Monitoria App{% endblock %}
+{% block page_kicker %}Administração{% endblock %}
+{% block page_title %}Usuários{% endblock %}
+{% block page_sub %}Cadastre e gerencie todos os usuários do sistema.{% endblock %}
+
+{% block page_action %}
+<button onclick="document.getElementById('dlg-novo-usuario').showModal()" class="button" style="flex:none;align-self:flex-end;">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+  Novo usuário
+</button>
+{% endblock %}
+
 {% block content %}
-<section class="card">
-  <h2>Cadastrar usuário</h2>
-    <form method="post">
-      <label for="nome">Nome</label>
-      <input id="nome" name="nome" required />
 
-      <label for="email">Email</label>
-      <input id="email" name="email" type="email" required />
+{# ─ Toast de senha gerada ─ #}
+{% if generated_password %}
+<div class="alert success" style="display:flex;align-items:center;gap:10px;font-size:13.5px;">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+  Usuário criado. Senha temporária: <strong style="font-family:'Space Grotesk',sans-serif;letter-spacing:.5px;">{{ generated_password }}</strong>
+</div>
+{% endif %}
 
-      <label for="papel">Papel</label>
+{# ─ Lista de usuários ─ #}
+<div class="user-list">
+  <div class="user-list-head">
+    <span style="flex:1;">Usuário</span>
+    <span style="flex:none;width:110px;">Papel</span>
+    <span style="flex:none;width:90px;">Status</span>
+    <span style="flex:none;width:180px;text-align:right;">Ações</span>
+  </div>
+  {% for user in users %}
+  <div class="user-row">
+    <div class="user-avatar" aria-hidden="true"></div>
+    <div class="user-info">
+      <div class="user-name">{{ user.nome }}</div>
+      <div class="user-email">{{ user.email }}</div>
+    </div>
+    <span style="flex:none;width:110px;font-size:12.5px;color:var(--muted);">
+      {% if user.papel == 'ADMIN' %}Administrador
+      {% elif user.papel == 'PROFESSOR' %}Professor
+      {% elif user.papel == 'MONITOR' %}Monitor
+      {% else %}Aluno{% endif %}
+    </span>
+    <div style="flex:none;width:90px;">
+      {% if user.status == 'ATIVO' %}
+      <span class="status-pill success">Ativo</span>
+      {% elif user.status == 'PENDENTE' %}
+      <span class="status-pill warning">Pendente</span>
+      {% else %}
+      <span class="status-pill muted">Inativo</span>
+      {% endif %}
+    </div>
+    <div class="user-actions">
+      {% if user.status != 'INATIVO' %}
+      <form method="post" action="{{ url_for('usuarios.reset_password', user_id=user.id) }}" class="inline-form">
+        <button type="submit" class="button btn-outline btn-sm">Resetar senha</button>
+      </form>
+      <button type="button" class="button btn-danger btn-sm"
+        onclick="document.getElementById('dlg-desativar-{{ user.id }}').showModal()">Desativar</button>
+
+      <dialog id="dlg-desativar-{{ user.id }}" class="dialog">
+        <div class="dialog-head">
+          <div class="dialog-icon" style="background:var(--error-bg);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--error)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L2.4 18a2 2 0 001.7 3h15.8a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0zM12 9v4M12 17h.01"/></svg>
+          </div>
+          <h3>Desativar usuário?</h3>
+        </div>
+        <p style="color:var(--muted);font-size:14px;line-height:1.5;">
+          <strong style="color:var(--text);">{{ user.nome }}</strong> perderá acesso ao sistema imediatamente. Esta ação pode ser revertida.
+        </p>
+        <div class="dialog-actions">
+          <button type="button" class="button btn-outline" onclick="this.closest('dialog').close()">Cancelar</button>
+          <form method="post" action="{{ url_for('usuarios.deactivate', user_id=user.id) }}" class="inline-form">
+            <button type="submit" class="button" style="background:var(--error);color:#fff;">Desativar</button>
+          </form>
+        </div>
+      </dialog>
+
+      {% else %}
+      <form method="post" action="{{ url_for('usuarios.reactivate', user_id=user.id) }}" class="inline-form">
+        <button type="submit" class="button btn-outline btn-sm">Reativar</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div style="padding:24px 20px;color:var(--muted);font-size:13.5px;">Nenhum usuário cadastrado.</div>
+  {% endfor %}
+</div>
+
+{# ─ Dialog: novo usuário ─ #}
+<dialog id="dlg-novo-usuario" class="dialog" style="max-width:480px;">
+  <div class="dialog-head">
+    <div class="dialog-icon" style="background:var(--success-bg);">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+    </div>
+    <h3>Cadastrar usuário</h3>
+  </div>
+  <form method="post" class="form-stack">
+    <label for="nome">Nome completo
+      <input id="nome" name="nome" placeholder="Nome do usuário" required />
+    </label>
+    <label for="email">E-mail
+      <input id="email" name="email" type="email" placeholder="usuario@email.com" required />
+    </label>
+    <label for="papel">Papel
       <select id="papel" name="papel" required>
         <option value="">Selecione</option>
         <option value="ALUNO">Aluno</option>
         <option value="PROFESSOR">Professor</option>
-        <option value="ADMIN">Admin</option>
+        <option value="ADMIN">Administrador</option>
       </select>
-
-      <button type="submit" class="button">Cadastrar</button>
-    </form>
-
-    {% if generated_password %}
-    <p class="alert success">
-      Senha temporária gerada: <strong>{{ generated_password }}</strong>
-    </p>
-    {% endif %}
-  </section>
-
-  <section class="card stack-gap">
-    <h2>Usuários cadastrados</h2>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Email</th>
-            <th>Papel</th>
-            <th>Status</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for user in users %}
-          <tr>
-            <td>{{ user.nome }}</td>
-            <td>{{ user.email }}</td>
-            <td>{{ user.papel }}</td>
-            <td>{{ user.status }}</td>
-            <td>
-              {% if user.status != 'INATIVO' %}
-              <form class="inline-form" method="post" action="{{ url_for('usuarios.deactivate', user_id=user.id) }}">
-                <button type="submit" class="button danger">Desativar</button>
-              </form>
-              <form class="inline-form" method="post" action="{{ url_for('usuarios.reset_password', user_id=user.id) }}">
-                <button type="submit" class="button">Resetar senha</button>
-              </form>
-              {% else %}
-              <form class="inline-form" method="post" action="{{ url_for('usuarios.reactivate', user_id=user.id) }}">
-                <button type="submit" class="button">Reativar</button>
-              </form>
-              {% endif %}
-            </td>
-          </tr>
-          {% else %}
-          <tr>
-              <td colspan="5">Nenhum usuário cadastrado.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    </label>
+    <div class="dialog-actions" style="padding:0;margin-top:6px;">
+      <button type="button" class="button btn-outline" onclick="this.closest('dialog').close()">Cancelar</button>
+      <button type="submit">Cadastrar</button>
     </div>
-  </section>
+  </form>
+</dialog>
+
 {% endblock %}

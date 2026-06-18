@@ -1,62 +1,143 @@
 <!doctype html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}Monitoria App{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
-  </head>
-  <body>
-    <header class="topbar">
-      <div class="brand">
-        <span class="logo" aria-hidden="true"></span>
-        <h1>Monitoria App</h1>
-      </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Monitoria App{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+</head>
+<body>
 
-      <div class="nav-wrap">
-        <button class="menu-toggle" aria-expanded="false" aria-label="Abrir menu">☰</button>
-        <nav class="nav-links" role="navigation" aria-label="Navegação principal">
-          {% if current_user.id %}
-          <a href="{{ url_for('home') }}" class="button">Início</a>
-          {% if current_user.papel == 'ADMIN' %}
-          <a href="{{ url_for('usuarios.index') }}" class="button">Usuários</a>
-          <a href="{{ url_for('disciplinas.index') }}" class="button">Disciplinas</a>
-          <a href="{{ url_for('monitorias.pendentes') }}" class="button">Indicações</a>
-          <a href="{{ url_for('relatorios.index') }}" class="button">Relatórios</a>
-          {% endif %}
-          {% if current_user.papel == 'PROFESSOR' %}
-          <a href="{{ url_for('monitorias.indicar') }}" class="button">Indicar monitor</a>
-          {% endif %}
-          {% if current_user.papel == 'ALUNO' or current_user.is_monitor %}
-          <a href="{{ url_for('agenda.index') }}" class="button">Agenda</a>
-          {% endif %}
-          {% if current_user.is_monitor %}
-          <a href="{{ url_for('usuarios.my_profile') }}" class="button">Meu perfil</a>
-          {% endif %}
-          <form action="{{ url_for('auth.logout') }}" method="post" class="inline-form">
-            <button type="submit" class="button">Sair</button>
-          </form>
-          {% else %}
-          <a href="{{ url_for('auth.login') }}" class="button">Entrar</a>
-          {% endif %}
-          <button class="theme-toggle button" aria-pressed="false" title="Alternar tema">Tema</button>
-        </nav>
-      </div>
-    </header>
+{% if current_user.id %}
+{# ════════ APP SHELL ════════ #}
+<div class="app-shell">
 
-    <main class="container">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-      <section class="alerts">
-        {% for category, message in messages %}
-        <p class="alert {{ category }}">{{ message }}</p>
-        {% endfor %}
-      </section>
+  {# ── Sidebar ── #}
+  <aside class="sidebar" role="navigation" aria-label="Navegação principal">
+
+    <div class="sidebar-brand">
+      <span class="sidebar-logo" aria-hidden="true"></span>
+      <div>
+        <div class="sidebar-brand-name">Monitoria</div>
+        <div class="sidebar-brand-sub">UFRJ · IC</div>
+      </div>
+    </div>
+
+    <div class="sidebar-user">
+      <span class="sidebar-avatar" aria-hidden="true"></span>
+      <div style="min-width:0;">
+        <div class="sidebar-user-name">{{ current_user.nome }}</div>
+        <div class="sidebar-user-role">
+          {% if current_user.papel == 'ADMIN' %}Administrador
+          {% elif current_user.papel == 'PROFESSOR' %}Professor
+          {% elif current_user.is_monitor %}Monitor
+          {% else %}Aluno
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <span class="sidebar-label">Navegação</span>
+
+    <nav class="sidebar-nav">
+      {% set ep = request.endpoint or '' %}
+
+      {# ADMIN #}
+      {% if current_user.papel == 'ADMIN' %}
+        <a href="{{ url_for('home') }}" class="nav-item {% if ep == 'home' %}active{% endif %}">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7M5 10v9a1 1 0 001 1h3v-6h6v6h3a1 1 0 001-1v-9"/></svg>Início
+        </a>
+        <a href="{{ url_for('usuarios.index') }}" class="nav-item {% if ep.startswith('usuarios') %}active{% endif %}">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11a3 3 0 100-6 3 3 0 000 6zM3 20a6 6 0 0112 0M17 11a3 3 0 100-6M16.5 20a6 6 0 015.5 0"/></svg>Usuários
+        </a>
+        <a href="{{ url_for('disciplinas.index') }}" class="nav-item {% if ep.startswith('disciplinas') %}active{% endif %}">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h12a1 1 0 011 1v15l-7-3-7 3V5a1 1 0 011-1z"/></svg>Disciplinas
+        </a>
+        <a href="{{ url_for('monitorias.pendentes') }}" class="nav-item {% if ep.startswith('monitorias') %}active{% endif %}">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Indicações
+        </a>
+        <a href="{{ url_for('relatorios.index') }}" class="nav-item {% if ep.startswith('relatorios') %}active{% endif %}">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Relatórios
+        </a>
       {% endif %}
-      {% endwith %}
 
+      {# PROFESSOR #}
+      {% if current_user.papel == 'PROFESSOR' %}
+        <a href="{{ url_for('home') }}" class="nav-item {% if ep == 'home' %}active{% endif %}">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7M5 10v9a1 1 0 001 1h3v-6h6v6h3a1 1 0 001-1v-9"/></svg>Início
+        </a>
+        <a href="{{ url_for('monitorias.indicar') }}" class="nav-item {% if ep == 'monitorias.indicar' %}active{% endif %}">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Indicar monitor
+        </a>
+      {% endif %}
+
+      {# MONITOR #}
+      {% if current_user.is_monitor %}
+        <a href="{{ url_for('home') }}" class="nav-item {% if ep == 'home' %}active{% endif %}">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7M5 10v9a1 1 0 001 1h3v-6h6v6h3a1 1 0 001-1v-9"/></svg>Início
+        </a>
+        <a href="{{ url_for('agenda.index') }}" class="nav-item {% if ep.startswith('agenda') %}active{% endif %}">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v16H4zM4 9h16M8 3v4M16 3v4"/></svg>Minha agenda
+        </a>
+        <a href="{{ url_for('usuarios.my_profile') }}" class="nav-item {% if ep == 'usuarios.my_profile' %}active{% endif %}">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zM5 20a7 7 0 0114 0"/></svg>Perfil
+        </a>
+      {% elif current_user.papel == 'ALUNO' %}
+        <a href="{{ url_for('home') }}" class="nav-item {% if ep == 'home' %}active{% endif %}">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7M5 10v9a1 1 0 001 1h3v-6h6v6h3a1 1 0 001-1v-9"/></svg>Início
+        </a>
+        <a href="{{ url_for('agenda.index') }}" class="nav-item {% if ep.startswith('agenda') %}active{% endif %}">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4a7 7 0 100 14 7 7 0 000-14zM20 20l-4-4"/></svg>Buscar monitoria
+        </a>
+      {% endif %}
+    </nav>
+
+    <div class="sidebar-foot">
+      <button class="nav-item theme-toggle" aria-pressed="false" title="Alternar tema">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>Tema
+      </button>
+      <form action="{{ url_for('auth.logout') }}" method="post" style="display:block;">
+        <button type="submit" class="nav-item danger" style="width:100%;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h3a1 1 0 011 1v14a1 1 0 01-1 1h-3M10 17l-5-5 5-5M5 12h11"/></svg>Sair
+        </button>
+      </form>
+    </div>
+  </aside>
+
+  {# ── Main column ── #}
+  <div class="main-col">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="alerts">
+      {% for category, message in messages %}
+      <p class="alert {{ category }}">{{ message }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <div class="page-header">
+      <div>
+        <div class="page-kicker">{% block page_kicker %}{% endblock %}</div>
+        <h1 class="page-title">{% block page_title %}Monitoria App{% endblock %}</h1>
+        <p class="page-sub">{% block page_sub %}{% endblock %}</p>
+      </div>
+      {% block page_action %}{% endblock %}
+    </div>
+
+    <main class="page-content">
       {% block content %}{% endblock %}
     </main>
-    <script src="{{ url_for('static', filename='js/ui.js') }}" defer></script>
-  </body>
+
+  </div>
+</div>
+
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/ui.js') }}" defer></script>
+</body>
 </html>

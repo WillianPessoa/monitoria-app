@@ -1,56 +1,83 @@
 {% extends 'base.html' %}
-{% block title %}Relatório de Horas - Monitoria App{% endblock %}
+{% block title %}Horas por monitor — Monitoria App{% endblock %}
+{% block page_kicker %}Relatórios{% endblock %}
+{% block page_title %}Horas por monitor{% endblock %}
+{% block page_sub %}{{ painel.mes }}/{{ painel.ano }} — mínimo esperado: {{ painel.minimo_horas }}h por mês{% endblock %}
+
 {% block content %}
-<section class="card stack-gap">
-  <h2>Total de horas por monitor</h2>
+<div class="stack">
 
   <nav class="tab-bar">
     <a href="{{ url_for('relatorios.index') }}" class="button active">Horas por monitor</a>
     <a href="{{ url_for('relatorios.participacao') }}" class="button">Participação por disciplina</a>
   </nav>
-  <p class="muted">{{ painel.mes }}/{{ painel.ano }} — mínimo esperado: {{ painel.minimo_horas }}h (1h/semana)</p>
 
-  <form method="get" class="toolbar">
-    <select name="disciplina_id" onchange="this.form.submit()">
-      <option value="">Todas as disciplinas</option>
-      {% for disciplina in disciplinas %}
-      <option value="{{ disciplina.id }}" {% if filtro_disciplina_id == disciplina.id %}selected{% endif %}>
-        {{ disciplina.codigo }} - {{ disciplina.nome }}
-      </option>
-      {% endfor %}
-    </select>
+  <form method="get" class="card" style="padding:16px 20px;">
+    <div class="filter-bar">
+      <div class="filter-field">
+        <label for="disciplina_id">Disciplina</label>
+        <select id="disciplina_id" name="disciplina_id" onchange="this.form.submit()">
+          <option value="">Todas as disciplinas</option>
+          {% for disciplina in disciplinas %}
+          <option value="{{ disciplina.id }}" {% if filtro_disciplina_id == disciplina.id %}selected{% endif %}>
+            {{ disciplina.codigo }} — {{ disciplina.nome }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
   </form>
 
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Monitor</th>
-          <th>Disciplina</th>
-          <th>Horas no mês</th>
-        </tr>
-      </thead>
-      <tbody>
+  {% if painel.linhas %}
+  {% set max_horas = painel.linhas | map(attribute='total_horas') | max %}
+  <div class="equal-col" style="align-items:start;">
+    <div class="card">
+      <h3 style="font-size:15px;margin-bottom:18px;">Horas registradas</h3>
+      <div class="bar-chart">
         {% for linha in painel.linhas %}
-        <tr>
-          <td>{{ linha.monitor_nome }}</td>
-          <td>{{ linha.disciplina_codigo }} - {{ linha.disciplina_nome }}</td>
-          <td>
-            <span class="status-pill {% if linha.abaixo_minimo %}error{% else %}success{% endif %}">
-              {{ linha.total_horas }}h
-            </span>
-            {% if linha.abaixo_minimo %}
-            <span class="muted" style="font-size:0.8rem">Abaixo do mínimo</span>
-            {% endif %}
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="3">Nenhum monitor com horas registradas no mês.</td>
-        </tr>
+        {% set pct = ((linha.total_horas / max_horas * 100) if max_horas > 0 else 0) | int %}
+        <div class="bar-item">
+          <div class="bar-label">
+            <span class="bar-label-name">{{ linha.monitor_nome }}</span>
+            <span class="bar-label-value" style="color:{% if linha.abaixo_minimo %}var(--error){% else %}var(--success){% endif %};">{{ linha.total_horas }}h</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:{{ pct }}%;background:{% if linha.abaixo_minimo %}var(--error){% else %}linear-gradient(90deg,var(--primary),var(--accent)){% endif %};"></div>
+          </div>
+          {% if linha.abaixo_minimo %}
+          <div style="font-size:11px;color:var(--error);margin-top:2px;">Abaixo do mínimo de {{ painel.minimo_horas }}h</div>
+          {% endif %}
+        </div>
         {% endfor %}
-      </tbody>
-    </table>
+      </div>
+    </div>
+
+    <div class="user-list" style="box-shadow:none;">
+      <div class="user-list-head">
+        <span style="flex:1;">Monitor</span>
+        <span style="flex:1;">Disciplina</span>
+        <span style="flex:none;width:80px;text-align:right;">Horas</span>
+      </div>
+      {% for linha in painel.linhas %}
+      <div class="user-row" style="flex-wrap:wrap;">
+        <div class="user-avatar" aria-hidden="true"></div>
+        <div class="user-info">
+          <div class="user-name">{{ linha.monitor_nome }}</div>
+          <div class="user-email">{{ linha.disciplina_codigo }} — {{ linha.disciplina_nome }}</div>
+        </div>
+        <div style="flex:none;width:80px;text-align:right;">
+          <span class="status-pill {% if linha.abaixo_minimo %}error{% else %}success{% endif %}">{{ linha.total_horas }}h</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
   </div>
-</section>
+
+  {% else %}
+  <div class="card">
+    <p class="muted">Nenhum monitor com horas registradas no mês.</p>
+  </div>
+  {% endif %}
+
+</div>
 {% endblock %}
