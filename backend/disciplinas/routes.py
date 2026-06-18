@@ -189,7 +189,10 @@ def detalhe(disciplina_id):
     is_monitor_for_disciplina = monitor and monitor.get("monitor_id") == user_id
     is_aluno = role == "ALUNO" and repository.is_aluno_matriculado(disciplina_id, user_id)
 
-    if not (is_aluno or is_monitor_for_disciplina):
+    is_professor_responsavel = role == "PROFESSOR" and disciplina["professor_id"] == user_id
+    is_admin = role == "ADMIN"
+
+    if not (is_aluno or is_monitor_for_disciplina or is_professor_responsavel or is_admin):
         flash("Você não tem permissão para acessar esta disciplina.", "error")
         return redirect(url_for("home"))
 
