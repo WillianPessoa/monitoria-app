@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}{{ section_title }} - Monitoria App{% endblock %}
+{% block content %}
+<section class="card stack-gap">
+  <h2>{{ section_title }}</h2>
+
+  <a href="{{ url_for('disciplinas.detalhe', disciplina_id=disciplina.id) }}" class="button outline">
+    Voltar para disciplina
+  </a>
+
+  {% if registros %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Monitor</th>
+          <th>Aluno</th>
+          <th>Status</th>
+          <th>Assunto</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for registro in registros %}
+        <tr>
+          <td>{{ registro.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>{{ registro.monitor_nome }}</td>
+          <td>{{ registro.aluno_nome }}</td>
+          <td>
+            {% if registro.presenca_status == 'CONFIRMADA' %}
+            <span class="status-pill success">Presente</span>
+            {% else %}
+            <span class="status-pill error">Ausente</span>
+            {% endif %}
+          </td>
+          <td>{{ registro.assunto }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted">Nenhum atendimento registrado nesta disciplina.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -351,6 +351,35 @@ def remove_alunos_from_disciplina(disciplina_id, aluno_ids):
     return affected
 
 
+def list_sessoes_com_presencas(disciplina_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        """
+        SELECT s.id AS sessao_id,
+               s.data_inicio,
+               s.data_fim,
+               s.assunto,
+               m.nome AS monitor_nome,
+               a.nome AS aluno_nome,
+               p.status AS presenca_status
+        FROM monitoria_sessoes s
+        JOIN usuarios m ON m.id = s.monitor_id
+        JOIN presencas p ON p.sessao_id = s.id
+        JOIN usuarios a ON a.id = p.aluno_id
+        WHERE s.disciplina_id = %s
+          AND s.status = 'CONCLUIDA'
+          AND p.status IN ('CONFIRMADA', 'AUSENTE')
+        ORDER BY s.data_inicio DESC, a.nome ASC
+        """,
+        (disciplina_id,),
+    )
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return rows
+
+
 def is_aluno_matriculado(disciplina_id, aluno_id):
     conn = get_connection()
     cursor = conn.cursor()

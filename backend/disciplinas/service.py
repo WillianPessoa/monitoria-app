@@ -202,3 +202,15 @@ def list_disciplinas_by_aluno(aluno_id):
 
 def count_alunos_disciplina(disciplina_id):
     return repository.count_alunos_disciplina(disciplina_id)
+
+
+def get_historico_atendimentos(disciplina_id, professor_id):
+    disciplina = repository.get_disciplina_by_id(disciplina_id)
+    if not disciplina:
+        return None, "Disciplina não encontrada."
+
+    if professor_id is not None and disciplina["professor_id"] != professor_id:
+        return None, "Você não tem permissão para acessar o histórico desta disciplina."
+
+    rows = repository.list_sessoes_com_presencas(disciplina_id)
+    return rows, None

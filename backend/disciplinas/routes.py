@@ -530,6 +530,38 @@ def alunos(disciplina_id):
     )
 
 
+@bp.get("/<int:disciplina_id>/historico")
+@login_required
+def historico(disciplina_id):
+    user_id = session.get("user_id")
+    role = session.get("papel")
+    disciplina = service.get_disciplina_by_id(disciplina_id)
+    if not disciplina:
+        flash("Disciplina não encontrada.", "error")
+        return redirect(url_for("home"))
+
+    if role == "PROFESSOR":
+        if disciplina["professor_id"] != user_id:
+            flash("Você não tem permissão para acessar o histórico desta disciplina.", "error")
+            return redirect(url_for("home"))
+    elif role != "ADMIN":
+        flash("Você não tem permissão para acessar o histórico desta disciplina.", "error")
+        return redirect(url_for("home"))
+
+    registros, error = service.get_historico_atendimentos(disciplina_id, user_id if role == "PROFESSOR" else None)
+    if error:
+        flash(error, "error")
+        return redirect(url_for("home"))
+
+    title = f"Histórico de atendimentos — {disciplina['codigo']} - {disciplina['nome']}"
+    return render_template(
+        "disciplinas/historico.html",
+        section_title=title,
+        disciplina=disciplina,
+        registros=registros,
+    )
+
+
 @bp.post("/<int:disciplina_id>/alunos/adicionar")
 @login_required
 @require_role("ADMIN")
