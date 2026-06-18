@@ -152,7 +152,7 @@ a,button,input,select{transition:all 0.14s ease}
 .filter-bar{display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end}
 .filter-field{display:flex;flex-direction:column;gap:0.35rem}
 .filter-field label{font-size:0.78rem;font-weight:600;color:var(--muted);letter-spacing:0.04em;text-transform:uppercase}
-.filter-field select,.filter-field input[type="date"]{width:auto;min-width:170px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.05);border-radius:8px;padding:0.6rem 0.75rem;color:var(--text);font-size:0.95rem}
+.filter-field select,.filter-field input[type="date"]{width:auto;min-width:170px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.05);border-radius:8px;padding:0.6rem 0.75rem;color:var(--text);font-size:0.95rem;box-sizing:border-box;height:2.5rem;line-height:1}
 .filter-field select:focus,.filter-field input[type="date"]:focus{outline:2px solid var(--primary);border-color:transparent}
 
 .stat-grid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
