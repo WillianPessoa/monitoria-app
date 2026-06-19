@@ -154,11 +154,14 @@ def update_monitor_profile(user_id, contato, disponibilidade, carga_horaria, mod
         """,
         (contato, disponibilidade, carga_horaria, modo_2h, user_id),
     )
-    affected = cursor.rowcount
     conn.commit()
     cursor.close()
     conn.close()
-    return affected > 0
+    # Retorna True se o UPDATE executou sem erros.
+    # Não usa rowcount > 0 porque MySQL reporta rowcount = 0 quando
+    # os valores enviados são idênticos aos já armazenados — o que é
+    # um comportamento válido (ex: salvar formulário sem alterações).
+    return True
 
 
 def list_monitor_disponibilidade(monitor_id):

@@ -2,3 +2,6 @@ Flask==3.0.3
 mysql-connector-python==9.0.0
 Werkzeug==3.0.3
 gunicorn==22.0.0
+pytest==8.3.4
+pytest-cov==5.0.0
+pytest-playwright==0.6.2
