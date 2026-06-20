@@ -1,4 +1,4 @@
-from flask import Flask, render_template, session
+from flask import Flask, redirect, render_template, session, url_for
 import os
 
 from agenda import bp as agenda_bp
@@ -54,7 +54,7 @@ def create_app():
         user_id = session.get("user_id")
         role = session.get("papel")
         if not user_id:
-            return render_template("home.html")
+            return redirect(url_for("auth.login"))
 
         if role == "PROFESSOR":
             from disciplinas import service as disciplinas_service
