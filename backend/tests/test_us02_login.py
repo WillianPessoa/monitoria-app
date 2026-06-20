@@ -180,3 +180,43 @@ class TestUS02Login:
         )
         with client.session_transaction() as sess:
             assert sess.get("user_id") is None
+
+
+# ---------------------------------------------------------------------------
+# Regressão — BUG-03
+# ---------------------------------------------------------------------------
+# O redesign (design/refactor) colocou {% block content %} dentro de
+# {% if current_user.id %} no base.html. Rotas que renderzavam templates
+# baseados em base.html para usuários sem sessão devolviam 200 com body
+# completamente vazio, sem redirecionar para login.
+# Garantimos que todas as rotas principais redirecionam corretamente.
+# ---------------------------------------------------------------------------
+
+
+class TestRedirecionamentoSemSessao:
+
+    def test_raiz_redireciona_para_login(self, client):
+        """BUG-03: GET / sem sessão → 302 para /auth/login (não 200 com body vazio)."""
+        response = client.get("/", follow_redirects=False)
+        assert response.status_code == 302
+        assert "login" in response.location
+
+    def test_raiz_nao_devolve_body_vazio(self, client):
+        """BUG-03: GET / sem sessão seguindo redirect → exibe formulário de login, não body vazio."""
+        response = client.get("/", follow_redirects=True)
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert len(body) > 500  # body vazio teria < 700 bytes
+        assert "email" in body.lower()  # formulário de login presente
+
+    def test_usuarios_redireciona_para_login(self, client):
+        """Regressão: rotas protegidas devolvem 302, não 200 com body vazio."""
+        response = client.get("/usuarios/", follow_redirects=False)
+        assert response.status_code == 302
+        assert "login" in response.location
+
+    def test_disciplinas_redireciona_para_login(self, client):
+        """Regressão: GET /disciplinas/ sem sessão → 302 para login."""
+        response = client.get("/disciplinas/", follow_redirects=False)
+        assert response.status_code == 302
+        assert "login" in response.location
