@@ -1,2 +1,2 @@
 ALTER TABLE monitoria_sessoes
-ADD COLUMN IF NOT EXISTS assunto TEXT NULL;
+ADD COLUMN assunto TEXT NULL;

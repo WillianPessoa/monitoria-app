@@ -74,9 +74,20 @@ def _apply_migrations(conn):
 
             statements = [s.strip() for s in sql.split(";") if s.strip()]
             for stmt in statements:
-                cursor.execute(stmt)
-                if cursor.with_rows:
-                    cursor.fetchall()
+                try:
+                    cursor.execute(stmt)
+                    if cursor.with_rows:
+                        cursor.fetchall()
+                except mysql.connector.errors.ProgrammingError as exc:
+                    if exc.errno == 1060:
+                        # Duplicate column name — coluna já existe no schema.sql.
+                        # Acontece em bancos criados do zero a partir do schema atual.
+                        logging.warning("Migration %s: coluna já existe, ignorado: %s", filename, exc)
+                    elif exc.errno == 1061:
+                        # Duplicate key name — índice já existe.
+                        logging.warning("Migration %s: índice já existe, ignorado: %s", filename, exc)
+                    else:
+                        raise
 
             cursor.execute(
                 "INSERT INTO migrations (filename) VALUES (%s)",
