@@ -178,6 +178,75 @@
   </details>
   {% endif %}
 
+  {# ─ Criar horário de atendimento (US10) ─ #}
+  <section>
+    <div class="section-head">
+      <span class="section-dot" style="background:var(--primary);"></span>
+      <h3>Criar horário de atendimento</h3>
+    </div>
+    <div class="card">
+      <form method="post" action="{{ url_for('agenda.create_slot') }}" style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;">
+          <div class="stack-sm">
+            <label for="data_inicio" style="font-size:13px;font-weight:600;color:var(--muted);">Data e horário de início</label>
+            <input type="datetime-local" id="data_inicio" name="data_inicio" required
+                   style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--surface2);color:var(--text);" />
+          </div>
+          <div class="stack-sm" style="min-width:110px;">
+            <label for="duracao" style="font-size:13px;font-weight:600;color:var(--muted);">Duração (min)</label>
+            <input type="number" id="duracao" name="duracao" value="60" min="30" max="180" required
+                   style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--surface2);color:var(--text);" />
+          </div>
+        </div>
+        <div class="stack-sm">
+          <label for="local" style="font-size:13px;font-weight:600;color:var(--muted);">Local <span style="font-weight:400;">(opcional)</span></label>
+          <input type="text" id="local" name="local" placeholder="Ex: Sala 101, Lab 3, Online…"
+                 style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--surface2);color:var(--text);" />
+        </div>
+        <div>
+          <button type="submit">Criar horário</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  {# ─ Meus horários (own_slots) com bloquear/desbloquear ─ #}
+  {% if own_slots %}
+  <section>
+    <div class="section-head">
+      <span class="section-dot" style="background:var(--muted);"></span>
+      <h3>Meus horários cadastrados</h3>
+    </div>
+    <div class="agenda-list">
+      {% for slot in own_slots %}
+      <div class="agenda-row">
+        <div class="agenda-date">
+          <div class="agenda-day">{{ slot.data_inicio.strftime('%d') }}</div>
+          <div class="agenda-mon">{{ slot.data_inicio.strftime('%b') }}</div>
+        </div>
+        <div class="agenda-body">
+          <div class="agenda-disc">{{ slot.disciplina_codigo }} — {{ slot.disciplina_nome }}</div>
+          <div class="agenda-meta">{{ slot.data_inicio.strftime('%H:%M') }} — {{ slot.data_fim.strftime('%H:%M') }}{% if slot.aluno_nome %} · {{ slot.aluno_nome }}{% endif %}</div>
+        </div>
+        {% if slot.status == 'DISPONIVEL' %}
+          <span class="status-pill success">Disponível</span>
+          <form method="post" action="{{ url_for('agenda.block_slot', slot_id=slot.disponibilidade_id) }}" class="inline-form">
+            <button type="submit" class="button outline btn-sm">Bloquear</button>
+          </form>
+        {% elif slot.status == 'AGENDADO' %}
+          <span class="status-pill warning">Agendado</span>
+        {% elif slot.status == 'BLOQUEADO' %}
+          <span class="status-pill error">Bloqueado</span>
+          <form method="post" action="{{ url_for('agenda.unblock_slot', slot_id=slot.disponibilidade_id) }}" class="inline-form">
+            <button type="submit" class="button outline btn-sm">Desbloquear</button>
+          </form>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
 </div>
 
 {# ══════════════════ ALUNO ══════════════════ #}
@@ -209,6 +278,12 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l2.5 2"/></svg>
             {{ (slot.data_fim - slot.data_inicio).seconds // 60 }} min
           </div>
+          {% if slot.local %}
+          <div class="slot-info-row">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+            {{ slot.local }}
+          </div>
+          {% endif %}
         </div>
         <form method="post" action="{{ url_for('agenda.book_slot', slot_id=slot.disponibilidade_id) }}">
           <button type="submit" style="width:100%;justify-content:center;">Agendar</button>
@@ -222,6 +297,35 @@
     </div>
     {% endif %}
   </section>
+
+  {# ─ Horários agendados individualmente (disponibilidades) ─ #}
+  {% if student_agendamentos %}
+  <section>
+    <div class="section-head">
+      <span class="section-dot" style="background:var(--primary);"></span>
+      <h3>Horários agendados</h3>
+      <span class="section-badge">{{ student_agendamentos | length }}</span>
+    </div>
+    <div class="agenda-list">
+      {% for ag in student_agendamentos %}
+      <div class="agenda-row">
+        <div class="agenda-date">
+          <div class="agenda-day">{{ ag.data_inicio.strftime('%d') }}</div>
+          <div class="agenda-mon">{{ ag.data_inicio.strftime('%b') }}</div>
+        </div>
+        <div class="agenda-body">
+          <div class="agenda-disc">{{ ag.disciplina_codigo }} — {{ ag.disciplina_nome }}</div>
+          <div class="agenda-meta">{{ ag.monitor_nome }} · {{ ag.data_inicio.strftime('%H:%M') }} — {{ ag.data_fim.strftime('%H:%M') }}{% if ag.local %} · {{ ag.local }}{% endif %}</div>
+        </div>
+        <span class="status-pill warning">Confirmado</span>
+        <form method="post" action="{{ url_for('agenda.cancel_agendamento', agendamento_id=ag.agendamento_id) }}" class="inline-form">
+          <button type="submit" class="button btn-danger btn-sm">Cancelar</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 
   <section>
     <div class="section-head">

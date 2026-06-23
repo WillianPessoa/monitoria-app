@@ -126,3 +126,25 @@ def professor_mobile(mobile):
     mobile.click("button[type='submit']")
     mobile.wait_for_url(f"{BASE_URL}/")
     return mobile
+
+
+@pytest.fixture
+def aluno_desktop(desktop):
+    """Desktop já autenticado como aluno comum (credencial estática do Railway)."""
+    desktop.goto(f"{BASE_URL}/auth/login")
+    desktop.fill("input#email", ALUNO_EMAIL)
+    desktop.fill("input#senha", ALUNO_PASSWORD)
+    desktop.click("button[type='submit']")
+    desktop.wait_for_url(f"{BASE_URL}/")
+    return desktop
+
+
+@pytest.fixture
+def aluno_mobile(mobile):
+    """Mobile já autenticado como aluno comum (credencial estática do Railway)."""
+    mobile.goto(f"{BASE_URL}/auth/login")
+    mobile.fill("input#email", ALUNO_EMAIL)
+    mobile.fill("input#senha", ALUNO_PASSWORD)
+    mobile.click("button[type='submit']")
+    mobile.wait_for_url(f"{BASE_URL}/")
+    return mobile

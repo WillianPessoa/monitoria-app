@@ -212,3 +212,109 @@ def make_user():
         return user_id
 
     return _create
+
+
+@pytest.fixture
+def make_monitoria_ativa(make_user):
+    """
+    Factory: cria professor + disciplina + aluno com monitoria ATIVA.
+    Retorna dict com IDs e credenciais para login do aluno-monitor.
+
+    Uso:
+        setup = make_monitoria_ativa("us10c1")
+        client.post("/auth/login", data={"email": setup["monitor_email"], "senha": setup["monitor_senha"]})
+    """
+    def _create(prefix="agenda"):
+        prof_id = make_user(f"Prof {prefix}", f"prof.{prefix}@teste.com", "PROFESSOR")
+
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO disciplinas (codigo, nome, professor_id) VALUES (%s, %s, %s)",
+            (f"D{prefix.upper()[:9]}", f"Disciplina {prefix}", prof_id),
+        )
+        conn.commit()
+        disc_id = cur.lastrowid
+        cur.close()
+        conn.close()
+
+        aluno_id = make_user(f"Monitor {prefix}", f"mon.{prefix}@teste.com", "ALUNO")
+
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO monitorias (disciplina_id, professor_id, aluno_id, status)
+            VALUES (%s, %s, %s, 'ATIVO')
+            """,
+            (disc_id, prof_id, aluno_id),
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return {
+            "prof_id": prof_id,
+            "disc_id": disc_id,
+            "aluno_id": aluno_id,
+            "monitor_email": f"mon.{prefix}@teste.com",
+            "monitor_senha": "Senha@Teste1",
+        }
+
+    return _create
+
+
+@pytest.fixture
+def make_sessao(make_monitoria_ativa):
+    """
+    Factory: cria professor + disciplina + aluno-monitor com monitoria ATIVA + monitoria_sessao.
+
+    Parâmetros:
+        prefix   — string única por teste (ex: "us13c1")
+        past     — True  → sessão no passado (para registrar presença)
+                   False → sessão no futuro 8h à frente (para testar cancelamento)
+        aluno_id — se informado, cria uma presença CONFIRMADA para esse aluno
+
+    Retorna dict com: prof_id, disc_id, aluno_id, monitor_email, monitor_senha, sessao_id
+    """
+    import datetime as _dt
+
+    def _create(prefix, past=True, aluno_id=None):
+        setup = make_monitoria_ativa(prefix)
+        now = _dt.datetime.now()
+
+        if past:
+            data_inicio = now - _dt.timedelta(hours=4)
+            data_fim    = now - _dt.timedelta(hours=2)
+        else:
+            data_inicio = now + _dt.timedelta(hours=8)
+            data_fim    = data_inicio + _dt.timedelta(hours=2)
+
+        conn = get_connection()
+        cur  = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO monitoria_sessoes (disciplina_id, monitor_id, data_inicio, data_fim, status)
+            VALUES (%s, %s, %s, %s, 'AGENDADA')
+            """,
+            (setup["disc_id"], setup["aluno_id"], data_inicio, data_fim),
+        )
+        conn.commit()
+        sessao_id = cur.lastrowid
+
+        if aluno_id is not None:
+            cur.execute(
+                """
+                INSERT IGNORE INTO presencas (sessao_id, aluno_id, status)
+                VALUES (%s, %s, 'CONFIRMADA')
+                """,
+                (sessao_id, aluno_id),
+            )
+            conn.commit()
+
+        cur.close()
+        conn.close()
+
+        return {**setup, "sessao_id": sessao_id}
+
+    return _create

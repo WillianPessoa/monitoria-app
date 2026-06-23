@@ -91,6 +91,18 @@ Este arquivo será usado na apresentação final para demonstrar o valor dos tes
 
 ---
 
+## BUG-03 — Página em branco para usuários não autenticados na raiz
+
+| Campo | Detalhe |
+|---|---|
+| **Onde** | `GET /` — rota home em `backend/app.py` |
+| **Comportamento observado** | Acessar `https://web-production-1f724.up.railway.app/` retornava HTTP 200 com body completamente vazio. Nenhum conteúdo visível, nenhuma mensagem de erro |
+| **Comportamento esperado** | Usuário não autenticado deveria ser redirecionado para `/auth/login` |
+| **Causa** | O redesign (`design/refactor`) envolveu `{% block content %}` dentro de um `{% if current_user.id %}` no `base.html`. `app.py` ainda chamava `render_template("home.html")` para usuários sem sessão — o template renderizava, mas o bloco de conteúdo ficava fora do `{% if %}` e produzia body vazio. O Railway retornava 200 porque não havia erro Python, apenas HTML sem conteúdo |
+| **Corrigido em** | `backend/app.py` — `render_template("home.html")` → `redirect(url_for("auth.login"))` — commit `f1d8dd4` |
+
+---
+
 ## Problema de infraestrutura encontrado durante setup
 
 **Não é um bug de comportamento do app, mas foi descoberto durante a criação dos testes.**
@@ -103,6 +115,34 @@ Este arquivo será usado na apresentação final para demonstrar o valor dos tes
 | **Impacto** | Nenhum em produção (Railway já tem o banco com a coluna criada pela migration). Impacta apenas ambientes novos criados a partir do schema atual |
 | **Solução adotada** | `conftest.py` pré-marca todas as migrations como aplicadas antes de chamar `create_app()`, fazendo com que `_apply_migrations()` as pule |
 | **Solução definitiva recomendada** | Reescrever as migrations de ADD COLUMN para verificar existência via `information_schema` antes de adicionar (como já é feito nas migrations de índices) |
+
+---
+
+## US10 — Monitor cria horários
+
+*Nenhum bug encontrado. Todos os 10 testes de backend passaram na primeira execução.*
+
+---
+
+## US11 — Aluno vê horários disponíveis
+
+### BUG-04 — Local do atendimento não exibido no slot-card (US11 C1)
+
+| Campo | Detalhe |
+|---|---|
+| **US / Cenário** | US11 — Aluno vê horários disponíveis / C1 — Busca por disciplina |
+| **Teste** | `test_aluno_matriculado_ve_slot_disponivel` (backend) — falhou na primeira execução |
+| **Suite** | Backend |
+| **Comportamento observado** | O slot-card renderizado em `/agenda/` exibe nome do monitor, data, horário e duração, mas **não exibe o campo `local`** |
+| **Comportamento esperado** | Critério US11 C1 diz: "sistema exibe lista de horários disponíveis com nome do monitor, data, horário e **local**" — o local deveria aparecer no card |
+| **Causa** | `frontend/templates/agenda/index.html` — o bloco `div.slot-info` dentro de `div.slot-card` renderiza apenas data e duração. A variável `{{ slot.local }}` nunca é usada no template, apesar de estar disponível no objeto `slot` retornado pelo repositório |
+| **Corrigido em** | Pendente — requer alteração no template `agenda/index.html` para exibir `slot.local` dentro de `.slot-info` |
+
+---
+
+## US12 — Aluno agenda horário
+
+*Nenhum bug encontrado. Todos os 9 testes de backend passaram na primeira execução.*
 
 ---
 
@@ -121,10 +161,15 @@ Este arquivo será usado na apresentação final para demonstrar o valor dos tes
 | US07 — Professor indica monitor | ✅ Coberta (backend + UI) |
 | US08 — Admin aprova/rejeita indicação | ✅ Coberta (backend + UI) |
 | US09 — Admin lista monitorias ativas | ✅ Coberta (backend + UI) |
-| US10 — Monitor cria horários | ⏳ Pendente |
-| US11 — Aluno vê horários disponíveis | ⏳ Pendente |
-| US12 — Aluno agenda horário | ⏳ Pendente |
-| US16 — Monitor registra presença | ⏳ Pendente |
-| US17 — Monitor registra assunto tratado | ⏳ Pendente |
-| US18 — Admin vê horas por monitor | ⏳ Pendente |
-| US20 — Admin gera relatório | ⏳ Pendente |
+| US10 — Monitor cria horários | ✅ Coberta (backend + UI) |
+| US11 — Aluno vê horários disponíveis | ✅ Coberta (backend + UI) — BUG-04 registrado e corrigido |
+| US12 — Aluno agenda horário | ✅ Coberta (backend + UI) |
+| US13 — Monitor vê agenda | ✅ Coberta (backend + UI) |
+| US14 — Aluno cancela agendamento | ❌ Rota não implementada no backend |
+| US15 — Monitor bloqueia horário | ❌ Rota não implementada no backend |
+| US16-novo — Monitor cancela sessão | ✅ Coberta (backend + UI) |
+| US16 — Monitor registra presença | ✅ Coberta (backend + UI) |
+| US17 — Monitor registra assunto | ✅ Coberta (backend + UI, junto com US16) |
+| US18 — Admin vê horas por monitor | ✅ Coberta (backend + UI) |
+| US19 — Professor vê histórico | ✅ Coberta (backend + UI, sessao_detalhe é placeholder) |
+| US20 — Admin gera relatório | ✅ Coberta (backend + UI) |
