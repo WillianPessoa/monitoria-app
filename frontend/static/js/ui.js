@@ -161,24 +161,189 @@ document.addEventListener('DOMContentLoaded', function(){
     applyContactMask();
   }
 
-  const voteGrid = document.querySelector('.vote-grid');
-  if(voteGrid){
-    voteGrid.addEventListener('change', function(){
-      const checked = voteGrid.querySelectorAll('input[name="opcao_ids"]:checked');
-      if(checked.length > 2){
-        const last = checked[checked.length - 1];
-        last.checked = false;
+  const voteForms = document.querySelectorAll('form[data-max-select]');
+  voteForms.forEach(function(form){
+    const max = parseInt(form.getAttribute('data-max-select') || '2', 10);
+    const inputName = form.querySelector('input[name="monitor_slots"]')
+      ? 'monitor_slots'
+      : 'opcao_ids';
+    form.addEventListener('change', function(event){
+      const target = event.target;
+      if(!target || target.name !== inputName){
+        return;
+      }
+      if(!target.checked){
+        return;
+      }
+      const checked = Array.from(form.querySelectorAll('input[name="' + inputName + '"]:checked'));
+      if(checked.length > max){
+        const toUncheck = checked.find(function(item){
+          return item !== target;
+        });
+        if(toUncheck){
+          toUncheck.checked = false;
+        }else{
+          target.checked = false;
+        }
       }
     });
-  }
+  });
 
-  const monitorVoteForm = document.querySelector('[data-monitor-vote-grid]');
-  if(monitorVoteForm){
-    monitorVoteForm.addEventListener('change', function(){
-      const checked = monitorVoteForm.querySelectorAll('input[name="monitor_slots"]:checked');
-      if(checked.length > 2){
-        checked[checked.length - 1].checked = false;
+  const voteToggleForms = document.querySelectorAll('form[data-vote-toggle]');
+  voteToggleForms.forEach(function(form){
+    const hasVote = form.getAttribute('data-has-vote') === 'true';
+    const submitBtn = form.querySelector('[data-vote-submit]');
+    const checkboxes = form.querySelectorAll('input[name="opcao_ids"]');
+    if(!submitBtn || !checkboxes.length){
+      return;
+    }
+
+    if(hasVote){
+      submitBtn.type = 'button';
+      submitBtn.textContent = 'Alterar voto';
+      checkboxes.forEach(function(cb){
+        cb.disabled = true;
+      });
+    }
+
+    submitBtn.addEventListener('click', function(event){
+      if(!hasVote){
+        return;
       }
+      if(submitBtn.getAttribute('data-editing') === 'true'){
+        return;
+      }
+      event.preventDefault();
+      checkboxes.forEach(function(cb){
+        cb.disabled = false;
+      });
+      submitBtn.type = 'submit';
+      submitBtn.textContent = 'Salvar';
+      submitBtn.setAttribute('data-editing', 'true');
     });
+  });
+
+  const profileConfig = document.querySelector('[data-profile-config]');
+  if(profileConfig){
+    const form = profileConfig.closest('form') || profileConfig;
+    const cargaSelect = form.querySelector('[data-carga-horaria]');
+    const modoLabel = form.querySelector('[data-modo-2h-label]');
+    const modoSelect = form.querySelector('select[data-modo-2h]');
+    const grid1h = form.querySelector('[data-grid-1h]');
+    const grid2h = form.querySelector('[data-grid-2h]');
+    const actions = form.querySelector('[data-profile-actions]');
+    const cancelBtn = form.querySelector('[data-profile-cancel]');
+    const saveBtn = form.querySelector('[data-profile-save]');
+
+    if(cargaSelect && modoLabel && modoSelect && grid1h && grid2h && actions && cancelBtn && saveBtn){
+      const initialCarga = cargaSelect.value;
+      const initialModo = modoSelect.value;
+
+      function setGridVisibility(mode){
+        if(mode === '2h'){
+          grid1h.hidden = true;
+          grid2h.hidden = false;
+          disableGrid(grid1h);
+          enableGrid(grid2h);
+        }else{
+          grid1h.hidden = false;
+          grid2h.hidden = true;
+          enableGrid(grid1h);
+          disableGrid(grid2h);
+        }
+      }
+
+      function disableGrid(grid){
+        grid.querySelectorAll('input[name="slots"]').forEach(function(cb){
+          cb.disabled = true;
+        });
+      }
+
+      function enableGrid(grid){
+        grid.querySelectorAll('input[name="slots"]').forEach(function(cb){
+          cb.disabled = false;
+        });
+      }
+
+      function clearCheckboxes(){
+        form.querySelectorAll('input[name="slots"]').forEach(function(cb){
+          cb.checked = false;
+        });
+      }
+
+      function restoreCheckboxes(){
+        form.querySelectorAll('input[name="slots"]').forEach(function(cb){
+          cb.checked = cb.getAttribute('data-initial') === 'true';
+        });
+      }
+
+      function update2hOverlaps(){
+        grid2h.querySelectorAll('input[name="slots"]').forEach(function(cb){
+          cb.disabled = false;
+        });
+      }
+
+      function toggleModeSelect(){
+        const carga = cargaSelect.value;
+        modoLabel.hidden = (carga !== '2');
+      }
+
+      function showActions(){
+        actions.hidden = false;
+        saveBtn.hidden = true;
+      }
+
+      function resetActions(){
+        actions.hidden = true;
+        saveBtn.hidden = false;
+      }
+
+      function applySelection(resetChecks){
+        const carga = cargaSelect.value;
+        const modo = modoSelect.value;
+        toggleModeSelect();
+        if(carga === '2' && modo === 'CONSECUTIVAS'){
+          setGridVisibility('2h');
+        }else{
+          setGridVisibility('1h');
+        }
+        if(resetChecks){
+          clearCheckboxes();
+        }
+        update2hOverlaps();
+        showActions();
+      }
+
+      cargaSelect.addEventListener('change', function(){
+        if(cargaSelect.value === '1'){
+          modoSelect.value = 'CONSECUTIVAS';
+        }
+        applySelection(true);
+      });
+
+      modoSelect.addEventListener('change', function(){
+        applySelection(true);
+      });
+
+      grid2h.addEventListener('change', function(){
+        update2hOverlaps();
+      });
+
+      applySelection(false);
+
+      cancelBtn.addEventListener('click', function(){
+        cargaSelect.value = initialCarga;
+        modoSelect.value = initialModo;
+        toggleModeSelect();
+        if(initialCarga === '2' && initialModo === 'CONSECUTIVAS'){
+          setGridVisibility('2h');
+        }else{
+          setGridVisibility('1h');
+        }
+        restoreCheckboxes();
+        update2hOverlaps();
+        resetActions();
+      });
+    }
   }
 });

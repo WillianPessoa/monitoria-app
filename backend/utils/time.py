@@ -21,6 +21,15 @@ def week_bounds_sp(ref: datetime | None = None) -> tuple[date, date]:
     return monday, sunday
 
 
+def week_bounds_for_votacao(ref: datetime | None = None) -> tuple[date, date]:
+    base = ref or now_sp_naive()
+    monday, sunday = week_bounds_sp(base)
+    if base.weekday() >= 5:
+        monday = monday + timedelta(days=7)
+        sunday = monday + timedelta(days=6)
+    return monday, sunday
+
+
 def combine_date_time(day: date, time_value: time) -> datetime:
     return datetime.combine(day, time_value)
 

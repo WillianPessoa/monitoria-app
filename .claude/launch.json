@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "monitoria-app",
+      "runtimeExecutable": "flask",
+      "runtimeArgs": ["--app", "backend/app:create_app", "run", "--port", "5050", "--debug"],
+      "port": 5050
+    }
+  ]
+}

@@ -3,6 +3,8 @@
 **Priorização:** MoSCoW  
 **Sprint 0 — 30/04/2026**
 
+> `†` — História emergente: identificada durante o desenvolvimento e formalizada retroativamente. Não constava no planejamento inicial do Sprint 0.
+
 ---
 
 ## Épicos
@@ -61,6 +63,10 @@
 | US13 | monitor | ver minha agenda com agendamentos confirmados | me organizar                             | US10       |  **Must**  |
 | US14 | aluno   | cancelar um agendamento                       | liberar o horário se não puder ir        | US12       |   Should   |
 | US15 | monitor | bloquear um horário da agenda                 | marcar quando não estou disponível       | US10       |   Should   |
+| US16-novo `†` | monitor | cancelar uma sessão de monitoria confirmada | reagendar quando houver imprevistos | US25 | **Must** |
+| US24 `†` | aluno | votar em horário preferido para a sessão semanal de monitoria | o monitor possa confirmar o horário mais conveniente | US07/US08, US06 | **Must** |
+| US25 `†` | monitor | configurar a carga horária semanal e confirmar o horário mais votado | os alunos saibam quando a sessão ocorrerá | US24, US10 | **Must** |
+| US26 `†` | aluno | confirmar ou cancelar minha presença em sessão coletiva de monitoria | o monitor saiba quantos alunos comparecerão | US24/US25, US06 | Should |
 
 ### EP04 — Registro de Atendimentos e Bolsas
 
@@ -86,13 +92,29 @@
 
 | Classificação | IDs | Total |
 |---|---|:---:|
-| **Must have** | TT01, TT02, TT03, TT04, TT05, US01, US02, US06, US07, US08, US10, US11, US12, US13, US16, US18, US20 | 17 |
-| **Should have** | US03, US04, US09, US14, US15, US17, US19, US21 | 8 |
-| **Could have** | US05, US22, US23 | 3 |
+| **Must have** | TT01, TT02, TT03, TT04, TT05, US01, US02, US06, US07, US08, US10, US11, US12, US13, US16, US16-novo, US18, US20, US24, US25 | 20 |
+| **Should have** | US03, US04, US09, US14, US15, US17, US19, US21, US26 | 9 |
+| **Could have** | US05, US22 | 2 |
+| **Won't do** | US23 | 1 |
 
 ---
 
 > Os critérios de aceitação de cada história estão em [`docs/criterios-de-aceitacao.md`](criterios-de-aceitacao.md).
+
+## Histórias Emergentes (`†`)
+
+Histórias identificadas durante o desenvolvimento — implementadas pelo time sem US formal prévia, formalizadas retroativamente pelo QM.
+
+| ID | Sprint em que emergiu | Motivo da emergência | Issue |
+|---|---|---|---|
+| US16-novo | Sprint 4 | Necessidade de cancelar sessão confirmada não prevista no US16 original (que cobre apenas o registro de presença pós-sessão) | — |
+| US24 | Sprint 3/4 | Time implementou votação de horário como mecanismo de coordenação entre alunos e monitor, sem US prévia | [#36](https://github.com/WillianPessoa/monitoria-app/issues/36) |
+| US25 | Sprint 3/4 | Contrapartida obrigatória de US24: monitor precisa configurar a votação e confirmar o horário resultante | [#37](https://github.com/WillianPessoa/monitoria-app/issues/37) |
+| US26 | Sprint 3/4 | Presença em sessão coletiva é distinta de presença em atendimento individual (US16); implementada junto ao sistema de votação | [#38](https://github.com/WillianPessoa/monitoria-app/issues/38) |
+
+> **Observação QM:** a existência de histórias emergentes indica que o épico EP03 (Agenda e Agendamento) foi subestimado no planejamento inicial — o sistema de sessões coletivas com votação não estava mapeado como requisito. Recomenda-se incluir sessões coletivas no escopo do planejamento em projetos futuros.
+
+---
 
 ## Definition of Ready (DoR)
 

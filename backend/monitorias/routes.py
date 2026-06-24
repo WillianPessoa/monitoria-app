@@ -1,9 +1,9 @@
 from flask import render_template, flash, redirect, url_for, request, session
 
 from auth.decorators import login_required, require_role
+from disciplinas import repository as disciplinas_repository
 from disciplinas import service as disciplinas_service
 from monitorias import bp, service
-from disciplinas import service as disciplinas_service
 from utils.time import hours_until, now_sp_naive, week_bounds_sp
 from usuarios import repository as usuarios_repository
 
@@ -103,6 +103,9 @@ def confirmar_votacao(votacao_id):
         flash("Votação inválida.", "error")
         return redirect(url_for("agenda.index"))
 
+    weekly_hours, split_mode = service.get_votacao_config(votacao)
+    max_select = 1 if weekly_hours == 1 or split_mode == "CONSECUTIVAS" else 2
+
     monitor = service.get_active_monitor_for_disciplina(votacao["disciplina_id"])
     if not monitor or monitor["monitor_id"] != user_id:
         flash("Você não tem permissão para confirmar esta votação.", "error")
@@ -112,11 +115,13 @@ def confirmar_votacao(votacao_id):
     required_votes = max(1, (total_alunos + 1) // 2)
 
     if not slots:
-        flash("Selecione uma ou duas opções de horário.", "error")
+        empty_message = "Selecione uma opção de horário." if max_select == 1 else "Selecione uma ou duas opções de horário."
+        flash(empty_message, "error")
         return redirect(url_for("agenda.index"))
 
-    if len(slots) > 2:
-        flash("Selecione no máximo duas opções de horário.", "error")
+    if len(slots) > max_select:
+        message = "Selecione apenas 1 opção de horário." if max_select == 1 else "Selecione no máximo duas opções de horário."
+        flash(message, "error")
         return redirect(url_for("agenda.index"))
 
     success, error = service.confirm_votacao_slots(
@@ -126,6 +131,8 @@ def confirmar_votacao(votacao_id):
         votacao["semana_inicio"],
         slots,
         required_votes,
+        weekly_hours,
+        split_mode,
     )
     if success:
         flash("Monitoria confirmada para a semana.", "success")
@@ -136,6 +143,51 @@ def confirmar_votacao(votacao_id):
             flash("Seleção inválida. Escolha horários válidos na grade.", "error")
         else:
             flash("Não foi possível confirmar a votação.", "error")
+    return redirect(url_for("agenda.index"))
+
+
+@bp.post("/votacao/<int:votacao_id>/configurar")
+@login_required
+def configurar_votacao(votacao_id):
+    user_id = session.get("user_id")
+    carga_raw = request.form.get("carga_horaria", "1")
+    modo_2h = request.form.get("modo_2h", "CONSECUTIVAS").upper()
+
+    try:
+        carga_horaria = int(carga_raw)
+    except (TypeError, ValueError):
+        carga_horaria = 1
+
+    if carga_horaria not in {1, 2}:
+        flash("Carga horária inválida.", "error")
+        return redirect(url_for("agenda.index"))
+
+    if modo_2h not in {"CONSECUTIVAS", "SEPARADAS"}:
+        modo_2h = "CONSECUTIVAS"
+
+    votacao = service.get_votacao_by_id(votacao_id)
+    if not votacao or votacao["status"] != "ABERTA":
+        flash("Votação inválida.", "error")
+        return redirect(url_for("agenda.index"))
+
+    monitor = service.get_active_monitor_for_disciplina(votacao["disciplina_id"])
+    if not monitor or monitor["monitor_id"] != user_id:
+        flash("Você não tem permissão para configurar esta votação.", "error")
+        return redirect(url_for("agenda.index"))
+
+    if carga_horaria == 1:
+        modo_2h = "CONSECUTIVAS"
+
+    if service.update_votacao_config(votacao_id, carga_horaria, modo_2h):
+        service.sync_open_votacao_opcoes_for_monitor(
+            votacao["disciplina_id"],
+            user_id,
+            votacao["semana_inicio"],
+            votacao["semana_fim"],
+        )
+        flash("Configuração de votação atualizada.", "success")
+    else:
+        flash("Não foi possível atualizar a votação.", "error")
     return redirect(url_for("agenda.index"))
 
 
@@ -153,7 +205,7 @@ def cancelar_sessao(sessao_id):
         return redirect(url_for("agenda.index"))
 
     if hours_until(sessao["data_inicio"], now_sp_naive()) <= 6:
-        flash("Cancelamento permitido somente com mais de 6 horas de antecedência.", "error")
+        flash("Cancelamento não permitido com menos de 6 horas de antecedência", "error")
         return redirect(url_for("agenda.index"))
 
     if service.cancel_session(sessao_id, "Cancelado pelo monitor."):
@@ -168,3 +220,99 @@ def cancelar_sessao(sessao_id):
     else:
         flash("Não foi possível cancelar a sessão.", "error")
     return redirect(url_for("agenda.index"))
+
+
+@bp.post("/sessoes/<int:sessao_id>/registrar")
+@login_required
+def registrar_sessao(sessao_id):
+    user_id = session.get("user_id")
+    sessao = service.get_session_by_id(sessao_id)
+    if not sessao or sessao["monitor_id"] != user_id:
+        flash("Você não tem permissão para registrar esta sessão.", "error")
+        return redirect(url_for("agenda.index"))
+
+    if sessao["data_fim"] > now_sp_naive():
+        flash("Só é possível registrar monitorias já realizadas.", "error")
+        return redirect(url_for("agenda.index"))
+
+    assunto = request.form.get("assunto", "").strip()
+    if not assunto:
+        flash("Informe o assunto abordado na monitoria.", "error")
+        return redirect(url_for("agenda.index"))
+
+    presentes_raw = request.form.getlist("presentes")
+    presentes = set()
+    for raw in presentes_raw:
+        try:
+            presentes.add(int(raw))
+        except (TypeError, ValueError):
+            continue
+
+    alunos = disciplinas_repository.list_alunos_by_disciplina(sessao["disciplina_id"])
+    for aluno in alunos:
+        aluno_id = aluno["id"]
+        status = "CONFIRMADA" if aluno_id in presentes else "AUSENTE"
+        service.set_presenca(sessao_id, aluno_id, status)
+
+    materiais_raw = request.form.get("materiais", "").strip()
+    materiais = []
+    for line in materiais_raw.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if "|" in line:
+            parts = line.split("|", 1)
+            materiais.append({"descricao": parts[0].strip(), "url": parts[1].strip() or None})
+        else:
+            materiais.append({"descricao": line, "url": None})
+    if materiais:
+        service.save_sessao_materiais(sessao_id, materiais)
+
+    if service.save_session_report(sessao_id, assunto):
+        flash("Registro da monitoria salvo com sucesso.", "success")
+    else:
+        flash("Não foi possível salvar o registro da monitoria.", "error")
+    return redirect(url_for("agenda.index"))
+
+
+@bp.get("/sessoes/<int:sessao_id>")
+@login_required
+def sessao_detalhe(sessao_id):
+    user_id = session.get("user_id")
+    role = session.get("papel")
+    sessao = service.get_session_by_id(sessao_id)
+    if not sessao:
+        flash("Sessão não encontrada.", "error")
+        return redirect(url_for("home"))
+
+    monitor = service.get_active_monitor_for_disciplina(sessao["disciplina_id"])
+    is_monitor = monitor and monitor.get("monitor_id") == user_id
+    is_aluno = role == "ALUNO" and disciplinas_repository.is_aluno_matriculado(
+        sessao["disciplina_id"],
+        user_id,
+    )
+
+    if role not in {"ADMIN", "PROFESSOR"} and not (is_monitor or is_aluno):
+        flash("Você não tem permissão para acessar esta sessão.", "error")
+        return redirect(url_for("home"))
+
+    participantes = service.list_session_participants(sessao_id)
+    materiais = service.list_sessao_materiais(sessao_id)
+    minha_presenca = None
+    if is_aluno:
+        minha_presenca = next((p for p in participantes if p["aluno_id"] == user_id), None)
+    alunos_sessao = []
+    now_value = now_sp_naive()
+    if is_monitor and sessao["status"] == "AGENDADA" and sessao["data_fim"] <= now_value:
+        alunos_sessao = service.list_alunos_for_sessao(sessao["disciplina_id"], sessao_id)
+    return render_template(
+        "monitorias/sessao_detalhe.html",
+        sessao=sessao,
+        participantes=participantes,
+        materiais=materiais,
+        is_monitor=is_monitor,
+        is_aluno=is_aluno,
+        minha_presenca=minha_presenca,
+        alunos_sessao=alunos_sessao,
+        now_value=now_value,
+    )

@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% block title %}Participação por disciplina — Monitoria App{% endblock %}
+{% block page_kicker %}Relatórios{% endblock %}
+{% block page_title %}Participação por disciplina{% endblock %}
+{% block page_sub %}Selecione uma disciplina e período para gerar o relatório.{% endblock %}
+
+{% block content %}
+<div class="stack">
+
+  <nav class="tab-bar">
+    <a href="{{ url_for('relatorios.index') }}" class="button">Horas por monitor</a>
+    <a href="{{ url_for('relatorios.participacao') }}" class="button active">Participação por disciplina</a>
+  </nav>
+
+  <form method="get" class="card" style="padding:16px 20px;">
+    <div class="filter-bar">
+      <div class="filter-field">
+        <label for="disciplina_id">Disciplina</label>
+        <select id="disciplina_id" name="disciplina_id" required>
+          <option value="">Selecione uma disciplina</option>
+          {% for disciplina in disciplinas %}
+          <option value="{{ disciplina.id }}" {% if filtro_disciplina_id == disciplina.id %}selected{% endif %}>
+            {{ disciplina.codigo }} — {{ disciplina.nome }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="data_inicio">De</label>
+        <input id="data_inicio" type="date" name="data_inicio" value="{{ data_inicio }}"
+          onchange="var f=document.getElementById('data_fim');f.min=this.value;if(f.value&&f.value<this.value)f.value=this.value;" />
+      </div>
+      <div class="filter-field">
+        <label for="data_fim">Até</label>
+        <input id="data_fim" type="date" name="data_fim" value="{{ data_fim }}" min="{{ data_inicio }}" />
+      </div>
+      <button type="submit" style="align-self:flex-end;">Gerar relatório</button>
+    </div>
+  </form>
+
+  {% if relatorio %}
+  {% set s = relatorio.sumario %}
+  {% if s %}
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">Sessões realizadas</div>
+      <div class="stat-value">{{ s.total_sessoes }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Alunos atendidos</div>
+      <div class="stat-value">{{ s.alunos_atendidos }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Horas realizadas</div>
+      <div class="stat-value">{{ s.horas_realizadas }}<span style="font-size:16px;color:var(--muted);">h</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Monitores ativos</div>
+      <div class="stat-value">{{ s.monitores_ativos }}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <div>
+        <div style="font-size:11.5px;color:var(--muted);">{{ s.disciplina_codigo }} — {{ s.disciplina_nome }}</div>
+        <div style="font-size:12.5px;color:var(--muted);">{{ data_inicio }} a {{ data_fim }} · {{ semanas_no_periodo }} semana{{ 's' if semanas_no_periodo != 1 }} · mínimo esperado: {{ minimo_esperado_horas }}h/monitor</div>
+      </div>
+      <a href="{{ url_for('relatorios.participacao_csv', disciplina_id=filtro_disciplina_id, data_inicio=data_inicio, data_fim=data_fim) }}"
+         class="button btn-outline btn-sm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Exportar CSV
+      </a>
+    </div>
+
+    {% if relatorio.monitores %}
+    <div style="margin-top:16px;">
+      <div class="user-list-head" style="background:transparent;padding:8px 0;border-bottom:1px solid var(--border);">
+        <span style="flex:1;">Monitor</span>
+        <span style="flex:none;width:80px;text-align:right;">Sessões</span>
+        <span style="flex:none;width:70px;text-align:right;">Horas</span>
+        <span style="flex:none;width:100px;text-align:right;">Alunos</span>
+        <span style="flex:none;width:130px;text-align:right;">Mínimo 1h/sem.</span>
+      </div>
+      {% for m in relatorio.monitores %}
+      <div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);">
+        <div class="user-avatar" aria-hidden="true"></div>
+        <div style="flex:1;font-weight:700;font-size:13.5px;">{{ m.monitor_nome }}</div>
+        <span style="flex:none;width:80px;text-align:right;font-family:'Space Grotesk',sans-serif;font-weight:700;">{{ m.sessoes }}</span>
+        <span style="flex:none;width:70px;text-align:right;font-family:'Space Grotesk',sans-serif;font-weight:700;">{{ m.horas }}h</span>
+        <span style="flex:none;width:100px;text-align:right;font-family:'Space Grotesk',sans-serif;font-weight:700;">{{ m.alunos_atendidos }}</span>
+        <span style="flex:none;width:130px;text-align:right;">
+          {% if m.horas >= minimo_esperado_horas %}
+          <span class="status-pill success" style="font-size:11.5px;">Atingiu</span>
+          {% else %}
+          <span class="status-pill error" style="font-size:11.5px;">{{ m.horas }}/{{ minimo_esperado_horas }}h</span>
+          {% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted" style="margin-top:14px;">Nenhum atendimento registrado no período.</p>
+    {% endif %}
+  </div>
+
+  {% else %}
+  <div class="card"><p class="muted">Disciplina não encontrada ou inativa.</p></div>
+  {% endif %}
+
+  {% elif filtro_disciplina_id %}
+  <div class="card"><p class="muted">Nenhum dado encontrado para a seleção.</p></div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,62 +1,69 @@
 {% extends 'base.html' %}
-{% block title %}Indicar monitor - Monitoria App{% endblock %}
+{% block title %}Indicar monitor — Monitoria App{% endblock %}
+{% block page_kicker %}Professor{% endblock %}
+{% block page_title %}Indicar monitor{% endblock %}
+{% block page_sub %}Selecione a disciplina e o aluno. A indicação segue para aprovação do administrador.{% endblock %}
+
 {% block content %}
-<section class="card">
-  <h2>Indicar monitor</h2>
-  {% if not disciplinas %}
-  <p class="muted">Você ainda não tem disciplinas cadastradas.</p>
-  {% else %}
-  <form method="post">
-    <label for="disciplina_id">Disciplina</label>
-    <select id="disciplina_id" name="disciplina_id" required>
-      <option value="">Selecione</option>
-      {% for disciplina in disciplinas %}
-      <option value="{{ disciplina.id }}">{{ disciplina.codigo }} - {{ disciplina.nome }}</option>
-      {% endfor %}
-    </select>
+<div class="two-col" style="align-items:start;">
 
-    <label for="aluno_id">Aluno</label>
-    <select id="aluno_id" name="aluno_id" required>
-      <option value="">Selecione</option>
-      {% for aluno in alunos %}
-      <option value="{{ aluno.id }}">{{ aluno.nome }} ({{ aluno.email }})</option>
-      {% else %}
-      <option value="" disabled>Nenhum aluno ativo</option>
-      {% endfor %}
-    </select>
+  {# ─ Formulário ─ #}
+  <div class="card">
+    {% if not disciplinas %}
+    <p class="muted">Você não tem disciplinas cadastradas para indicar monitores.</p>
+    {% else %}
+    <form method="post" class="form-stack">
+      <label for="disciplina_id">Disciplina
+        <select id="disciplina_id" name="disciplina_id" required>
+          <option value="">Selecione</option>
+          {% for disciplina in disciplinas %}
+          <option value="{{ disciplina.id }}">{{ disciplina.codigo }} — {{ disciplina.nome }}</option>
+          {% endfor %}
+        </select>
+      </label>
 
-    <button type="submit" class="button">Enviar indicação</button>
-  </form>
-  {% endif %}
-</section>
+      <label for="aluno_id">Aluno
+        <select id="aluno_id" name="aluno_id" required>
+          <option value="">Selecione</option>
+          {% for aluno in alunos %}
+          <option value="{{ aluno.id }}">{{ aluno.nome }} ({{ aluno.email }})</option>
+          {% else %}
+          <option value="" disabled>Nenhum aluno ativo</option>
+          {% endfor %}
+        </select>
+      </label>
 
-<section class="card stack-gap">
-  <h2>Minhas indicações</h2>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Disciplina</th>
-          <th>Aluno</th>
-          <th>Status</th>
-          <th>Criado em</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for indicacao in indicacoes %}
-        <tr>
-          <td>{{ indicacao.disciplina_codigo }} - {{ indicacao.disciplina_nome }}</td>
-          <td>{{ indicacao.aluno_nome }}</td>
-          <td>{{ indicacao.status }}</td>
-          <td>{{ indicacao.criado_em }}</td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="4">Nenhuma indicação encontrada.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+      <button type="submit" style="align-self:flex-start;">Enviar indicação</button>
+    </form>
+    {% endif %}
   </div>
-</section>
+
+  {# ─ Histórico de indicações ─ #}
+  <div>
+    <div class="section-head"><h3>Minhas indicações</h3></div>
+    {% if indicacoes %}
+    <div class="pending-list">
+      {% for ind in indicacoes %}
+      <div class="pending-card" style="padding:14px 18px;">
+        <div class="pending-avatar" aria-hidden="true"></div>
+        <div class="pending-body">
+          <div class="pending-name">{{ ind.aluno_nome }}</div>
+          <div class="pending-meta">{{ ind.disciplina_codigo }} — {{ ind.disciplina_nome }} · {{ ind.criado_em }}</div>
+        </div>
+        {% if ind.status == 'PENDENTE_APROVACAO' %}
+        <span class="status-pill warning">Pendente</span>
+        {% elif ind.status == 'ATIVO' %}
+        <span class="status-pill success">Aprovado</span>
+        {% else %}
+        <span class="status-pill error">Rejeitado</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card"><p class="muted">Nenhuma indicação enviada ainda.</p></div>
+    {% endif %}
+  </div>
+
+</div>
 {% endblock %}

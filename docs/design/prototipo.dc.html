@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Manrope', system-ui, sans-serif; background: #0b1018; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: rgba(125,160,190,0.25); border-radius: 10px; }
+  @keyframes dlgIn { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+  @keyframes ovIn { from { opacity: 0; } to { opacity: 1; } }
+  @media (max-width: 880px) {
+    [data-app-shell] { flex-direction: column !important; }
+    [data-sidebar] { width: 100% !important; height: auto !important; flex-direction: row !important; overflow-x: auto !important; }
+    [data-sidebar-nav] { flex-direction: row !important; }
+    [data-sidebar-foot] { display: none !important; }
+  }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; flex-direction:column; background:#0b1018;">
+
+  <!-- ===== PROTOTYPE CONTROL STRIP (chrome, not the app) ===== -->
+  <div style="flex:none; display:flex; flex-wrap:wrap; align-items:center; gap:18px; padding:10px 18px; background:#10151e; border-bottom:1px solid rgba(255,255,255,0.06);">
+    <div style="display:flex; align-items:center; gap:9px; color:#e7edf4; font-weight:700; font-size:13px; letter-spacing:.2px;">
+      <span style="width:18px; height:18px; border-radius:5px; background:linear-gradient(135deg,#4fd1c5,#7dd3fc); display:inline-block;"></span>
+      Monitoria App · protótipo
+    </div>
+    <div style="width:1px; height:20px; background:rgba(255,255,255,0.08);"></div>
+
+    <div style="display:flex; align-items:center; gap:7px;">
+      <span style="color:#6b7886; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.6px;">Papel</span>
+      <div style="display:flex; background:#1a212c; border-radius:9px; padding:3px;">
+        <sc-for list="{{ roleSeg }}" as="s" hint-placeholder-count="4">
+          <button onClick="{{ s.onClick }}" style="border:none; cursor:pointer; font:inherit; font-size:12px; font-weight:600; padding:6px 12px; border-radius:7px; background:{{ s.bg }}; color:{{ s.col }};">{{ s.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:7px;">
+      <span style="color:#6b7886; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.6px;">Nav</span>
+      <div style="display:flex; background:#1a212c; border-radius:9px; padding:3px;">
+        <sc-for list="{{ navSeg }}" as="s" hint-placeholder-count="2">
+          <button onClick="{{ s.onClick }}" style="border:none; cursor:pointer; font:inherit; font-size:12px; font-weight:600; padding:6px 12px; border-radius:7px; background:{{ s.bg }}; color:{{ s.col }};">{{ s.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:7px;">
+      <span style="color:#6b7886; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.6px;">Tema</span>
+      <div style="display:flex; background:#1a212c; border-radius:9px; padding:3px;">
+        <sc-for list="{{ themeSeg }}" as="s" hint-placeholder-count="2">
+          <button onClick="{{ s.onClick }}" style="border:none; cursor:pointer; font:inherit; font-size:12px; font-weight:600; padding:6px 12px; border-radius:7px; background:{{ s.bg }}; color:{{ s.col }};">{{ s.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <sc-if value="{{ showHomeVariant }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; align-items:center; gap:7px;">
+        <span style="color:#6b7886; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.6px;">Dashboard</span>
+        <div style="display:flex; background:#1a212c; border-radius:9px; padding:3px;">
+          <sc-for list="{{ homeSeg }}" as="s" hint-placeholder-count="2">
+            <button onClick="{{ s.onClick }}" style="border:none; cursor:pointer; font:inherit; font-size:12px; font-weight:600; padding:6px 12px; border-radius:7px; background:{{ s.bg }}; color:{{ s.col }};">{{ s.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showAgendaVariant }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; align-items:center; gap:7px;">
+        <span style="color:#6b7886; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.6px;">Agenda</span>
+        <div style="display:flex; background:#1a212c; border-radius:9px; padding:3px;">
+          <sc-for list="{{ agendaSeg }}" as="s" hint-placeholder-count="2">
+            <button onClick="{{ s.onClick }}" style="border:none; cursor:pointer; font:inherit; font-size:12px; font-weight:600; padding:6px 12px; border-radius:7px; background:{{ s.bg }}; color:{{ s.col }};">{{ s.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <div style="margin-left:auto; display:flex; gap:7px;">
+      <button onClick="{{ goLogin }}" style="border:1px solid rgba(255,255,255,0.12); background:transparent; color:#aab7c4; cursor:pointer; font:inherit; font-size:12px; font-weight:600; padding:6px 12px; border-radius:8px;">Login</button>
+      <button onClick="{{ goFirst }}" style="border:1px solid rgba(255,255,255,0.12); background:transparent; color:#aab7c4; cursor:pointer; font:inherit; font-size:12px; font-weight:600; padding:6px 12px; border-radius:8px;">1º acesso</button>
+    </div>
+  </div>
+
+  <!-- ===== APP (theme-scoped) ===== -->
+  <div style="flex:1; --bg:{{ t.bg }}; --bgEnd:{{ t.bgEnd }}; --appBg:{{ t.appBg }}; --card:{{ t.card }}; --surface2:{{ t.surface2 }}; --border:{{ t.border }}; --muted:{{ t.muted }}; --text:{{ t.text }}; --primary:{{ t.primary }}; --primaryFg:{{ t.primaryFg }}; --accent:{{ t.accent }}; --success:{{ t.success }}; --successBg:{{ t.successBg }}; --warning:{{ t.warning }}; --warningBg:{{ t.warningBg }}; --error:{{ t.error }}; --errorBg:{{ t.errorBg }}; --shadow:{{ t.shadow }}; background:{{ t.appBg }}; color:var(--text); min-height:0; position:relative;">
+
+    <!-- AUTH SCREENS -->
+    <sc-if value="{{ isAuth }}" hint-placeholder-val="{{ false }}">
+      <div style="min-height:calc(100vh - 56px); display:flex; align-items:center; justify-content:center; padding:40px 20px;">
+        <div style="width:100%; max-width:400px; background:var(--card); border:1px solid var(--border); border-radius:18px; box-shadow:var(--shadow); padding:34px 30px;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+            <span style="width:26px; height:26px; border-radius:7px; background:linear-gradient(135deg,var(--primary),var(--accent)); display:inline-block;"></span>
+            <span style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:17px;">Monitoria App</span>
+          </div>
+          <h1 style="font-family:'Space Grotesk',sans-serif; font-size:24px; margin:18px 0 4px;">{{ authTitle }}</h1>
+          <p style="color:var(--muted); font-size:14px; margin:0 0 22px; line-height:1.5;">{{ authSub }}</p>
+
+          <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; flex-direction:column; gap:14px;">
+              <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:600; color:var(--muted);">E-mail
+                <input type="email" placeholder="voce@email.com" style="width:100%; padding:11px 13px; border-radius:10px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font:inherit; font-size:14px; outline:none;" style-focus="border-color:var(--primary);">
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:600; color:var(--muted);">Senha
+                <input type="password" placeholder="••••••••" style="width:100%; padding:11px 13px; border-radius:10px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font:inherit; font-size:14px; outline:none;" style-focus="border-color:var(--primary);">
+              </label>
+              <button onClick="{{ exitAuth }}" style="margin-top:6px; width:100%; justify-content:center; display:inline-flex; align-items:center; gap:8px; padding:12px 16px; border-radius:11px; border:none; background:var(--primary); color:var(--primaryFg); font:inherit; font-weight:700; font-size:14px; cursor:pointer;" style-hover="filter:brightness(1.06);">Entrar</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isFirst }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; flex-direction:column; gap:14px;">
+              <div style="display:flex; gap:9px; padding:11px 13px; border-radius:11px; background:var(--warningBg); border:1px solid var(--warning); color:var(--warning); font-size:12.5px; font-weight:600; line-height:1.45;">Por segurança, defina uma nova senha antes de continuar.</div>
+              <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:600; color:var(--muted);">Nova senha
+                <input type="password" placeholder="••••••••" style="width:100%; padding:11px 13px; border-radius:10px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font:inherit; font-size:14px; outline:none;" style-focus="border-color:var(--primary);">
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:600; color:var(--muted);">Confirmar nova senha
+                <input type="password" placeholder="••••••••" style="width:100%; padding:11px 13px; border-radius:10px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font:inherit; font-size:14px; outline:none;" style-focus="border-color:var(--primary);">
+              </label>
+              <button onClick="{{ exitAuth }}" style="margin-top:6px; width:100%; justify-content:center; display:inline-flex; align-items:center; gap:8px; padding:12px 16px; border-radius:11px; border:none; background:var(--primary); color:var(--primaryFg); font:inherit; font-weight:700; font-size:14px; cursor:pointer;" style-hover="filter:brightness(1.06);">Salvar e continuar</button>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- APP SHELL -->
+    <sc-if value="{{ isApp }}" hint-placeholder-val="{{ true }}">
+      <div data-app-shell style="display:flex; align-items:stretch; min-height:calc(100vh - 56px);">
+
+        <!-- SIDEBAR -->
+        <sc-if value="{{ navSidebar }}" hint-placeholder-val="{{ true }}">
+          <aside data-sidebar style="flex:none; width:248px; background:var(--card); border-right:1px solid var(--border); display:flex; flex-direction:column; padding:18px 14px; gap:6px;">
+            <div style="display:flex; align-items:center; gap:10px; padding:6px 8px 14px;">
+              <span style="width:30px; height:30px; border-radius:9px; background:linear-gradient(135deg,var(--primary),var(--accent)); display:inline-block;"></span>
+              <div style="line-height:1.1;">
+                <div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px;">Monitoria</div>
+                <div style="font-size:11px; color:var(--muted);">UFRJ · IC</div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; padding:9px 10px; margin-bottom:6px; border-radius:11px; background:var(--surface2);">
+              <span style="width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--primary)); flex:none;"></span>
+              <div style="min-width:0; line-height:1.2;">
+                <div style="font-weight:700; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ userName }}</div>
+                <div style="font-size:11px; color:var(--primary); font-weight:700;">{{ roleLabel }}</div>
+              </div>
+            </div>
+            <div style="font-size:10.5px; font-weight:700; letter-spacing:.7px; text-transform:uppercase; color:var(--muted); padding:6px 10px 2px;">Navegação</div>
+            <nav data-sidebar-nav style="display:flex; flex-direction:column; gap:3px;">
+              <sc-for list="{{ nav }}" as="n" hint-placeholder-count="4">
+                <button onClick="{{ n.onClick }}" style="position:relative; display:flex; align-items:center; gap:11px; width:100%; text-align:left; border:none; cursor:pointer; font:inherit; font-size:13.5px; font-weight:600; padding:10px 11px; border-radius:10px; background:{{ n.bg }}; color:{{ n.txt }};" style-hover="background:var(--surface2);">
+                  <span style="position:absolute; left:-14px; top:50%; transform:translateY(-50%); width:3px; height:18px; border-radius:3px; background:{{ n.bar }};"></span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ n.ic }}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="{{ n.icon }}"></path></svg>
+                  {{ n.label }}
+                </button>
+              </sc-for>
+            </nav>
+            <div data-sidebar-foot style="margin-top:auto; display:flex; flex-direction:column; gap:3px; padding-top:10px; border-top:1px solid var(--border);">
+              <button onClick="{{ themeToggle }}" style="display:flex; align-items:center; gap:11px; width:100%; text-align:left; border:none; cursor:pointer; font:inherit; font-size:13px; font-weight:600; padding:9px 11px; border-radius:10px; background:transparent; color:var(--muted);" style-hover="background:var(--surface2);">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="{{ themeIcon }}"></path></svg>{{ themeLabel }}
+              </button>
+              <button onClick="{{ goLogin }}" style="display:flex; align-items:center; gap:11px; width:100%; text-align:left; border:none; cursor:pointer; font:inherit; font-size:13px; font-weight:600; padding:9px 11px; border-radius:10px; background:transparent; color:var(--error);" style-hover="background:var(--errorBg);">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a1 1 0 011 1v14a1 1 0 01-1 1h-3M10 17l-5-5 5-5M5 12h11"></path></svg>Sair
+              </button>
+            </div>
+          </aside>
+        </sc-if>
+
+        <!-- MAIN COLUMN -->
+        <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+
+          <!-- TOPBAR NAV -->
+          <sc-if value="{{ navTopbar }}" hint-placeholder-val="{{ false }}">
+            <header style="flex:none; display:flex; align-items:center; gap:14px; padding:12px 26px; background:var(--card); border-bottom:1px solid var(--border);">
+              <div style="display:flex; align-items:center; gap:9px; margin-right:6px;">
+                <span style="width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,var(--primary),var(--accent)); display:inline-block;"></span>
+                <span style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px;">Monitoria</span>
+              </div>
+              <nav style="display:flex; gap:4px; overflow-x:auto;">
+                <sc-for list="{{ nav }}" as="n" hint-placeholder-count="4">
+                  <button onClick="{{ n.onClick }}" style="display:flex; align-items:center; gap:8px; border:none; cursor:pointer; white-space:nowrap; font:inherit; font-size:13px; font-weight:600; padding:9px 13px; border-radius:9px; background:{{ n.bg }}; color:{{ n.txt }};" style-hover="background:var(--surface2);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{ n.ic }}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="{{ n.icon }}"></path></svg>{{ n.label }}
+                  </button>
+                </sc-for>
+              </nav>
+              <div style="margin-left:auto; display:flex; align-items:center; gap:10px;">
+                <button onClick="{{ themeToggle }}" style="border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center;" style-hover="background:var(--surface2);">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="{{ themeIcon }}"></path></svg>
+                </button>
+                <span style="width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--primary)); flex:none;"></span>
+              </div>
+            </header>
+          </sc-if>
+
+          <!-- PAGE HEADER -->
+          <div style="flex:none; display:flex; align-items:flex-end; gap:18px; flex-wrap:wrap; padding:26px 30px 18px;">
+            <div style="min-width:0;">
+              <div style="font-size:11.5px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--primary); margin-bottom:7px;">{{ pageKicker }}</div>
+              <h1 style="font-family:'Space Grotesk',sans-serif; font-size:27px; line-height:1.1; margin:0;">{{ pageTitle }}</h1>
+              <p style="color:var(--muted); font-size:14px; margin:7px 0 0; line-height:1.45; max-width:60ch;">{{ pageSub }}</p>
+            </div>
+            <sc-if value="{{ showAction }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ onAction }}" style="margin-left:auto; display:inline-flex; align-items:center; gap:8px; padding:11px 17px; border-radius:11px; border:none; background:var(--primary); color:var(--primaryFg); font:inherit; font-weight:700; font-size:14px; cursor:pointer; white-space:nowrap;" style-hover="filter:brightness(1.06);">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>{{ actionLabel }}
+              </button>
+            </sc-if>
+          </div>
+
+          <!-- SCREEN CONTENT -->
+          <div style="flex:1; padding:6px 30px 40px;">
+
+            <!-- ========== ALUNO HOME ========== -->
+            <sc-if value="{{ v.alunoHome }}" hint-placeholder-val="{{ false }}">
+              <sc-if value="{{ homeIsA }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex; flex-direction:column; gap:20px;">
+                  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:16px;">
+                    <div style="background:linear-gradient(135deg,var(--primary),var(--accent)); border-radius:16px; padding:20px; color:#04201d; box-shadow:var(--shadow);">
+                      <div style="font-size:12.5px; font-weight:700; opacity:.85;">Próximo atendimento</div>
+                      <div style="font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; margin:8px 0 2px;">Qua, 19 jun · 14h</div>
+                      <div style="font-size:13px; font-weight:600; opacity:.9;">Cálculo I · com Rafael S. · Sala D-204</div>
+                    </div>
+                    <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow);">
+                      <div style="font-size:12.5px; font-weight:600; color:var(--muted);">Agendamentos ativos</div>
+                      <div style="font-family:'Space Grotesk',sans-serif; font-size:34px; font-weight:700; margin-top:4px;">2</div>
+                      <button onClick="{{ goBuscar }}" style="margin-top:6px; background:none; border:none; padding:0; color:var(--primary); font:inherit; font-weight:700; font-size:12.5px; cursor:pointer;">Ver agendamentos →</button>
+                    </div>
+                    <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow);">
+                      <div style="font-size:12.5px; font-weight:600; color:var(--muted);">Disciplinas matriculadas</div>
+                      <div style="font-family:'Space Grotesk',sans-serif; font-size:34px; font-weight:700; margin-top:4px;">4</div>
+                      <div style="margin-top:6px; font-size:12.5px; color:var(--muted);">3 com monitoria ativa</div>
+                    </div>
+                  </div>
+
+                  <div style="display:grid; grid-template-columns:1.6fr 1fr; gap:18px;">
+                    <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow);">
+                      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                        <h3 style="margin:0; font-size:15px;">Próximos agendamentos</h3>
+                        <button onClick="{{ goAgend }}" style="background:none; border:none; padding:0; color:var(--primary); font:inherit; font-weight:700; font-size:12.5px; cursor:pointer;">Ver todos</button>
+                      </div>
+                      <div style="display:flex; flex-direction:column; gap:10px;">
+                        <sc-for list="{{ alunoUpcoming }}" as="r" hint-placeholder-count="3">
+                          <div style="display:flex; align-items:center; gap:14px; padding:13px 14px; border-radius:12px; background:var(--surface2);">
+                            <div style="flex:none; width:46px; text-align:center;">
+                              <div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:17px;">{{ r.day }}</div>
+                              <div style="font-size:10.5px; color:var(--muted); text-transform:uppercase; font-weight:700;">{{ r.mon }}</div>
+                            </div>
+                            <div style="flex:1; min-width:0;">
+                              <div style="font-weight:700; font-size:13.5px;">{{ r.disc }}</div>
+                              <div style="font-size:12px; color:var(--muted);">{{ r.meta }}</div>
+                            </div>
+                            <span style="flex:none; font-size:11.5px; font-weight:700; padding:4px 11px; border-radius:999px; background:{{ r.pbg }}; color:{{ r.pc }};">{{ r.status }}</span>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </div>
+                    <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow);">
+                      <h3 style="margin:0 0 14px; font-size:15px;">Suas disciplinas</h3>
+                      <div style="display:flex; flex-direction:column; gap:9px;">
+                        <sc-for list="{{ alunoDisc }}" as="d" hint-placeholder-count="3">
+                          <button onClick="{{ goBuscar }}" style="display:flex; align-items:center; gap:11px; text-align:left; border:none; cursor:pointer; font:inherit; padding:11px 12px; border-radius:11px; background:var(--surface2); color:var(--text);" style-hover="filter:brightness(1.04);">
+                            <span style="flex:none; width:34px; height:34px; border-radius:9px; background:var(--card); display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:12px; color:var(--primary);">{{ d.code }}</span>
+                            <span style="flex:1; min-width:0;">
+                              <span style="display:block; font-weight:700; font-size:13px;">{{ d.name }}</span>
+                              <span style="display:block; font-size:11.5px; color:var(--muted);">{{ d.meta }}</span>
+                            </span>
+                          </button>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ homeIsB }}" hint-placeholder-val="{{ false }}">
+                <div style="display:grid; grid-template-columns:1fr 320px; gap:18px; align-items:start;">
+                  <div style="display:flex; flex-direction:column; gap:16px;">
+                    <div style="background:var(--card); border:1px solid var(--border); border-left:4px solid var(--primary); border-radius:16px; padding:22px; box-shadow:var(--shadow);">
+                      <div style="font-size:12.5px; font-weight:700; color:var(--primary); text-transform:uppercase; letter-spacing:.5px;">Sua próxima sessão</div>
+                      <div style="font-family:'Space Grotesk',sans-serif; font-size:26px; font-weight:700; margin:10px 0 4px;">Cálculo I — quarta, 19 jun às 14h</div>
+                      <div style="color:var(--muted); font-size:14px;">Monitor Rafael Souza · Sala D-204 · presencial</div>
+                      <div style="display:flex; gap:9px; margin-top:16px;">
+                        <button onClick="{{ goAgend }}" style="padding:9px 15px; border-radius:10px; border:none; background:var(--primary); color:var(--primaryFg); font:inherit; font-weight:700; font-size:13px; cursor:pointer;">Ver detalhes</button>
+                        <button onClick="{{ confirmCancel }}" style="padding:9px 15px; border-radius:10px; border:1px solid var(--border); background:transparent; color:var(--text); font:inherit; font-weight:700; font-size:13px; cursor:pointer;">Cancelar</button>
+                      </div>
+                    </div>
+                    <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow);">
+                      <h3 style="margin:0 0 14px; font-size:15px;">Histórico recente</h3>
+                      <div style="display:flex; flex-direction:column; gap:10px;">
+                        <sc-for list="{{ alunoUpcoming }}" as="r" hint-placeholder-count="3">
+                          <div style="display:flex; align-items:center; gap:14px; padding:11px 0; border-bottom:1px solid var(--border);">
+                            <div style="flex:1;"><div style="font-weight:700; font-size:13.5px;">{{ r.disc }}</div><div style="font-size:12px; color:var(--muted);">{{ r.meta }}</div></div>
+                            <span style="font-size:11.5px; font-weight:700; padding:4px 11px; border-radius:999px; background:{{ r.pbg }}; color:{{ r.pc }};">{{ r.status }}</span>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:14px;">
+                    <button onClick="{{ goBuscar }}" style="text-align:left; border:none; cursor:pointer; font:inherit; background:linear-gradient(135deg,var(--primary),var(--accent)); color:#04201d; border-radius:16px; padding:20px; box-shadow:var(--shadow);">
+                      <div style="font-weight:800; font-size:16px;">Buscar monitoria</div>
+                      <div style="font-size:13px; font-weight:600; opacity:.85; margin-top:4px;">Encontre horários livres nas suas disciplinas →</div>
+                    </button>
+                    <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px; box-shadow:var(--shadow);">
+                      <div style="display:flex; justify-content:space-between; padding:7px 0;"><span style="color:var(--muted); font-size:13px;">Agendamentos ativos</span><span style="font-family:'Space Grotesk',sans-serif; font-weight:700;">2</span></div>
+                      <div style="display:flex; justify-content:space-between; padding:7px 0; border-top:1px solid var(--border);"><span style="color:var(--muted); font-size:13px;">Sessões este mês</span><span style="font-family:'Space Grotesk',sans-serif; font-weight:700;">5</span></div>
+                      <div style="display:flex; justify-content:space-between; padding:7px 0; border-top:1px solid var(--border);"><span style="color:var(--muted); font-size:13px;">Disciplinas</span><span style="font-family:'Space Grotesk',sans-serif; font-weight:700;">4</span></div>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+            </sc-if>
+
+            <!-- ========== ALUNO BUSCAR ========== -->
+            <sc-if value="{{ v.alunoBuscar }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-direction:column; gap:18px;">
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                  <sc-for list="{{ discChips }}" as="c" hint-placeholder-count="4">
+                    <button style="border:1px solid {{ c.bd }}; cursor:pointer; font:inherit; font-size:13px; font-weight:600; padding:8px 14px; border-radius:999px; background:{{ c.bg }}; color:{{ c.col }};">{{ c.label }}</button>
+                  </sc-for>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px;">
+                  <sc-for list="{{ buscaSlots }}" as="s" hint-placeholder-count="4">
+                    <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:12px;">
+                      <div style="display:flex; align-items:center; gap:11px;">
+                        <span style="flex:none; width:40px; height:40px; border-radius:11px; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:12px; color:var(--primary);">{{ s.code }}</span>
+                        <div><div style="font-weight:700; font-size:14px;">{{ s.disc }}</div><div style="font-size:12px; color:var(--muted);">Monitor {{ s.monitor }}</div></div>
+                      </div>
+                      <div style="display:flex; flex-direction:column; gap:6px; font-size:13px;">
+                        <div style="display:flex; align-items:center; gap:8px; color:var(--text);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.7"><path d="M4 5h16v16H4zM4 9h16M8 3v4M16 3v4"></path></svg>{{ s.when }}</div>
+                        <div style="display:flex; align-items:center; gap:8px; color:var(--text);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.7"><circle cx="12" cy="10" r="3"></circle><path d="M12 2a7 7 0 00-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 00-7-7z"></path></svg>{{ s.local }}</div>
+                      </div>
+                      <button onClick="{{ confirmAgendar }}" style="margin-top:2px; width:100%; justify-content:center; display:inline-flex; align-items:center; gap:7px; padding:10px; border-radius:10px; border:none; background:var(--primary); color:var(--primaryFg); font:inherit; font-weight:700; font-size:13.5px; cursor:pointer;" style-hover="filter:brightness(1.06);">Agendar</button>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ========== ALUNO AGENDAMENTOS ========== -->
+            <sc-if value="{{ v.alunoAgend }}" hint-placeholder-val="{{ false }}">
+              <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); overflow:hidden;">
+                <sc-for list="{{ alunoAgend }}" as="r" hint-placeholder-count="3">
+                  <div style="display:flex; align-items:center; gap:16px; padding:16px 20px; border-bottom:1px solid var(--border);">
+                    <div style="flex:none; width:50px; text-align:center;">
+                      <div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:19px;">{{ r.day }}</div>
+                      <div style="font-size:10.5px; color:var(--muted); text-transform:uppercase; font-weight:700;">{{ r.mon }}</div>
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                      <div style="font-weight:700; font-size:14.5px;">{{ r.disc }}</div>
+                      <div style="font-size:12.5px; color:var(--muted);">{{ r.meta }}</div>
+                    </div>
+                    <span style="flex:none; font-size:11.5px; font-weight:700; padding:5px 12px; border-radius:999px; background:{{ r.pbg }}; color:{{ r.pc }};">{{ r.status }}</span>
+                    <sc-if value="{{ r.cancelable }}" hint-placeholder-val="{{ true }}">
+                      <button onClick="{{ confirmCancel }}" style="flex:none; border:1px solid var(--border); background:transparent; color:var(--error); cursor:pointer; font:inherit; font-weight:700; font-size:12.5px; padding:7px 13px; border-radius:9px;" style-hover="background:var(--errorBg);">Cancelar</button>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <!-- ========== ALUNO/MONITOR/PROF DISCIPLINAS (shared) ========== -->
+            <sc-if value="{{ v.discList }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px;">
+                <sc-for list="{{ discCards }}" as="d" hint-placeholder-count="4">
+                  <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:14px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between;">
+                      <span style="width:44px; height:44px; border-radius:12px; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px; color:var(--primary);">{{ d.code }}</span>
+                      <span style="font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px; background:{{ d.pbg }}; color:{{ d.pc }};">{{ d.status }}</span>
+                    </div>
+                    <div>
+                      <div style="font-weight:700; font-size:15px;">{{ d.name }}</div>
+                      <div style="font-size:12.5px; color:var(--muted); margin-top:3px;">{{ d.meta }}</div>
+                    </div>
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding-top:12px; border-top:1px solid var(--border);">
+                      <span style="font-size:12.5px; color:var(--muted);">{{ d.monitor }}</span>
+                      <button onClick="{{ d.onClick }}" style="background:none; border:none; padding:0; color:var(--primary); font:inherit; font-weight:700; font-size:12.5px; cursor:pointer;">Abrir →</button>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <!-- ========== MONITOR HOME ========== -->
+            <sc-if value="{{ v.monitorHome }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-direction:column; gap:20px;">
+                <sc-if value="{{ homeIsA }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ goAgenda }}" style="text-align:left; border:1px solid var(--warning); cursor:pointer; font:inherit; display:flex; align-items:center; gap:16px; background:var(--warningBg); border-radius:16px; padding:18px 20px;">
+                    <span style="flex:none; width:44px; height:44px; border-radius:12px; background:var(--warning); display:flex; align-items:center; justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#231a00" stroke-width="2.2" stroke-linecap="round"><path d="M12 8v5M12 16.5v.01M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg></span>
+                    <div style="flex:1;"><div style="font-weight:800; font-size:15.5px; color:var(--warning);">2 sessões aguardando registro de presença</div><div style="font-size:13px; color:var(--text); opacity:.85; margin-top:2px;">Registre antes que o histórico da disciplina fique incompleto.</div></div>
+                    <span style="flex:none; color:var(--warning); font-weight:700; font-size:13px;">Resolver agora →</span>
+                  </button>
+                  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px;">
+                    <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow);"><div style="font-size:12.5px; color:var(--muted);">Próxima sessão</div><div style="font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; margin-top:6px;">Hoje · 16h</div><div style="font-size:12.5px; color:var(--muted); margin-top:2px;">Cálculo I · 1 aluno</div></div>
+                    <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow);"><div style="font-size:12.5px; color:var(--muted);">Horas no mês</div><div style="font-family:'Space Grotesk',sans-serif; font-size:34px; font-weight:700; margin-top:4px;">18<span style="font-size:15px; color:var(--muted);">h</span></div></div>
+                    <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow);"><div style="font-size:12.5px; color:var(--muted);">Alunos atendidos</div><div style="font-family:'Space Grotesk',sans-serif; font-size:34px; font-weight:700; margin-top:4px;">12</div></div>
+                    <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow);"><div style="font-size:12.5px; color:var(--muted);">Horários abertos</div><div style="font-family:'Space Grotesk',sans-serif; font-size:34px; font-weight:700; margin-top:4px;">3</div></div>
+                  </div>
+                  <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow);">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;"><h3 style="margin:0; font-size:15px;">Próximas sessões</h3><button onClick="{{ goAgenda }}" style="background:none; border:none; padding:0; color:var(--primary); font:inherit; font-weight:700; font-size:12.5px; cursor:pointer;">Abrir agenda</button></div>
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                      <sc-for list="{{ monitorUpcoming }}" as="r" hint-placeholder-count="3">
+                        <div style="display:flex; align-items:center; gap:14px; padding:12px 14px; border-radius:12px; background:var(--surface2);">
+                          <div style="flex:none; width:46px; text-align:center;"><div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px;">{{ r.day }}</div><div style="font-size:10.5px; color:var(--muted); text-transform:uppercase; font-weight:700;">{{ r.mon }}</div></div>
+                          <div style="flex:1; min-width:0;"><div style="font-weight:700; font-size:13.5px;">{{ r.disc }}</div><div style="font-size:12px; color:var(--muted);">{{ r.meta }}</div></div>
+                          <span style="flex:none; font-size:11.5px; font-weight:700; padding:4px 11px; border-radius:999px; background:{{ r.pbg }}; color:{{ r.pc }};">{{ r.status }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ homeIsB }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:18px;">
+                    <div style="grid-column:1 / -1; display:grid; grid-template-columns:repeat(4,1fr); gap:14px;">
+                      <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px;"><div style="font-size:11.5px; color:var(--muted);">Pendências</div><div style="font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700; color:var(--warning);">2</div></div>
+                      <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px;"><div style="font-size:11.5px; color:var(--muted);">Próximas</div><div style="font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700;">4</div></div>
+                      <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px;"><div style="font-size:11.5px; color:var(--muted);">Horas/mês</div><div style="font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700;">18</div></div>
+                      <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px;"><div style="font-size:11.5px; color:var(--muted);">Alunos</div><div style="font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700;">12</div></div>
+                    </div>
+                    <div style="background:var(--warningBg); border:1px solid var(--warning); border-radius:16px; padding:20px;">
+                      <h3 style="margin:0 0 12px; font-size:15px; color:var(--warning);">Precisa de ação</h3>
+                      <div style="display:flex; flex-direction:column; gap:10px;">
+                        <sc-for list="{{ monitorAttention }}" as="r" hint-placeholder-count="2">
+                          <div style="display:flex; align-items:center; gap:12px; padding:12px; border-radius:11px; background:var(--card);">
+                            <div style="flex:1;"><div style="font-weight:700; font-size:13.5px;">{{ r.disc }}</div><div style="font-size:12px; color:var(--muted);">{{ r.meta }}</div></div>
+                            <button onClick="{{ openPresenca }}" style="border:none; background:var(--warning); color:#231a00; cursor:pointer; font:inherit; font-weight:700; font-size:12px; padding:7px 11px; border-radius:9px;">Registrar</button>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </div>
+                    <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px;">
+                      <h3 style="margin:0 0 12px; font-size:15px;">Próximas sessões</h3>
+                      <div style="display:flex; flex-direction:column; gap:9px;">
+                        <sc-for list="{{ monitorUpcoming }}" as="r" hint-placeholder-count="3">
+                          <div style="display:flex; align-items:center; gap:12px; padding:9px 0; border-bottom:1px solid var(--border);"><div style="flex:1;"><div style="font-weight:700; font-size:13px;">{{ r.disc }}</div><div style="font-size:11.5px; color:var(--muted);">{{ r.meta }}</div></div><span style="font-size:11px; font-weight:700; padding:3px 9px; border-radius:999px; background:{{ r.pbg }}; color:{{ r.pc }};">{{ r.status }}</span></div>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <!-- ========== MONITOR AGENDA (redesign) ========== -->
+            <sc-if value="{{ v.monitorAgenda }}" hint-placeholder-val="{{ false }}">
+              <!-- VARIANT A: priority stack -->
+              <sc-if value="{{ agendaIsA }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex; flex-direction:column; gap:22px;">
+                  <section>
+                    <div style="display:flex; align-items:center; gap:9px; margin-bottom:12px;">
+                      <span style="width:9px; height:9px; border-radius:50%; background:var(--warning);"></span>
+                      <h3 style="margin:0; font-size:14px;">Precisa de ação agora</h3>
+                      <span style="font-size:11px; font-weight:700; padding:2px 9px; border-radius:999px; background:var(--warningBg); color:var(--warning);">2</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:11px;">
+                      <sc-for list="{{ monitorAttention }}" as="r" hint-placeholder-count="2">
+                        <div style="display:flex; align-items:center; gap:16px; padding:16px 18px; border-radius:14px; background:var(--card); border:1px solid var(--warning); box-shadow:var(--shadow);">
+                          <span style="flex:none; width:42px; height:42px; border-radius:11px; background:var(--warningBg); display:flex; align-items:center; justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4l3 2"></path></svg></span>
+                          <div style="flex:1; min-width:0;"><div style="font-weight:700; font-size:14.5px;">{{ r.disc }}</div><div style="font-size:12.5px; color:var(--muted);">{{ r.meta }}</div></div>
+                          <button onClick="{{ openPresenca }}" style="flex:none; border:none; background:var(--warning); color:#231a00; cursor:pointer; font:inherit; font-weight:700; font-size:13px; padding:9px 15px; border-radius:10px;" style-hover="filter:brightness(1.05);">Registrar presença</button>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </section>
+
+                  <section>
+                    <div style="display:flex; align-items:center; gap:9px; margin-bottom:12px;">
+                      <span style="width:9px; height:9px; border-radius:50%; background:var(--success);"></span>
+                      <h3 style="margin:0; font-size:14px;">Próximas sessões confirmadas</h3>
+                    </div>
+                    <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); overflow:hidden;">
+                      <sc-for list="{{ monitorUpcoming }}" as="r" hint-placeholder-count="3">
+                        <div style="display:flex; align-items:center; gap:16px; padding:15px 18px; border-bottom:1px solid var(--border);">
+                          <div style="flex:none; width:48px; text-align:center;"><div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:18px;">{{ r.day }}</div><div style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700;">{{ r.mon }}</div></div>
+                          <div style="flex:1; min-width:0;"><div style="font-weight:700; font-size:14px;">{{ r.disc }}</div><div style="font-size:12.5px; color:var(--muted);">{{ r.meta }}</div></div>
+                          <span style="flex:none; font-size:11.5px; font-weight:700; padding:5px 12px; border-radius:999px; background:{{ r.pbg }}; color:{{ r.pc }};">{{ r.status }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </section>
+
+                  <section>
+                    <div style="display:flex; align-items:center; gap:9px; margin-bottom:12px;">
+                      <span style="width:9px; height:9px; border-radius:50%; background:var(--accent);"></span>
+                      <h3 style="margin:0; font-size:14px;">Horários abertos (sem agendamento)</h3>
+                      <button onClick="{{ goCriar }}" style="margin-left:auto; background:none; border:none; padding:0; color:var(--primary); font:inherit; font-weight:700; font-size:12.5px; cursor:pointer;">+ Novo horário</button>
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px;">
+                      <sc-for list="{{ monitorSlots }}" as="s" hint-placeholder-count="3">
+                        <div style="background:var(--surface2); border:1px dashed var(--border); border-radius:13px; padding:15px;">
+                          <div style="font-weight:700; font-size:13.5px;">{{ s.when }}</div>
+                          <div style="font-size:12px; color:var(--muted); margin-top:3px;">{{ s.disc }} · {{ s.local }}</div>
+                          <div style="margin-top:9px; font-size:11.5px; font-weight:700; color:var(--accent);">{{ s.booked }}</div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </section>
+
+                  <details style="background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow);">
+                    <summary style="cursor:pointer; padding:15px 18px; font-weight:700; font-size:14px; list-style:none;">Histórico de sessões registradas</summary>
+                    <div style="padding:0 18px 8px;">
+                      <sc-for list="{{ monitorHistory }}" as="r" hint-placeholder-count="3">
+                        <div style="display:flex; align-items:center; gap:14px; padding:13px 0; border-top:1px solid var(--border);"><div style="flex:1;"><div style="font-weight:700; font-size:13px;">{{ r.disc }} · {{ r.meta }}</div><div style="font-size:12px; color:var(--muted); margin-top:2px;">{{ r.assunto }}</div></div><span style="font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px; background:{{ r.pbg }}; color:{{ r.pc }};">{{ r.status }}</span></div>
+                      </sc-for>
+                    </div>
+                  </details>
+                </div>
+              </sc-if>
+              <!-- VARIANT B: tabs -->
+              <sc-if value="{{ agendaIsB }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; flex-direction:column; gap:18px;">
+                  <div style="display:flex; gap:4px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:5px; width:max-content;">
+                    <sc-for list="{{ agendaTabs }}" as="tb" hint-placeholder-count="4">
+                      <button onClick="{{ tb.onClick }}" style="display:flex; align-items:center; gap:8px; border:none; cursor:pointer; font:inherit; font-size:13px; font-weight:700; padding:8px 15px; border-radius:9px; background:{{ tb.bg }}; color:{{ tb.col }};">{{ tb.label }}<sc-if value="{{ tb.badge }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px; padding:1px 7px; border-radius:999px; background:{{ tb.badgeBg }}; color:{{ tb.badgeCol }};">{{ tb.count }}</span></sc-if></button>
+                    </sc-for>
+                  </div>
+                  <sc-if value="{{ agTabPend }}" hint-placeholder-val="{{ true }}">
+                    <div style="display:flex; flex-direction:column; gap:11px;">
+                      <sc-for list="{{ monitorAttention }}" as="r" hint-placeholder-count="2">
+                        <div style="display:flex; align-items:center; gap:16px; padding:16px 18px; border-radius:14px; background:var(--card); border:1px solid var(--warning); box-shadow:var(--shadow);">
+                          <div style="flex:1; min-width:0;"><div style="font-weight:700; font-size:14.5px;">{{ r.disc }}</div><div style="font-size:12.5px; color:var(--muted);">{{ r.meta }}</div></div>
+                          <button onClick="{{ openPresenca }}" style="border:none; background:var(--warning); color:#231a00; cursor:pointer; font:inherit; font-weight:700; font-size:13px; padding:9px 15px; border-radius:10px;">Registrar presença</button>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ agTabProx }}" hint-placeholder-val="{{ false }}">
+                    <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); overflow:hidden;">
+                      <sc-for list="{{ monitorUpcoming }}" as="r" hint-placeholder-count="3">
+                        <div style="display:flex; align-items:center; gap:16px; padding:15px 18px; border-bottom:1px solid var(--border);"><div style="flex:none; width:48px; text-align:center;"><div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:18px;">{{ r.day }}</div><div style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700;">{{ r.mon }}</div></div><div style="flex:1;"><div style="font-weight:700; font-size:14px;">{{ r.disc }}</div><div style="font-size:12.5px; color:var(--muted);">{{ r.meta }}</div></div><span style="font-size:11.5px; font-weight:700; padding:5px 12px; border-radius:999px; background:{{ r.pbg }}; color:{{ r.pc }};">{{ r.status }}</span></div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ agTabSlots }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px;">
+                      <sc-for list="{{ monitorSlots }}" as="s" hint-placeholder-count="3"><div style="background:var(--surface2); border:1px dashed var(--border); border-radius:13px; padding:15px;"><div style="font-weight:700; font-size:13.5px;">{{ s.when }}</div><div style="font-size:12px; color:var(--muted); margin-top:3px;">{{ s.disc }} · {{ s.local }}</div><div style="margin-top:9px; font-size:11.5px; font-weight:700; color:var(--accent);">{{ s.booked }}</div></div></sc-for>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ agTabHist }}" hint-placeholder-val="{{ false }}">
+                    <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); overflow:hidden;">
+                      <sc-for list="{{ monitorHistory }}" as="r" hint-placeholder-count="3"><div style="display:flex; align-items:center; gap:14px; padding:14px 18px; border-bottom:1px solid var(--border);"><div style="flex:1;"><div style="font-weight:700; font-size:13px;">{{ r.disc }} · {{ r.meta }}</div><div style="font-size:12px; color:var(--muted); margin-top:2px;">{{ r.assunto }}</div></div><span style="font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px; background:{{ r.pbg }}; color:{{ r.pc }};">{{ r.status }}</span></div></sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-if>
+            </sc-if>
+
+            <!-- ========== MONITOR CRIAR HORÁRIO ========== -->
+            <sc-if value="{{ v.monitorCriar }}" hint-placeholder-val="{{ false }}">
+              <div style="max-width:560px; background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); padding:24px;">
+                <div style="display:flex; flex-direction:column; gap:16px;">
+                  <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:600; color:var(--muted);">Disciplina
+                    <select style="width:100%; padding:11px 13px; border-radius:10px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font:inherit; font-size:14px; outline:none;"><option>Cálculo I</option><option>Álgebra Linear</option></select>
+                  </label>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:600; color:var(--muted);">Data<input type="date" style="width:100%; padding:11px 13px; border-radius:10px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font:inherit; font-size:14px;"></label>
+                    <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:600; color:var(--muted);">Local<input type="text" placeholder="Sala D-204" style="width:100%; padding:11px 13px; border-radius:10px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font:inherit; font-size:14px;"></label>
+                  </div>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:600; color:var(--muted);">Início<input type="time" style="width:100%; padding:11px 13px; border-radius:10px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font:inherit; font-size:14px;"></label>
+                    <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:600; color:var(--muted);">Fim<input type="time" style="width:100%; padding:11px 13px; border-radius:10px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font:inherit; font-size:14px;"></label>
+                  </div>
+                  <div style="display:flex; gap:10px; margin-top:6px;">
+                    <button onClick="{{ goAgenda }}" style="flex:1; justify-content:center; display:inline-flex; padding:12px; border-radius:11px; border:none; background:var(--primary); color:var(--primaryFg); font:inherit; font-weight:700; font-size:14px; cursor:pointer;">Criar horário</button>
+                    <button onClick="{{ goAgenda }}" style="padding:12px 18px; border-radius:11px; border:1px solid var(--border); background:transparent; color:var(--text); font:inherit; font-weight:700; font-size:14px; cursor:pointer;">Cancelar</button>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ========== MONITOR PERFIL ========== -->
+            <sc-if value="{{ v.monitorPerfil }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid; grid-template-columns:280px 1fr; gap:18px; align-items:start;">
+                <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); padding:24px; text-align:center;">
+                  <span style="width:84px; height:84px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--primary)); display:inline-block;"></span>
+                  <div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:18px; margin-top:14px;">Rafael Souza</div>
+                  <div style="font-size:13px; color:var(--muted);">Monitor · Cálculo I</div>
+                  <div style="display:flex; gap:8px; justify-content:center; margin-top:16px;"><div style="flex:1; background:var(--surface2); border-radius:11px; padding:12px;"><div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px;">18h</div><div style="font-size:11px; color:var(--muted);">no mês</div></div><div style="flex:1; background:var(--surface2); border-radius:11px; padding:12px;"><div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px;">12</div><div style="font-size:11px; color:var(--muted);">alunos</div></div></div>
+                </div>
+                <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); padding:24px;">
+                  <h3 style="margin:0 0 16px; font-size:15px;">Dados pessoais</h3>
+                  <div style="display:flex; flex-direction:column; gap:14px;">
+                    <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:600; color:var(--muted);">Nome<input type="text" value="Rafael Souza" style="width:100%; padding:11px 13px; border-radius:10px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font:inherit; font-size:14px;"></label>
+                    <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:600; color:var(--muted);">E-mail<input type="email" value="aluno-monitor@email.com.br" style="width:100%; padding:11px 13px; border-radius:10px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font:inherit; font-size:14px;"></label>
+                    <div style="display:flex; gap:10px; margin-top:4px;"><button style="padding:11px 18px; border-radius:11px; border:none; background:var(--primary); color:var(--primaryFg); font:inherit; font-weight:700; font-size:14px; cursor:pointer;">Salvar</button><button onClick="{{ confirmResetSenha }}" style="padding:11px 18px; border-radius:11px; border:1px solid var(--border); background:transparent; color:var(--text); font:inherit; font-weight:700; font-size:14px; cursor:pointer;">Trocar senha</button></div>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ========== PROFESSOR HOME ========== -->
+            <sc-if value="{{ v.professorHome }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-direction:column; gap:20px;">
+                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px;">
+                  <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow);"><div style="font-size:12.5px; color:var(--muted);">Disciplinas</div><div style="font-family:'Space Grotesk',sans-serif; font-size:34px; font-weight:700; margin-top:4px;">3</div></div>
+                  <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow);"><div style="font-size:12.5px; color:var(--muted);">Monitores ativos</div><div style="font-family:'Space Grotesk',sans-serif; font-size:34px; font-weight:700; margin-top:4px;">2</div></div>
+                  <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow);"><div style="font-size:12.5px; color:var(--muted);">Indicação pendente</div><div style="font-family:'Space Grotesk',sans-serif; font-size:34px; font-weight:700; margin-top:4px; color:var(--warning);">1</div></div>
+                  <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow);"><div style="font-size:12.5px; color:var(--muted);">Sessões no mês</div><div style="font-family:'Space Grotesk',sans-serif; font-size:34px; font-weight:700; margin-top:4px;">23</div></div>
+                </div>
+                <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:18px;">
+                  <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow);">
+                    <h3 style="margin:0 0 14px; font-size:15px;">Suas disciplinas</h3>
+                    <div style="display:flex; flex-direction:column; gap:11px;">
+                      <sc-for list="{{ professorDisc }}" as="d" hint-placeholder-count="3">
+                        <div style="display:flex; align-items:center; gap:14px; padding:13px 14px; border-radius:12px; background:var(--surface2);">
+                          <span style="flex:none; width:42px; height:42px; border-radius:11px; background:var(--card); display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:12px; color:var(--primary);">{{ d.code }}</span>
+                          <div style="flex:1; min-width:0;"><div style="font-weight:700; font-size:13.5px;">{{ d.name }}</div><div style="font-size:12px; color:var(--muted);">{{ d.meta }}</div></div>
+                          <span style="font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px; background:{{ d.pbg }}; color:{{ d.pc }};">{{ d.status }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                  <button onClick="{{ goIndicar }}" style="text-align:left; cursor:pointer; font:inherit; border:1px dashed var(--primary); background:var(--surface2); border-radius:16px; padding:22px; display:flex; flex-direction:column; justify-content:center; gap:8px;">
+                    <span style="width:42px; height:42px; border-radius:12px; background:var(--primary); display:flex; align-items:center; justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primaryFg)" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+                    <span style="font-weight:800; font-size:16px;">Indicar um monitor</span>
+                    <span style="font-size:13px; color:var(--muted);">Selecione um aluno e a disciplina. A indicação segue para aprovação do admin.</span>
+                  </button>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ========== PROFESSOR INDICAR ========== -->
+            <sc-if value="{{ v.professorIndicar }}" hint-placeholder-val="{{ false }}">
+              <div style="max-width:560px; background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); padding:24px;">
+                <div style="display:flex; flex-direction:column; gap:16px;">
+                  <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:600; color:var(--muted);">Disciplina<select style="width:100%; padding:11px 13px; border-radius:10px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font:inherit; font-size:14px;"><option>Cálculo I</option><option>Álgebra Linear</option><option>Geometria Analítica</option></select></label>
+                  <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:600; color:var(--muted);">Aluno
+                    <div style="position:relative;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" style="position:absolute; left:12px; top:50%; transform:translateY(-50%);"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input type="text" placeholder="Buscar aluno por nome ou matrícula" style="width:100%; padding:11px 13px 11px 36px; border-radius:10px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font:inherit; font-size:14px;"></div>
+                  </label>
+                  <div style="display:flex; flex-direction:column; gap:7px;">
+                    <sc-for list="{{ alunoSearch }}" as="a" hint-placeholder-count="3">
+                      <button style="display:flex; align-items:center; gap:11px; text-align:left; border:1px solid var(--border); cursor:pointer; font:inherit; padding:10px 12px; border-radius:11px; background:var(--surface2); color:var(--text);" style-hover="border-color:var(--primary);">
+                        <span style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--primary)); flex:none;"></span>
+                        <span style="flex:1;"><span style="display:block; font-weight:700; font-size:13px;">{{ a.name }}</span><span style="display:block; font-size:11.5px; color:var(--muted);">{{ a.meta }}</span></span>
+                      </button>
+                    </sc-for>
+                  </div>
+                  <button onClick="{{ confirmIndicar }}" style="margin-top:4px; justify-content:center; display:inline-flex; padding:12px; border-radius:11px; border:none; background:var(--primary); color:var(--primaryFg); font:inherit; font-weight:700; font-size:14px; cursor:pointer;">Enviar indicação para aprovação</button>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ========== PROFESSOR HISTÓRICO ========== -->
+            <sc-if value="{{ v.professorHistorico }}" hint-placeholder-val="{{ false }}">
+              <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); overflow:hidden;">
+                <div style="display:flex; gap:14px; padding:13px 20px; background:var(--surface2); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--muted);"><span style="flex:none; width:70px;">Data</span><span style="flex:1;">Monitor / Aluno</span><span style="flex:1;">Assunto</span><span style="flex:none; width:90px;">Status</span></div>
+                <sc-for list="{{ professorHistory }}" as="r" hint-placeholder-count="4">
+                  <div style="display:flex; gap:14px; align-items:center; padding:14px 20px; border-bottom:1px solid var(--border); font-size:13px;"><span style="flex:none; width:70px; font-weight:700;">{{ r.date }}</span><span style="flex:1;"><div style="font-weight:600;">{{ r.monitor }}</div><div style="font-size:11.5px; color:var(--muted);">{{ r.aluno }}</div></span><span style="flex:1; color:var(--muted);">{{ r.assunto }}</span><span style="flex:none; width:90px;"><span style="font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px; background:{{ r.pbg }}; color:{{ r.pc }};">{{ r.status }}</span></span></div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <!-- ========== ADMIN HOME ========== -->
+            <sc-if value="{{ v.adminHome }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-direction:column; gap:20px;">
+                <button onClick="{{ goPendentes }}" style="text-align:left; border:1px solid var(--warning); cursor:pointer; font:inherit; display:flex; align-items:center; gap:16px; background:var(--warningBg); border-radius:16px; padding:18px 20px;">
+                  <span style="flex:none; width:44px; height:44px; border-radius:12px; background:var(--warning); display:flex; align-items:center; justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#231a00" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path></svg></span>
+                  <div style="flex:1;"><div style="font-weight:800; font-size:15.5px; color:var(--warning);">3 indicações de monitor aguardando aprovação</div><div style="font-size:13px; opacity:.85; margin-top:2px;">Revise para liberar os monitores nas disciplinas.</div></div>
+                  <span style="flex:none; color:var(--warning); font-weight:700; font-size:13px;">Revisar fila →</span>
+                </button>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:16px;">
+                  <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow);"><div style="font-size:12.5px; color:var(--muted);">Usuários</div><div style="font-family:'Space Grotesk',sans-serif; font-size:34px; font-weight:700; margin-top:4px;">128</div></div>
+                  <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow);"><div style="font-size:12.5px; color:var(--muted);">Disciplinas</div><div style="font-family:'Space Grotesk',sans-serif; font-size:34px; font-weight:700; margin-top:4px;">14</div></div>
+                  <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow);"><div style="font-size:12.5px; color:var(--muted);">Monitores ativos</div><div style="font-family:'Space Grotesk',sans-serif; font-size:34px; font-weight:700; margin-top:4px;">19</div></div>
+                  <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow);"><div style="font-size:12.5px; color:var(--muted);">Horas registradas</div><div style="font-family:'Space Grotesk',sans-serif; font-size:34px; font-weight:700; margin-top:4px;">412</div></div>
+                </div>
+                <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow);">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;"><h3 style="margin:0; font-size:15px;">Usuários recém-cadastrados</h3><button onClick="{{ goUsuarios }}" style="background:none; border:none; padding:0; color:var(--primary); font:inherit; font-weight:700; font-size:12.5px; cursor:pointer;">Gerenciar</button></div>
+                  <div style="display:flex; flex-direction:column; gap:9px;">
+                    <sc-for list="{{ adminUsers }}" as="u" hint-placeholder-count="3">
+                      <div style="display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border);"><span style="width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--primary)); flex:none;"></span><div style="flex:1;"><div style="font-weight:700; font-size:13px;">{{ u.name }}</div><div style="font-size:11.5px; color:var(--muted);">{{ u.email }}</div></div><span style="font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px; background:var(--surface2); color:var(--muted);">{{ u.role }}</span></div>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ========== ADMIN USUÁRIOS ========== -->
+            <sc-if value="{{ v.adminUsuarios }}" hint-placeholder-val="{{ false }}">
+              <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); overflow:hidden;">
+                <div style="display:flex; gap:14px; padding:13px 20px; background:var(--surface2); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--muted);"><span style="flex:1;">Usuário</span><span style="flex:none; width:120px;">Papel</span><span style="flex:none; width:90px;">Status</span><span style="flex:none; width:150px; text-align:right;">Ações</span></div>
+                <sc-for list="{{ adminUsersFull }}" as="u" hint-placeholder-count="4">
+                  <div style="display:flex; gap:14px; align-items:center; padding:13px 20px; border-bottom:1px solid var(--border);">
+                    <div style="flex:1; display:flex; align-items:center; gap:11px;"><span style="width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--primary)); flex:none;"></span><div><div style="font-weight:700; font-size:13.5px;">{{ u.name }}</div><div style="font-size:11.5px; color:var(--muted);">{{ u.email }}</div></div></div>
+                    <span style="flex:none; width:120px; font-size:12.5px; color:var(--muted);">{{ u.role }}</span>
+                    <span style="flex:none; width:90px;"><span style="font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px; background:{{ u.pbg }}; color:{{ u.pc }};">{{ u.status }}</span></span>
+                    <div style="flex:none; width:150px; display:flex; gap:7px; justify-content:flex-end;">
+                      <button onClick="{{ confirmResetSenha }}" style="border:1px solid var(--border); background:transparent; color:var(--text); cursor:pointer; font:inherit; font-size:11.5px; font-weight:700; padding:6px 10px; border-radius:8px;" style-hover="background:var(--surface2);">Resetar</button>
+                      <button onClick="{{ confirmDesativar }}" style="border:1px solid var(--border); background:transparent; color:var(--error); cursor:pointer; font:inherit; font-size:11.5px; font-weight:700; padding:6px 10px; border-radius:8px;" style-hover="background:var(--errorBg);">Desativar</button>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <!-- ========== ADMIN PENDENTES ========== -->
+            <sc-if value="{{ v.adminPendentes }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-direction:column; gap:13px;">
+                <sc-for list="{{ adminPendentes }}" as="p" hint-placeholder-count="3">
+                  <div style="display:flex; align-items:center; gap:16px; background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); padding:18px 20px;">
+                    <span style="flex:none; width:42px; height:42px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--primary));"></span>
+                    <div style="flex:1; min-width:0;"><div style="font-weight:700; font-size:14.5px;">{{ p.aluno }}</div><div style="font-size:12.5px; color:var(--muted);">Indicado por {{ p.prof }} para <strong style="color:var(--text);">{{ p.disc }}</strong></div></div>
+                    <span style="flex:none; font-size:11.5px; font-weight:700; padding:5px 12px; border-radius:999px; background:var(--warningBg); color:var(--warning);">Pendente</span>
+                    <div style="flex:none; display:flex; gap:8px;">
+                      <button onClick="{{ confirmRejeitar }}" style="border:1px solid var(--border); background:transparent; color:var(--error); cursor:pointer; font:inherit; font-weight:700; font-size:13px; padding:8px 14px; border-radius:9px;" style-hover="background:var(--errorBg);">Rejeitar</button>
+                      <button onClick="{{ confirmAprovar }}" style="border:none; background:var(--success); color:#04211a; cursor:pointer; font:inherit; font-weight:700; font-size:13px; padding:8px 14px; border-radius:9px;">Aprovar</button>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <!-- ========== ADMIN DISCIPLINAS ========== -->
+            <sc-if value="{{ v.adminDisciplinas }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:16px;">
+                <sc-for list="{{ adminDisc }}" as="d" hint-placeholder-count="4">
+                  <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:var(--shadow);">
+                    <div style="display:flex; align-items:center; gap:11px; margin-bottom:12px;"><span style="width:42px; height:42px; border-radius:11px; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:12px; color:var(--primary);">{{ d.code }}</span><div><div style="font-weight:700; font-size:14px;">{{ d.name }}</div><div style="font-size:11.5px; color:var(--muted);">{{ d.prof }}</div></div></div>
+                    <div style="display:flex; gap:10px; font-size:12px; color:var(--muted);"><span>{{ d.alunos }} alunos</span><span>·</span><span>{{ d.monitores }} monitores</span></div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <!-- ========== ADMIN RELATÓRIOS ========== -->
+            <sc-if value="{{ v.adminRelatorios }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start;">
+                <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); padding:22px;">
+                  <h3 style="margin:0 0 18px; font-size:15px;">Horas por monitor</h3>
+                  <div style="display:flex; flex-direction:column; gap:15px;">
+                    <sc-for list="{{ relatHoras }}" as="r" hint-placeholder-count="4">
+                      <div><div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;"><span style="font-weight:600;">{{ r.monitor }}</span><span style="font-family:'Space Grotesk',sans-serif; font-weight:700;">{{ r.horas }}h</span></div><div style="height:8px; border-radius:999px; background:var(--surface2); overflow:hidden;"><div style="height:100%; width:{{ r.pct }}; border-radius:999px; background:linear-gradient(90deg,var(--primary),var(--accent));"></div></div></div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); padding:22px;">
+                  <h3 style="margin:0 0 18px; font-size:15px;">Participação por disciplina</h3>
+                  <div style="display:flex; flex-direction:column; gap:15px;">
+                    <sc-for list="{{ relatPart }}" as="r" hint-placeholder-count="4">
+                      <div><div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;"><span style="font-weight:600;">{{ r.disc }}</span><span style="font-family:'Space Grotesk',sans-serif; font-weight:700;">{{ r.sessoes }} sessões</span></div><div style="height:8px; border-radius:999px; background:var(--surface2); overflow:hidden;"><div style="height:100%; width:{{ r.pct }}; border-radius:999px; background:linear-gradient(90deg,var(--success),var(--primary));"></div></div></div>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ===== CONFIRM DIALOG ===== -->
+    <sc-if value="{{ hasDialog }}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed; inset:0; z-index:50; background:rgba(3,8,15,0.6); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; padding:20px; animation:ovIn .15s ease;">
+        <div style="width:100%; max-width:420px; background:var(--card); border:1px solid var(--border); border-radius:18px; box-shadow:0 24px 60px rgba(0,0,0,0.5); padding:26px; animation:dlgIn .2s cubic-bezier(.2,.8,.2,1);">
+          <div style="display:flex; align-items:center; gap:13px; margin-bottom:14px;">
+            <span style="flex:none; width:44px; height:44px; border-radius:12px; background:{{ dlg.iconBg }}; display:flex; align-items:center; justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="{{ dlg.iconCol }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ dlg.icon }}"></path></svg></span>
+            <h3 style="margin:0; font-size:17px;">{{ dlg.title }}</h3>
+          </div>
+          <p style="color:var(--muted); font-size:14px; line-height:1.5; margin:0 0 22px;">{{ dlg.message }}</p>
+          <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <button onClick="{{ closeDialog }}" style="padding:10px 18px; border-radius:10px; border:1px solid var(--border); background:transparent; color:var(--text); font:inherit; font-weight:700; font-size:13.5px; cursor:pointer;" style-hover="background:var(--surface2);">Cancelar</button>
+            <button onClick="{{ confirmDialog }}" style="padding:10px 18px; border-radius:10px; border:none; background:{{ dlg.btnBg }}; color:{{ dlg.btnCol }}; font:inherit; font-weight:700; font-size:13.5px; cursor:pointer;" style-hover="filter:brightness(1.06);">{{ dlg.confirm }}</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ===== TOAST ===== -->
+    <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:60; display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--success); border-radius:12px; padding:12px 18px; box-shadow:0 16px 40px rgba(0,0,0,0.4); animation:dlgIn .2s ease;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>
+        <span style="font-size:13.5px; font-weight:600;">{{ toast }}</span>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { role:'aluno', screen:'home', theme:'dark', nav:'sidebar', homeV:'a', agendaV:'a', agTab:'pend', auth:null, dialog:null, toast:null };
+
+  tokens() {
+    if (this.state.theme === 'light') return {
+      bg:'#f4f7fb', bgEnd:'#eaf0f7', appBg:'linear-gradient(180deg,#f4f7fb,#eaf0f7)',
+      card:'#ffffff', surface2:'#f1f5fa', border:'rgba(13,40,71,0.10)',
+      muted:'#5b6b7a', text:'#0c1a2b', primary:'#0e9c8e', primaryFg:'#ffffff',
+      accent:'#0284c7', success:'#0f9d6b', successBg:'rgba(15,157,107,0.12)',
+      warning:'#a86a00', warningBg:'rgba(245,158,11,0.16)', error:'#e11d48', errorBg:'rgba(225,29,72,0.09)',
+      shadow:'0 8px 24px rgba(13,40,71,0.08)'
+    };
+    return {
+      bg:'#071225', bgEnd:'#071b2a', appBg:'radial-gradient(1100px 700px at 15% -10%, #0a1b2e, #050d18)',
+      card:'#0d1626', surface2:'#0a1322', border:'rgba(125,211,252,0.10)',
+      muted:'#8da0b0', text:'#e6eef6', primary:'#4fd1c5', primaryFg:'#04201d',
+      accent:'#7dd3fc', success:'#34d399', successBg:'rgba(52,211,153,0.13)',
+      warning:'#fbbf24', warningBg:'rgba(251,191,36,0.13)', error:'#fb7185', errorBg:'rgba(251,113,133,0.13)',
+      shadow:'0 12px 34px rgba(0,0,0,0.34)'
+    };
+  }
+
+  ICONS = {
+    home:'M3 11l9-7 9 7M5 10v9a1 1 0 001 1h3v-6h6v6h3a1 1 0 001-1v-9',
+    calendar:'M4 5h16v16H4zM4 9h16M8 3v4M16 3v4',
+    search:'M11 4a7 7 0 100 14 7 7 0 000-14zM20 20l-4-4',
+    list:'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01',
+    book:'M5 4h12a1 1 0 011 1v15l-7-3-7 3V5a1 1 0 011-1z',
+    users:'M9 11a3 3 0 100-6 3 3 0 000 6zM3 20a6 6 0 0112 0M17 11a3 3 0 100-6M16.5 20a6 6 0 015.5 0',
+    plus:'M12 5v14M5 12h14',
+    clock:'M12 4a8 8 0 100 16 8 8 0 000-16zM12 8v4l2.5 2',
+    chart:'M4 20V10M10 20V4M16 20v-7M22 20H2',
+    user:'M12 12a4 4 0 100-8 4 4 0 000 8zM5 20a7 7 0 0114 0',
+    check:'M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11'
+  };
+
+  NAV = {
+    aluno:[['home','Início','home'],['disciplinas','Minhas disciplinas','book'],['buscar','Buscar monitoria','search'],['agendamentos','Meus agendamentos','list']],
+    monitor:[['home','Início','home'],['agenda','Minha agenda','calendar'],['criar','Criar horário','plus'],['disciplinas','Minhas disciplinas','book'],['perfil','Perfil','user']],
+    professor:[['home','Início','home'],['disciplinas','Minhas disciplinas','book'],['indicar','Indicar monitor','plus'],['historico','Histórico','clock']],
+    admin:[['home','Início','home'],['usuarios','Usuários','users'],['disciplinas','Disciplinas','book'],['pendentes','Aprovações','check'],['relatorios','Relatórios','chart']]
+  };
+  ROLE_LABEL = { aluno:'Aluno', monitor:'Monitor', professor:'Professor', admin:'Administrador' };
+  USER_NAME = { aluno:'Marina Lopes', monitor:'Rafael Souza', professor:'Profª. Helena Dias', admin:'Willian Pessoa' };
+
+  HEADERS = {
+    'aluno-home':['Olá, Marina','Seu painel','Veja seus próximos atendimentos e marque novas monitorias.','Buscar monitoria','goBuscar'],
+    'aluno-disciplinas':['Disciplinas','Minhas disciplinas','Disciplinas em que você está matriculada.',null,null],
+    'aluno-buscar':['Agendar','Buscar monitoria','Horários disponíveis nas suas disciplinas. Escolha e agende.',null,null],
+    'aluno-agendamentos':['Agenda','Meus agendamentos','Acompanhe o status e cancele com antecedência se precisar.','Buscar monitoria','goBuscar'],
+    'monitor-home':['Olá, Rafael','Seu painel de monitor','O que precisa da sua atenção primeiro, depois suas próximas sessões.','Criar horário','goCriar'],
+    'monitor-agenda':['Agenda','Minha agenda','Priorizado por urgência: pendências de registro vêm primeiro.','Criar horário','goCriar'],
+    'monitor-criar':['Novo','Criar horário de atendimento','Defina data, intervalo e local. Alunos poderão agendar neste horário.',null,null],
+    'monitor-disciplinas':['Disciplinas','Disciplinas que monitoro','Disciplinas com seu vínculo ativo de monitoria.',null,null],
+    'monitor-perfil':['Conta','Meu perfil','Seus dados e atalhos de segurança.',null,null],
+    'professor-home':['Olá, profª. Helena','Seu painel','Suas disciplinas, monitores e indicações em andamento.','Indicar monitor','goIndicar'],
+    'professor-disciplinas':['Disciplinas','Minhas disciplinas','Disciplinas sob sua responsabilidade.',null,null],
+    'professor-indicar':['Indicação','Indicar um monitor','Selecione disciplina e aluno. Segue para aprovação do admin.',null,null],
+    'professor-historico':['Registros','Histórico de atendimentos','Sessões registradas pelos monitores nas suas disciplinas.',null,null],
+    'admin-home':['Painel','Administração','Visão geral do sistema e o que precisa de aprovação.',null,null],
+    'admin-usuarios':['Gestão','Usuários','Cadastre, redefina senha ou desative contas.','Novo usuário','openNovoUsuario'],
+    'admin-disciplinas':['Gestão','Disciplinas','Disciplinas cadastradas e seus professores responsáveis.','Nova disciplina','openNovaDisc'],
+    'admin-pendentes':['Aprovações','Indicações de monitor','Fila de indicações aguardando sua decisão.',null,null],
+    'admin-relatorios':['Dados','Relatórios','Horas por monitor e participação por disciplina.',null,null]
+  };
+
+  go(s){ this.setState({ screen:s }); }
+  setRole(r){ this.setState({ role:r, screen:'home', auth:null }); }
+  toast(msg){ this.setState({ toast:msg }); clearTimeout(this._tt); this._tt = setTimeout(()=>this.setState({toast:null}), 2600); }
+
+  openDialog(d){ this.setState({ dialog:d }); }
+  closeDialog(){ this.setState({ dialog:null }); }
+  confirmDialog(){ const d=this.state.dialog; this.setState({ dialog:null }); if(d&&d.toast) this.toast(d.toast); }
+
+  seg(items, active){
+    const t=this.tokens();
+    return items.map(it=>({ ...it, bg: it.key===active ? '#2b3a4e' : 'transparent', col: it.key===active ? '#fff' : '#9aa7b4' }));
+  }
+
+  renderVals(){
+    const t = this.tokens();
+    const s = this.state;
+    const view = s.role + '-' + s.screen;
+    const isAuth = !!s.auth;
+    const sc = (a,b)=>({ pbg:a, pc:b });
+    // pill palettes referencing theme
+    const P = {
+      ativo:{pbg:t.successBg,pc:t.success}, confirmado:{pbg:t.successBg,pc:t.success},
+      pendente:{pbg:t.warningBg,pc:t.warning}, cancelado:{pbg:t.errorBg,pc:t.error},
+      concluido:{pbg:'rgba(125,211,252,0.13)',pc:t.accent}, neutro:{pbg:t.surface2,pc:t.muted}
+    };
+
+    // ---- nav ----
+    const nav = (this.NAV[s.role]||[]).map(([key,label,icon])=>{
+      const active = key===s.screen;
+      return { key, label, icon:this.ICONS[icon],
+        bg: active ? t.surface2 : 'transparent',
+        txt: active ? t.text : t.muted,
+        ic: active ? t.primary : t.muted,
+        bar: active ? t.primary : 'transparent',
+        onClick: ()=>this.go(key) };
+    });
+
+    // ---- control strip segments ----
+    const roleSeg = this.seg([
+      {key:'aluno',label:'Aluno',onClick:()=>this.setRole('aluno')},
+      {key:'monitor',label:'Monitor',onClick:()=>this.setRole('monitor')},
+      {key:'professor',label:'Professor',onClick:()=>this.setRole('professor')},
+      {key:'admin',label:'Admin',onClick:()=>this.setRole('admin')}
+    ], isAuth ? null : s.role);
+    const navSeg = this.seg([
+      {key:'sidebar',label:'Sidebar',onClick:()=>this.setState({nav:'sidebar'})},
+      {key:'topbar',label:'Topbar',onClick:()=>this.setState({nav:'topbar'})}
+    ], s.nav);
+    const themeSeg = this.seg([
+      {key:'dark',label:'Escuro',onClick:()=>this.setState({theme:'dark'})},
+      {key:'light',label:'Claro',onClick:()=>this.setState({theme:'light'})}
+    ], s.theme);
+    const homeSeg = this.seg([
+      {key:'a',label:'A',onClick:()=>this.setState({homeV:'a'})},
+      {key:'b',label:'B',onClick:()=>this.setState({homeV:'b'})}
+    ], s.homeV);
+    const agendaSeg = this.seg([
+      {key:'a',label:'Pilha',onClick:()=>this.setState({agendaV:'a'})},
+      {key:'b',label:'Abas',onClick:()=>this.setState({agendaV:'b'})}
+    ], s.agendaV);
+
+    // ---- header ----
+    const h = this.HEADERS[view] || ['','','',null,null];
+    const actionFns = {
+      goBuscar:()=>this.go('buscar'), goCriar:()=>this.go('criar'), goIndicar:()=>this.go('indicar'),
+      openNovoUsuario:()=>this.openDialog({ title:'Novo usuário', message:'Esta ação abriria o formulário de cadastro de usuário em tela dedicada (admin).', icon:this.ICONS.plus, iconBg:t.surface2, iconCol:t.primary, btnBg:t.primary, btnCol:t.primaryFg, confirm:'Entendi', toast:'Formulário de cadastro' }),
+      openNovaDisc:()=>this.openDialog({ title:'Nova disciplina', message:'Abriria o formulário de cadastro de disciplina e professor responsável.', icon:this.ICONS.plus, iconBg:t.surface2, iconCol:t.primary, btnBg:t.primary, btnCol:t.primaryFg, confirm:'Entendi', toast:'Formulário de disciplina' })
+    };
+
+    // ---- dialog presets ----
+    const dlgCancel = ()=>this.openDialog({ title:'Cancelar agendamento?', message:'Você está cancelando este atendimento. O horário voltará a ficar disponível para outros alunos.', icon:'M18 6L6 18M6 6l12 12', iconBg:t.errorBg, iconCol:t.error, btnBg:t.error, btnCol:'#fff', confirm:'Cancelar agendamento', toast:'Agendamento cancelado' });
+    const dlgAgendar = ()=>this.openDialog({ title:'Confirmar agendamento?', message:'Você reservará este horário de monitoria. Poderá cancelar até 2h antes do início.', icon:'M5 13l4 4L19 7', iconBg:t.successBg, iconCol:t.success, btnBg:t.primary, btnCol:t.primaryFg, confirm:'Confirmar', toast:'Monitoria agendada' });
+    const dlgIndicar = ()=>this.openDialog({ title:'Enviar indicação?', message:'A indicação será enviada ao administrador para aprovação antes de o aluno virar monitor.', icon:'M5 13l4 4L19 7', iconBg:t.successBg, iconCol:t.success, btnBg:t.primary, btnCol:t.primaryFg, confirm:'Enviar', toast:'Indicação enviada' });
+    const dlgReset = ()=>this.openDialog({ title:'Resetar senha?', message:'Uma senha temporária será gerada e o usuário precisará trocá-la no próximo acesso.', icon:'M12 8v4M12 16h.01M10.3 3.9 2.4 18a2 2 0 001.7 3h15.8a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z', iconBg:t.warningBg, iconCol:t.warning, btnBg:t.warning, btnCol:'#231a00', confirm:'Resetar senha', toast:'Senha redefinida' });
+    const dlgDesativar = ()=>this.openDialog({ title:'Desativar usuário?', message:'O usuário perderá o acesso ao sistema. Você pode reativá-lo depois.', icon:'M18 6L6 18M6 6l12 12', iconBg:t.errorBg, iconCol:t.error, btnBg:t.error, btnCol:'#fff', confirm:'Desativar', toast:'Usuário desativado' });
+    const dlgAprovar = ()=>this.openDialog({ title:'Aprovar indicação?', message:'O aluno passará a ter vínculo ativo de monitoria na disciplina e poderá criar horários.', icon:'M5 13l4 4L19 7', iconBg:t.successBg, iconCol:t.success, btnBg:t.success, btnCol:'#04211a', confirm:'Aprovar', toast:'Indicação aprovada' });
+    const dlgRejeitar = ()=>this.openDialog({ title:'Rejeitar indicação?', message:'A indicação será recusada. O professor poderá indicar outro aluno.', icon:'M18 6L6 18M6 6l12 12', iconBg:t.errorBg, iconCol:t.error, btnBg:t.error, btnCol:'#fff', confirm:'Rejeitar', toast:'Indicação rejeitada' });
+    const dlgPresenca = ()=>this.openDialog({ title:'Registrar presença', message:'Marque presença/ausência dos alunos e anote o assunto tratado nesta sessão. (Abriria o formulário de registro.)', icon:'M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11', iconBg:t.warningBg, iconCol:t.warning, btnBg:t.primary, btnCol:t.primaryFg, confirm:'Abrir registro', toast:'Presença registrada' });
+
+    // ---- screen data ----
+    const alunoUpcoming = [
+      { day:'19', mon:'jun', disc:'Cálculo I', meta:'14h · Rafael S. · Sala D-204', ...P.confirmado, status:'Confirmado' },
+      { day:'21', mon:'jun', disc:'Álgebra Linear', meta:'10h · Bruna M. · Online', ...P.pendente, status:'Aguardando' },
+      { day:'12', mon:'jun', disc:'Cálculo I', meta:'14h · Rafael S. · Sala D-204', ...P.concluido, status:'Concluído' }
+    ];
+    const alunoDisc = [
+      { code:'MAC118', name:'Cálculo I', meta:'3 monitorias esta semana' },
+      { code:'MAE125', name:'Álgebra Linear', meta:'2 monitorias esta semana' },
+      { code:'MAB121', name:'Geometria Analítica', meta:'Sem monitoria ativa' }
+    ];
+    const buscaSlots = [
+      { code:'MAC118', disc:'Cálculo I', monitor:'Rafael Souza', when:'Qua, 19 jun · 14h–16h', local:'Sala D-204' },
+      { code:'MAC118', disc:'Cálculo I', monitor:'Rafael Souza', when:'Sex, 21 jun · 09h–11h', local:'Sala D-204' },
+      { code:'MAE125', disc:'Álgebra Linear', monitor:'Bruna Martins', when:'Qui, 20 jun · 10h–12h', local:'Online (Meet)' },
+      { code:'MAE125', disc:'Álgebra Linear', monitor:'Bruna Martins', when:'Seg, 24 jun · 16h–18h', local:'Sala B-110' }
+    ];
+    const discChips = [
+      {key:'all',label:'Todas',active:true},{key:'c1',label:'Cálculo I'},{key:'al',label:'Álgebra Linear'},{key:'ga',label:'Geometria Analítica'}
+    ].map(c=>({ ...c, bg:c.active?t.primary:'transparent', col:c.active?t.primaryFg:t.muted, bd:c.active?t.primary:t.border }));
+    const alunoAgend = [
+      { day:'19', mon:'jun', disc:'Cálculo I', meta:'14h · Rafael Souza · Sala D-204', ...P.confirmado, status:'Confirmado', cancelable:true },
+      { day:'21', mon:'jun', disc:'Álgebra Linear', meta:'10h · Bruna Martins · Online', ...P.pendente, status:'Aguardando', cancelable:true },
+      { day:'12', mon:'jun', disc:'Cálculo I', meta:'14h · Rafael Souza · Sala D-204', ...P.concluido, status:'Concluído', cancelable:false },
+      { day:'05', mon:'jun', disc:'Cálculo I', meta:'14h · Rafael Souza · Sala D-204', ...P.cancelado, status:'Cancelado', cancelable:false }
+    ];
+    const monitorAttention = [
+      { disc:'Cálculo I', meta:'Seg, 17 jun · 14h · 3 alunos · Sala D-204' },
+      { disc:'Cálculo I', meta:'Qui, 13 jun · 16h · 2 alunos · Online' }
+    ];
+    const monitorUpcoming = [
+      { day:'18', mon:'jun', disc:'Cálculo I', meta:'16h · Marina Lopes · Sala D-204', ...P.confirmado, status:'1 aluno' },
+      { day:'19', mon:'jun', disc:'Cálculo I', meta:'14h · 2 alunos · Sala D-204', ...P.confirmado, status:'2 alunos' },
+      { day:'21', mon:'jun', disc:'Cálculo I', meta:'09h · Sem agendamentos · Sala D-204', ...P.neutro, status:'Livre' }
+    ];
+    const monitorSlots = [
+      { when:'Sex, 21 jun · 09h–11h', disc:'Cálculo I', local:'Sala D-204', booked:'0 de 4 vagas' },
+      { when:'Seg, 24 jun · 14h–16h', disc:'Cálculo I', local:'Sala D-204', booked:'1 de 4 vagas' },
+      { when:'Qua, 26 jun · 16h–18h', disc:'Cálculo I', local:'Online', booked:'0 de 4 vagas' }
+    ];
+    const monitorHistory = [
+      { disc:'Cálculo I', meta:'10 jun · 14h', assunto:'Limites e continuidade', ...P.concluido, status:'Registrada' },
+      { disc:'Cálculo I', meta:'07 jun · 16h', assunto:'Derivadas — regra da cadeia', ...P.concluido, status:'Registrada' },
+      { disc:'Cálculo I', meta:'03 jun · 14h', assunto:'Revisão para a P1', ...P.concluido, status:'Registrada' }
+    ];
+    const professorDisc = [
+      { code:'MAC118', name:'Cálculo I', meta:'48 alunos · 2 monitores', ...P.ativo, status:'Ativa' },
+      { code:'MAE125', name:'Álgebra Linear', meta:'36 alunos · 1 monitor', ...P.ativo, status:'Ativa' },
+      { code:'MAB121', name:'Geometria Analítica', meta:'40 alunos · indicação pendente', ...P.pendente, status:'Pendente' }
+    ];
+    const alunoSearch = [
+      { name:'João Pereira', meta:'DRE 122045678 · Cálculo I' },
+      { name:'Ana Beatriz Costa', meta:'DRE 121098765 · Cálculo I' },
+      { name:'Lucas Ferreira', meta:'DRE 123011223 · Cálculo I' }
+    ];
+    const professorHistory = [
+      { date:'10/06', monitor:'Rafael Souza', aluno:'Marina Lopes', assunto:'Limites e continuidade', ...P.concluido, status:'Registrada' },
+      { date:'07/06', monitor:'Rafael Souza', aluno:'João Pereira', assunto:'Derivadas', ...P.concluido, status:'Registrada' },
+      { date:'05/06', monitor:'Bruna Martins', aluno:'Ana Costa', assunto:'Matrizes', ...P.concluido, status:'Registrada' },
+      { date:'03/06', monitor:'Rafael Souza', aluno:'Lucas Ferreira', assunto:'Ausente', ...P.cancelado, status:'Ausência' }
+    ];
+    const adminUsers = [
+      { name:'Marina Lopes', email:'aluno-comum@email.com.br', role:'Aluno' },
+      { name:'Rafael Souza', email:'aluno-monitor@email.com.br', role:'Monitor' },
+      { name:'Helena Dias', email:'professor@email.com.br', role:'Professor' }
+    ];
+    const adminUsersFull = [
+      { name:'Marina Lopes', email:'aluno-comum@email.com.br', role:'Aluno', ...P.ativo, status:'Ativo' },
+      { name:'Rafael Souza', email:'aluno-monitor@email.com.br', role:'Monitor', ...P.ativo, status:'Ativo' },
+      { name:'Helena Dias', email:'professor@email.com.br', role:'Professor', ...P.ativo, status:'Ativo' },
+      { name:'Carlos Antunes', email:'carlos@email.com.br', role:'Aluno', ...P.neutro, status:'Inativo' }
+    ];
+    const adminPendentes = [
+      { aluno:'João Pereira', prof:'Profª. Helena Dias', disc:'Cálculo I' },
+      { aluno:'Ana Beatriz Costa', prof:'Prof. Mário Reis', disc:'Álgebra Linear' },
+      { aluno:'Lucas Ferreira', prof:'Profª. Helena Dias', disc:'Geometria Analítica' }
+    ];
+    const adminDisc = [
+      { code:'MAC118', name:'Cálculo I', prof:'Profª. Helena Dias', alunos:48, monitores:2 },
+      { code:'MAE125', name:'Álgebra Linear', prof:'Prof. Mário Reis', alunos:36, monitores:1 },
+      { code:'MAB121', name:'Geometria Analítica', prof:'Profª. Helena Dias', alunos:40, monitores:0 },
+      { code:'MAC238', name:'Cálculo II', prof:'Prof. Sérgio Lima', alunos:30, monitores:1 }
+    ];
+    const relatHoras = [
+      { monitor:'Rafael Souza', horas:18, pct:'90%' },
+      { monitor:'Bruna Martins', horas:14, pct:'70%' },
+      { monitor:'Diego Alves', horas:11, pct:'55%' },
+      { monitor:'Paula Nunes', horas:7, pct:'35%' }
+    ];
+    const relatPart = [
+      { disc:'Cálculo I', sessoes:42, pct:'95%' },
+      { disc:'Álgebra Linear', sessoes:28, pct:'64%' },
+      { disc:'Cálculo II', sessoes:19, pct:'43%' },
+      { disc:'Geometria Analítica', sessoes:9, pct:'20%' }
+    ];
+
+    // disc list (shared aluno/monitor/professor)
+    const discList = ['disciplinas'].includes(s.screen) && s.role!=='admin';
+    let discCards = [];
+    if (s.role==='aluno') discCards = alunoDisc.map(d=>({ code:d.code, name:d.name, meta:d.meta, monitor:'Monitoria disponível', status:'Matriculado', ...P.ativo, onClick:()=>this.go('buscar') }));
+    else if (s.role==='monitor') discCards = [{ code:'MAC118', name:'Cálculo I', meta:'48 alunos · você monitora', monitor:'Profª. Helena Dias', status:'Ativa', ...P.ativo, onClick:()=>this.go('agenda') }];
+    else if (s.role==='professor') discCards = professorDisc.map(d=>({ ...d, monitor:'Ver detalhes', onClick:()=>this.go('historico') }));
+
+    // agenda tabs (variant B)
+    const agendaTabsBase = [
+      {key:'pend',label:'Pendências',badge:true,count:'2'},
+      {key:'prox',label:'Próximas'},
+      {key:'slots',label:'Horários abertos'},
+      {key:'hist',label:'Histórico'}
+    ];
+    const agendaTabs = agendaTabsBase.map(tb=>({
+      ...tb, onClick:()=>this.setState({agTab:tb.key}),
+      bg: tb.key===s.agTab ? t.surface2 : 'transparent',
+      col: tb.key===s.agTab ? t.text : t.muted,
+      badgeBg: t.warningBg, badgeCol: t.warning
+    }));
+
+    const dlg = s.dialog || {};
+
+    return {
+      t, isAuth, isLogin: s.auth==='login', isFirst: s.auth==='first',
+      authTitle: s.auth==='first' ? 'Primeiro acesso' : 'Entrar',
+      authSub: s.auth==='first' ? 'Defina uma nova senha para ativar sua conta.' : 'Acesse com seu e-mail institucional.',
+      isApp: !isAuth,
+      navSidebar: s.nav==='sidebar', navTopbar: s.nav==='topbar',
+      nav, roleSeg, navSeg, themeSeg, homeSeg, agendaSeg,
+      roleLabel: this.ROLE_LABEL[s.role], userName: this.USER_NAME[s.role],
+      themeToggle: ()=>this.setState({theme: s.theme==='dark'?'light':'dark'}),
+      themeLabel: s.theme==='dark' ? 'Tema claro' : 'Tema escuro',
+      themeIcon: s.theme==='dark' ? 'M12 3a9 9 0 109 9 7 7 0 01-9-9z' : 'M12 4v2M12 18v2M4 12H2M22 12h-2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4M12 8a4 4 0 100 8 4 4 0 000-8z',
+      goLogin: ()=>this.setState({auth:'login'}),
+      goFirst: ()=>this.setState({auth:'first'}),
+      exitAuth: ()=>this.setState({auth:null, role:s.role, screen:'home'}),
+      pageKicker:h[0], pageTitle:h[1], pageSub:h[2],
+      showAction: !!h[3], actionLabel:h[3]||'', onAction: actionFns[h[4]] || (()=>{}),
+      showHomeVariant: !isAuth && s.screen==='home',
+      showAgendaVariant: !isAuth && s.role==='monitor' && s.screen==='agenda',
+      homeIsA: s.homeV==='a', homeIsB: s.homeV==='b',
+      agendaIsA: s.agendaV==='a', agendaIsB: s.agendaV==='b',
+      agTabPend:s.agTab==='pend', agTabProx:s.agTab==='prox', agTabSlots:s.agTab==='slots', agTabHist:s.agTab==='hist',
+      agendaTabs,
+      v: {
+        alunoHome: view==='aluno-home', alunoBuscar: view==='aluno-buscar', alunoAgend: view==='aluno-agendamentos',
+        monitorHome: view==='monitor-home', monitorAgenda: view==='monitor-agenda', monitorCriar: view==='monitor-criar', monitorPerfil: view==='monitor-perfil',
+        professorHome: view==='professor-home', professorIndicar: view==='professor-indicar', professorHistorico: view==='professor-historico',
+        adminHome: view==='admin-home', adminUsuarios: view==='admin-usuarios', adminDisciplinas: view==='admin-disciplinas', adminPendentes: view==='admin-pendentes', adminRelatorios: view==='admin-relatorios',
+        discList
+      },
+      // nav helpers
+      goBuscar:()=>this.go('buscar'), goAgend:()=>this.go('agendamentos'), goAgenda:()=>this.go('agenda'),
+      goCriar:()=>this.go('criar'), goIndicar:()=>this.go('indicar'), goPendentes:()=>this.go('pendentes'), goUsuarios:()=>this.go('usuarios'),
+      // dialogs
+      confirmCancel:dlgCancel, confirmAgendar:dlgAgendar, confirmIndicar:dlgIndicar, confirmResetSenha:dlgReset,
+      confirmDesativar:dlgDesativar, confirmAprovar:dlgAprovar, confirmRejeitar:dlgRejeitar, openPresenca:dlgPresenca,
+      hasDialog: !!s.dialog, dlg, closeDialog:()=>this.closeDialog(), confirmDialog:()=>this.confirmDialog(),
+      hasToast: !!s.toast, toast: s.toast,
+      // data
+      alunoUpcoming, alunoDisc, buscaSlots, discChips, alunoAgend,
+      monitorAttention, monitorUpcoming, monitorSlots, monitorHistory,
+      professorDisc, alunoSearch, professorHistory,
+      adminUsers, adminUsersFull, adminPendentes, adminDisc, relatHoras, relatPart,
+      discCards
+    };
+  }
+}
+</script>
+</body>
+</html>

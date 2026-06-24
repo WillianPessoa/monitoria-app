@@ -92,35 +92,89 @@ def my_profile():
 
     disponibilidade_slots = repository.list_monitor_disponibilidade(user_id)
     selected_keys = set()
+    selected_block_keys = set()
+    weekday_hours = {}
+
     for slot in disponibilidade_slots:
         hora_inicio = slot.get("hora_inicio")
         if hasattr(hora_inicio, "seconds"):
             hour_value = int(hora_inicio.seconds / 3600)
         else:
             hour_value = int(str(hora_inicio).split(":")[0])
-        selected_keys.add(f"{slot['weekday']}|{hour_value}")
+        weekday = slot["weekday"]
+        selected_keys.add(f"{weekday}|{hour_value}")
+        weekday_hours.setdefault(weekday, []).append(hour_value)
+
+    for weekday, hours in weekday_hours.items():
+        hours_set = set(hours)
+        for hour in sorted(hours):
+            if hour in hours_set and (hour + 1) in hours_set:
+                selected_block_keys.add(f"{weekday}|{hour}")
+                hours_set.remove(hour)
+                hours_set.remove(hour + 1)
 
     if request.method == "POST":
         contato_tipo = request.form.get("contato_tipo", "").strip()
         contato_valor = request.form.get("contato_valor", "").strip()
         slots_raw = request.form.getlist("slots")
+        carga_raw = request.form.get("carga_horaria", "1")
+        modo_2h = request.form.get("modo_2h", "CONSECUTIVAS").upper()
+
+        try:
+            carga_horaria = int(carga_raw)
+        except (TypeError, ValueError):
+            carga_horaria = 1
 
         slots_payload = []
+        intervals_by_weekday = {}
+        slot_keys = set()
+
+        def has_overlap(weekday, start, end):
+            for existing_start, existing_end in intervals_by_weekday.get(weekday, []):
+                if start < existing_end and existing_start < end:
+                    return True
+            return False
+
         for raw in slots_raw:
             try:
-                weekday_str, hour_str = raw.split("|")
+                parts = raw.split("|")
+                weekday_str = parts[0]
+                hour_str = parts[1]
+                duration_str = parts[2] if len(parts) > 2 else "1"
                 weekday = int(weekday_str)
                 hour = int(hour_str)
+                duration = int(duration_str)
             except (ValueError, TypeError):
                 continue
 
-            slots_payload.append({"weekday": weekday, "hora_inicio": f"{hour:02d}:00:00"})
+            start = hour
+            end = hour + (2 if duration == 2 else 1)
+            if has_overlap(weekday, start, end):
+                flash("Selecione horários sem sobreposição.", "error")
+                return redirect(url_for("usuarios.my_profile"))
 
-        if service.update_monitor_profile(user_id, contato_tipo, contato_valor, slots_payload):
+            intervals_by_weekday.setdefault(weekday, []).append((start, end))
+            for h in range(start, end):
+                slot_key = (weekday, h)
+                if slot_key in slot_keys:
+                    flash("Selecione horários sem sobreposição.", "error")
+                    return redirect(url_for("usuarios.my_profile"))
+                slot_keys.add(slot_key)
+                slots_payload.append({"weekday": weekday, "hora_inicio": f"{h:02d}:00:00"})
+
+        ok, error_msg = service.update_monitor_profile(
+            user_id,
+            contato_tipo,
+            contato_valor,
+            slots_payload,
+            carga_horaria,
+            modo_2h,
+        )
+        if ok:
             flash("Perfil atualizado com sucesso.", "success")
             return redirect(url_for("usuarios.my_profile"))
 
-        flash("Contato inválido. Informe e-mail ou celular BR válido.", "error")
+        flash(error_msg, "error")
 
     contato_tipo = ""
     contato_valor = user.get("contato") or ""
@@ -129,11 +183,19 @@ def my_profile():
     elif contato_valor:
         contato_tipo = "celular"
 
+    carga_horaria = user.get("carga_horaria_semanal") or 1
+    modo_2h = user.get("modo_2h") or "CONSECUTIVAS"
+
     return render_template(
         "usuarios/my_profile.html",
         user=user,
         disponibilidade_slots=disponibilidade_slots,
         selected_keys=selected_keys,
+        selected_block_keys=selected_block_keys,
         contato_tipo=contato_tipo,
         contato_valor=contato_valor,
+        carga_horaria=carga_horaria,
+        modo_2h=modo_2h,
     )
+
+

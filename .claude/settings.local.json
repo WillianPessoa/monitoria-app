@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(Get-ChildItem *)",
-      "PowerShell(Get-ChildItem -Depth 1 | ForEach-Object { $_.FullName })"
+      "PowerShell(Get-ChildItem -Depth 1 | ForEach-Object { $_.FullName })",
+      "Bash(python -c \"import py_compile; py_compile.compile\\('disciplinas/repository.py', doraise=True\\); py_compile.compile\\('disciplinas/service.py', doraise=True\\); py_compile.compile\\('disciplinas/routes.py', doraise=True\\); print\\('OK'\\)\")"
     ]
   }
 }

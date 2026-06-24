@@ -1,43 +1,87 @@
 {% extends 'base.html' %}
-{% block title %}Indicações de monitores - Monitoria App{% endblock %}
+{% block title %}Indicações — Monitoria App{% endblock %}
+{% block page_kicker %}Administração{% endblock %}
+{% block page_title %}Indicações de monitor{% endblock %}
+{% block page_sub %}Aprove ou rejeite indicações feitas por professores.{% endblock %}
+
 {% block content %}
-<section class="card">
-  <h2>Indicações pendentes</h2>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Disciplina</th>
-          <th>Aluno</th>
-          <th>Professor</th>
-          <th>Criado em</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for m in monitorias %}
-        <tr>
-          <td>{{ m.disciplina }}</td>
-          <td>{{ m.aluno_nome }}</td>
-          <td>{{ m.professor_nome }}</td>
-          <td>{{ m.criado_em }}</td>
-          <td>
-            <form class="inline-form" method="post" action="{{ url_for('monitorias.aprovar', monitoria_id=m.id) }}">
-              <button type="submit" class="button">Aprovar</button>
-            </form>
-            <form class="inline-form" method="post" action="{{ url_for('monitorias.rejeitar', monitoria_id=m.id) }}">
-              <input name="motivo" placeholder="Motivo (opcional)" />
-              <button type="submit" class="button danger">Rejeitar</button>
-            </form>
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="5">Nenhuma indicação pendente.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+{% if monitorias %}
+<div class="pending-list">
+  {% for m in monitorias %}
+  <div class="pending-card">
+    <div class="pending-avatar" aria-hidden="true"></div>
+    <div class="pending-body">
+      <div class="pending-name">{{ m.aluno_nome }}</div>
+      <div class="pending-meta">
+        Indicado por <strong style="color:var(--text);">{{ m.professor_nome }}</strong>
+        para <strong style="color:var(--text);">{{ m.disciplina }}</strong>
+        · {{ m.criado_em }}
+      </div>
+    </div>
+    <span class="status-pill warning">Pendente</span>
+    <div class="pending-actions">
+      <button type="button" class="button btn-danger btn-sm"
+        onclick="document.getElementById('dlg-rejeitar-{{ m.id }}').showModal()">Rejeitar</button>
+      <button type="button" class="button btn-sm" style="background:var(--success);color:#04211a;"
+        onclick="document.getElementById('dlg-aprovar-{{ m.id }}').showModal()">Aprovar</button>
+    </div>
   </div>
-</section>
+
+  {# Dialog: aprovar #}
+  <dialog id="dlg-aprovar-{{ m.id }}" class="dialog">
+    <div class="dialog-head">
+      <div class="dialog-icon" style="background:var(--success-bg);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <h3>Aprovar indicação?</h3>
+    </div>
+    <p style="color:var(--muted);font-size:14px;line-height:1.5;">
+      <strong style="color:var(--text);">{{ m.aluno_nome }}</strong> se tornará monitor de
+      <strong style="color:var(--text);">{{ m.disciplina }}</strong> com acesso imediato ao sistema.
+    </p>
+    <div class="dialog-actions">
+      <button type="button" class="button btn-outline" onclick="this.closest('dialog').close()">Cancelar</button>
+      <form method="post" action="{{ url_for('monitorias.aprovar', monitoria_id=m.id) }}" class="inline-form">
+        <button type="submit" class="button" style="background:var(--success);color:#04211a;">Aprovar</button>
+      </form>
+    </div>
+  </dialog>
+
+  {# Dialog: rejeitar #}
+  <dialog id="dlg-rejeitar-{{ m.id }}" class="dialog">
+    <div class="dialog-head">
+      <div class="dialog-icon" style="background:var(--error-bg);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--error)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </div>
+      <h3>Rejeitar indicação?</h3>
+    </div>
+    <p style="color:var(--muted);font-size:14px;line-height:1.5;margin-bottom:14px;">
+      A indicação de <strong style="color:var(--text);">{{ m.aluno_nome }}</strong> será rejeitada.
+    </p>
+    <form method="post" action="{{ url_for('monitorias.rejeitar', monitoria_id=m.id) }}" class="form-stack">
+      <label for="motivo-{{ m.id }}">Motivo (opcional)
+        <input id="motivo-{{ m.id }}" name="motivo" placeholder="Explique o motivo da rejeição…" />
+      </label>
+      <div class="dialog-actions" style="padding:0;margin-top:0;">
+        <button type="button" class="button btn-outline" onclick="this.closest('dialog').close()">Cancelar</button>
+        <button type="submit" class="button" style="background:var(--error);color:#fff;">Rejeitar</button>
+      </div>
+    </form>
+  </dialog>
+
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="card" style="display:flex;align-items:center;gap:14px;">
+  <div style="width:44px;height:44px;border-radius:12px;background:var(--success-bg);display:flex;align-items:center;justify-content:center;flex:none;">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+  </div>
+  <div>
+    <div style="font-weight:700;font-size:14.5px;">Tudo em dia</div>
+    <p class="muted" style="font-size:13px;">Nenhuma indicação pendente de revisão.</p>
+  </div>
+</div>
+{% endif %}
+
 {% endblock %}

@@ -1,85 +1,94 @@
 {% extends 'base.html' %}
-{% block title %}Alunos da disciplina - Monitoria App{% endblock %}
+{% block title %}Alunos — Monitoria App{% endblock %}
+{% block page_kicker %}Disciplina{% endblock %}
+{% block page_title %}{{ disciplina.nome }}{% endblock %}
+{% block page_sub %}{{ disciplina.codigo }} · alunos matriculados{% endblock %}
+
+{% block page_action %}
+{% if not read_only %}
+<button type="button" class="button" onclick="document.getElementById('dlg-add-alunos').showModal()" style="flex:none;align-self:flex-end;">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+  Adicionar alunos
+</button>
+{% endif %}
+{% endblock %}
+
 {% block content %}
-<section class="card">
-  <h2>Alunos matriculados</h2>
-  <p class="muted">{{ disciplina.codigo }} - {{ disciplina.nome }}</p>
+<div class="stack">
 
-  <div class="toolbar">
-    <form method="get" class="inline-form" action="{{ url_for('disciplinas.alunos', disciplina_id=disciplina.id) }}">
-      <label for="busca" class="sr-only">Buscar aluno</label>
-      <input id="busca" name="q" value="{{ search_term }}" placeholder="Buscar por nome ou e-mail" class="search-input" />
-      <button type="submit" class="button">Buscar</button>
-      {% if search_term %}
-      <a href="{{ url_for('disciplinas.alunos', disciplina_id=disciplina.id) }}" class="button">Limpar</a>
-      {% endif %}
-    </form>
-
-    {% if not read_only %}
-    <button type="button" class="button" data-dialog-open="add-alunos">Adicionar alunos</button>
+  {# ─ Busca ─ #}
+  <form method="get" action="{{ url_for('disciplinas.alunos', disciplina_id=disciplina.id) }}" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <label for="busca" class="sr-only">Buscar aluno</label>
+    <input id="busca" name="q" value="{{ search_term }}" placeholder="Buscar por nome ou e-mail" style="max-width:320px;" />
+    <button type="submit" class="button btn-outline">Buscar</button>
+    {% if search_term %}
+    <a href="{{ url_for('disciplinas.alunos', disciplina_id=disciplina.id) }}" class="button btn-outline" style="text-decoration:none;">Limpar</a>
     {% endif %}
-  </div>
+  </form>
 
+  {# ─ Lista ─ #}
   {% if not read_only %}
   <form method="post" action="{{ url_for('disciplinas.remover_alunos', disciplina_id=disciplina.id) }}">
   {% endif %}
-    <div class="table-wrap stack-gap">
-      <table>
-        <thead>
-          <tr>
-            {% if not read_only %}
-            <th>
-              <input type="checkbox" id="toggle-all" />
-            </th>
-            {% endif %}
-            <th>Aluno</th>
-            <th>E-mail</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for aluno in alunos %}
-          <tr>
-            {% if not read_only %}
-            <td>
-              <input type="checkbox" name="alunos_ids" value="{{ aluno.id }}" />
-            </td>
-            {% endif %}
-            <td>{{ aluno.nome }}</td>
-            <td>{{ aluno.email }}</td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="{% if read_only %}2{% else %}3{% endif %}">Nenhum aluno encontrado.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
 
-    <div class="toolbar stack-gap">
+  <div class="user-list">
+    <div class="user-list-head">
+      {% if not read_only %}<span style="flex:none;width:36px;"></span>{% endif %}
+      <span style="flex:1;">Aluno</span>
+      <span style="flex:1;">E-mail</span>
+    </div>
+    {% for aluno in alunos %}
+    <div class="user-row">
       {% if not read_only %}
-      <button type="submit" class="button danger">Remover selecionados</button>
-      <a href="{{ url_for('disciplinas.index') }}" class="button">Voltar</a>
+      <div style="flex:none;width:36px;">
+        <input type="checkbox" name="alunos_ids" value="{{ aluno.id }}" style="width:16px;height:16px;" />
+      </div>
       {% endif %}
-      <a href="{{ url_for('home') }}" class="button">Voltar</a>
+      <div class="user-avatar" aria-hidden="true"></div>
+      <div class="user-info">
+        <div class="user-name">{{ aluno.nome }}</div>
+      </div>
+      <div style="flex:1;font-size:13px;color:var(--muted);">{{ aluno.email }}</div>
     </div>
-  {% if not read_only %}
-  </form>
-  {% endif %}
-</section>
+    {% else %}
+    <div style="padding:20px;color:var(--muted);font-size:13.5px;">Nenhum aluno encontrado.</div>
+    {% endfor %}
+  </div>
 
+  {% if not read_only %}
+  <div style="display:flex;gap:8px;align-items:center;">
+    <button type="submit" class="button btn-danger">Remover selecionados</button>
+    <a href="{{ url_for('disciplinas.detalhe', disciplina_id=disciplina.id) }}" class="button btn-outline" style="text-decoration:none;">Voltar</a>
+  </div>
+  </form>
+  {% else %}
+  <div>
+    <a href="{{ url_for('home') }}" class="button btn-outline" style="text-decoration:none;">Voltar</a>
+  </div>
+  {% endif %}
+
+</div>
+
+{# ─ Dialog: adicionar alunos ─ #}
 {% if not read_only %}
-<dialog id="add-alunos" class="dialog">
-  <form method="post" action="{{ url_for('disciplinas.adicionar_alunos', disciplina_id=disciplina.id) }}">
-    <h3>Adicionar alunos por e-mail</h3>
-    <label for="emails">E-mails dos alunos</label>
-    <textarea id="emails" name="alunos_emails" rows="6" placeholder="Ex: aluno1@exemplo.com, aluno2@exemplo.com"></textarea>
-    <p class="muted">Separe e-mails por vírgula ou linha.</p>
-    <div class="dialog-actions">
-      <button type="button" class="button ghost" data-dialog-close>Cancelar</button>
-      <button type="submit" class="button">Adicionar</button>
+<dialog id="dlg-add-alunos" class="dialog" style="max-width:480px;">
+  <div class="dialog-head">
+    <div class="dialog-icon" style="background:var(--success-bg);">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+    </div>
+    <h3>Adicionar alunos</h3>
+  </div>
+  <form method="post" action="{{ url_for('disciplinas.adicionar_alunos', disciplina_id=disciplina.id) }}" class="form-stack">
+    <label for="emails">E-mails dos alunos
+      <textarea id="emails" name="alunos_emails" rows="5" placeholder="aluno1@email.com, aluno2@email.com&#10;Separe por vírgula ou linha."></textarea>
+    </label>
+    <p class="muted" style="font-size:12.5px;">Separe os e-mails por vírgula ou uma por linha.</p>
+    <div class="dialog-actions" style="padding:0;margin-top:4px;">
+      <button type="button" class="button btn-outline" onclick="this.closest('dialog').close()">Cancelar</button>
+      <button type="submit">Adicionar</button>
     </div>
   </form>
 </dialog>
 {% endif %}
+
 {% endblock %}

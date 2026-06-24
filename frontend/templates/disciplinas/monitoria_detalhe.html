@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% block title %}{{ disciplina.codigo }} — Detalhe de monitoria{% endblock %}
+{% block page_kicker %}{% if current_user.papel == 'ADMIN' %}Administração{% elif current_user.papel == 'PROFESSOR' %}Professor{% else %}Monitor{% endif %}{% endblock %}
+{% block page_title %}{{ disciplina.codigo }} — {{ disciplina.nome }}{% endblock %}
+{% block page_sub %}
+  Relatório de monitoria
+{% endblock %}
+
+{% block page_action %}
+<a href="javascript:history.back()" class="button btn-outline" style="flex:none;align-self:flex-end;text-decoration:none;">← Voltar</a>
+{% endblock %}
+
+{% block content %}
+<div class="stack">
+
+  {# ─ Resumo ─ #}
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">Monitor</div>
+      <div class="stat-value" style="font-size:18px;">{{ monitor.monitor_nome if monitor else '—' }}</div>
+      {% if not monitor %}<div style="font-size:12px;color:var(--warning);margin-top:4px;">Sem monitor ativo</div>{% endif %}
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Alunos inscritos</div>
+      <div class="stat-value">{{ alunos | length }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Sessões concluídas</div>
+      <div class="stat-value">{{ sessoes | length }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Horas concluídas</div>
+      <div class="stat-value">{{ "%.1f"|format(total_horas) }}h</div>
+    </div>
+  </div>
+
+  {# ─ Próxima sessão ─ #}
+  {% if proxima_sessao %}
+  <section>
+    <div class="section-head">
+      <span class="section-dot" style="background:var(--primary);"></span>
+      <h3>Próxima sessão</h3>
+    </div>
+    <div class="card" style="border-left:4px solid var(--primary);">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div class="agenda-date" style="margin:0;">
+          <div class="agenda-day">{{ proxima_sessao.data_inicio.strftime('%d') }}</div>
+          <div class="agenda-mon">{{ proxima_sessao.data_inicio.strftime('%b') }}</div>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:14px;">{{ proxima_sessao.data_inicio.strftime('%H:%M') }} — {{ proxima_sessao.data_fim.strftime('%H:%M') }}</div>
+          <div style="font-size:12.5px;color:var(--muted);margin-top:2px;">{{ proxima_sessao.data_inicio.strftime('%A, %d de %B') }}</div>
+        </div>
+        <span class="status-pill warning">Agendada</span>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {# ─ Sessões que necessitam de ação do monitor ─ #}
+  {% if sessoes_pendentes %}
+  <section>
+    <div class="section-head">
+      <span class="section-dot" style="background:var(--warning);"></span>
+      <h3>Sessões que necessitam de ação do monitor</h3>
+      <span class="section-badge" style="background:#fff3cd;color:#856404;">{{ sessoes_pendentes | length }} pendente{{ 's' if sessoes_pendentes | length != 1 }}</span>
+    </div>
+    <div class="agenda-list">
+      {% for s in sessoes_pendentes %}
+      {% set alunos_s = session_alunos_map.get(s.id, []) if session_alunos_map is defined else [] %}
+      <div class="agenda-row" style="border-left:3px solid var(--warning);">
+        <div class="agenda-date">
+          <div class="agenda-day">{{ s.data_inicio.strftime('%d') }}</div>
+          <div class="agenda-mon">{{ s.data_inicio.strftime('%b') }}</div>
+        </div>
+        <div class="agenda-body">
+          <div class="agenda-disc">{{ s.data_inicio.strftime('%H:%M') }} — {{ s.data_fim.strftime('%H:%M') }}</div>
+          <div class="agenda-meta">Monitor ainda não finalizou o registro desta sessão</div>
+        </div>
+        <span class="status-pill warning">Pendente</span>
+        {% if is_monitor %}
+        <button type="button" style="background:var(--warning);color:#231a00;border:none;border-radius:9px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;flex:none;"
+          onclick="document.getElementById('dlg-mon-fin-{{ s.id }}').showModal()">Finalizar</button>
+        {% endif %}
+      </div>
+      {% if is_monitor %}
+      <dialog id="dlg-mon-fin-{{ s.id }}" class="dialog" style="max-width:520px;">
+        <div class="dialog-head">
+          <div class="dialog-icon" style="background:var(--warning-bg);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>
+          </div>
+          <div>
+            <h3 style="margin:0;">{{ disciplina.codigo }} — {{ disciplina.nome }}</h3>
+            <p style="margin:4px 0 0;font-size:12.5px;color:var(--muted);">{{ s.data_inicio.strftime('%d/%m/%Y %H:%M') }} — {{ s.data_fim.strftime('%H:%M') }}</p>
+          </div>
+        </div>
+        <form method="post" action="{{ url_for('monitorias.registrar_sessao', sessao_id=s.id) }}" class="form-stack">
+          <fieldset style="border:none;padding:0;margin:0;">
+            <legend style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px;">Alunos presentes</legend>
+            {% if alunos_s %}
+            <div class="stack-sm">
+              {% for aluno in alunos_s %}
+              <label style="flex-direction:row;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:9px;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--text);">
+                <input type="checkbox" name="presentes" value="{{ aluno.aluno_id }}" {% if aluno.status == 'CONFIRMADA' %}checked{% endif %} style="width:16px;height:16px;flex:none;" />
+                {{ aluno.aluno_nome }}
+              </label>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="muted" style="font-size:13px;">Nenhum aluno inscrito nesta disciplina.</p>
+            {% endif %}
+          </fieldset>
+          <label for="assunto-mon-{{ s.id }}">Assunto abordado
+            <textarea id="assunto-mon-{{ s.id }}" name="assunto" rows="2" required style="resize:vertical;">{{ s.assunto or '' }}</textarea>
+          </label>
+          <label for="materiais-mon-{{ s.id }}">Materiais compartilhados <span style="font-weight:400;font-size:12px;">(opcional — um por linha; use "descrição | url" para incluir link)</span>
+            <textarea id="materiais-mon-{{ s.id }}" name="materiais" rows="3" style="resize:vertical;" placeholder="Ex: Slides da aula | https://drive.google.com/…"></textarea>
+          </label>
+          <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+            <button type="button" class="button btn-outline" onclick="this.closest('dialog').close()">Cancelar</button>
+            <button type="submit" style="background:var(--warning);color:#231a00;">Salvar registro</button>
+          </div>
+        </form>
+      </dialog>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ─ Alunos inscritos ─ #}
+  <section>
+    <div class="section-head">
+      <span class="section-dot" style="background:var(--primary);"></span>
+      <h3>Alunos inscritos</h3>
+    </div>
+    {% if alunos %}
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="user-list-head" style="padding:10px 16px;font-size:12px;font-weight:700;color:var(--muted);border-bottom:1px solid var(--border);display:flex;gap:14px;">
+        <span style="flex:2;">Nome</span>
+        <span style="flex:2;">E-mail</span>
+        <span style="flex:none;width:120px;text-align:center;">Presenças</span>
+      </div>
+      {% for a in alunos %}
+      <div style="display:flex;align-items:center;gap:14px;padding:11px 16px;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}font-size:13.5px;">
+        <span style="flex:2;font-weight:600;">{{ a.nome }}</span>
+        <span style="flex:2;color:var(--muted);">{{ a.email }}</span>
+        <span style="flex:none;width:120px;text-align:center;">
+          <span class="status-pill {% if a.presencas_confirmadas > 0 %}success{% else %}muted{% endif %}">{{ a.presencas_confirmadas }} confirmada{{ 's' if a.presencas_confirmadas != 1 }}</span>
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card"><p class="muted">Nenhum aluno inscrito.</p></div>
+    {% endif %}
+  </section>
+
+  {# ─ Sessões concluídas ─ #}
+  <section>
+    <div class="section-head">
+      <span class="section-dot" style="background:var(--success);"></span>
+      <h3>Sessões realizadas</h3>
+    </div>
+    {% if sessoes %}
+    <div class="agenda-list">
+      {% for s in sessoes %}
+      <div class="agenda-row">
+        <div class="agenda-date">
+          <div class="agenda-day">{{ s.data_inicio.strftime('%d') }}</div>
+          <div class="agenda-mon">{{ s.data_inicio.strftime('%b') }}</div>
+        </div>
+        <div class="agenda-body">
+          <div class="agenda-disc">{{ s.data_inicio.strftime('%H:%M') }} — {{ s.data_fim.strftime('%H:%M') }}</div>
+          <div class="agenda-meta">{{ s.assunto or '—' }}</div>
+        </div>
+        <span class="status-pill success">{{ s.total_presentes }} presente{{ 's' if s.total_presentes != 1 }}</span>
+        <a href="{{ url_for('monitorias.sessao_detalhe', sessao_id=s.id) }}" class="button btn-outline btn-sm" style="text-decoration:none;">Ver detalhes</a>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card"><p class="muted">Nenhuma sessão concluída ainda.</p></div>
+    {% endif %}
+  </section>
+
+  {# ─ Adicionar alunos (somente admin) ─ #}
+  {% if pode_adicionar %}
+  <section>
+    <div class="section-head">
+      <span class="section-dot" style="background:var(--accent);"></span>
+      <h3>Adicionar alunos</h3>
+    </div>
+    <div class="card">
+      <form method="post" action="{{ url_for('disciplinas.adicionar_alunos', disciplina_id=disciplina.id) }}" class="form-stack">
+        <label for="alunos_emails">E-mails dos alunos
+          <textarea id="alunos_emails" name="alunos_emails" rows="4" placeholder="aluno1@ufrj.br, aluno2@ufrj.br&#10;Um por linha ou separados por vírgula"></textarea>
+        </label>
+        <button type="submit" style="align-self:flex-start;">Adicionar alunos</button>
+      </form>
+    </div>
+  </section>
+  {% endif %}
+
+</div>
+{% endblock %}
