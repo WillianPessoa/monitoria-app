@@ -89,6 +89,26 @@ def get_disponibilidade_by_id(disponibilidade_id):
         conn.close()
 
 
+def get_slot_with_monitor(disponibilidade_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT ds.id, ds.data_inicio, ds.data_fim, ds.local, ds.status,
+                   u.nome AS monitor_nome
+            FROM disponibilidades ds
+            JOIN usuarios u ON u.id = ds.monitor_id
+            WHERE ds.id = %s
+            """,
+            (disponibilidade_id,),
+        )
+        return cursor.fetchone()
+    finally:
+        cursor.close()
+        conn.close()
+
+
 def student_has_conflict(aluno_id, data_inicio, data_fim):
     conn = get_connection()
     cursor = conn.cursor()

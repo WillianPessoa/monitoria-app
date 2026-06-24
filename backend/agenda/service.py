@@ -9,6 +9,10 @@ def get_active_monitoria_for_user(user_id):
     return monitoria_service.get_active_by_aluno(user_id)
 
 
+def get_slot_info(slot_id):
+    return repository.get_slot_with_monitor(slot_id)
+
+
 def list_available_slots_for_aluno(aluno_id):
     return repository.list_available_slots_for_aluno(aluno_id)
 

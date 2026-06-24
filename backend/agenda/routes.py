@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import flash, redirect, render_template, request, session, url_for
 
@@ -81,6 +81,17 @@ def index():
         for sessao in monitor_sessions:
             participantes = monitoria_service.list_session_participants(sessao["id"])
             session_participants_map[sessao["id"]] = participantes
+    proximas_24h = now_value + timedelta(hours=24)
+    agendamentos_proximas_24h = {
+        ag["agendamento_id"]
+        for ag in student_agendamentos
+        if ag["data_inicio"] <= proximas_24h
+    }
+    sessoes_proximas_24h = {
+        sessao["sessao_id"]
+        for sessao in weekly_sessions
+        if sessao["data_inicio"] <= proximas_24h
+    }
     return render_template(
         "agenda/index.html",
         monitoria=monitoria,
@@ -101,6 +112,8 @@ def index():
         own_slots=own_slots,
         now_value=now_value,
         student_agendamentos=student_agendamentos,
+        agendamentos_proximas_24h=agendamentos_proximas_24h,
+        sessoes_proximas_24h=sessoes_proximas_24h,
     )
 
 
@@ -136,9 +149,17 @@ def create_slot():
 @login_required
 def book_slot(slot_id):
     user_id = session.get("user_id")
+    slot_info = service.get_slot_info(slot_id)
     success, error = service.book_slot(slot_id, user_id)
     if success:
-        flash("Horário agendado com sucesso.", "success")
+        if slot_info:
+            data_str = slot_info["data_inicio"].strftime("%-d/%m às %H:%M")
+            flash(
+                f"Agendamento confirmado: {data_str} com {slot_info['monitor_nome']}.",
+                "success",
+            )
+        else:
+            flash("Horário agendado com sucesso.", "success")
     else:
         flash(error, "error")
     return redirect(url_for("agenda.index"))

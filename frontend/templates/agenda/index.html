@@ -317,7 +317,7 @@
           <div class="agenda-disc">{{ ag.disciplina_codigo }} — {{ ag.disciplina_nome }}</div>
           <div class="agenda-meta">{{ ag.monitor_nome }} · {{ ag.data_inicio.strftime('%H:%M') }} — {{ ag.data_fim.strftime('%H:%M') }}{% if ag.local %} · {{ ag.local }}{% endif %}</div>
         </div>
-        <span class="status-pill warning">Confirmado</span>
+        {% if ag.agendamento_id in agendamentos_proximas_24h %}<span class="status-pill error" title="Atendimento nas próximas 24 horas">Hoje/Amanhã</span>{% else %}<span class="status-pill warning">Confirmado</span>{% endif %}
         <form method="post" action="{{ url_for('agenda.cancel_agendamento', agendamento_id=ag.agendamento_id) }}" class="inline-form">
           <button type="submit" class="button btn-danger btn-sm">Cancelar</button>
         </form>
@@ -346,6 +346,7 @@
         </div>
         {% if sessao.presenca_status == 'CONFIRMADA' %}<span class="status-pill success">Presente</span>
         {% elif sessao.presenca_status == 'AUSENTE' %}<span class="status-pill error">Ausente</span>
+        {% elif sessao.sessao_id in sessoes_proximas_24h %}<span class="status-pill error" title="Sessão nas próximas 24 horas">Hoje/Amanhã</span>
         {% else %}<span class="status-pill warning">Agendado</span>{% endif %}
       </div>
       {% endfor %}
