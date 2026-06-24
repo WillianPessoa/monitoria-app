@@ -332,3 +332,163 @@ Given: admin visualiza relatório gerado
 When:  solicita exportação
 Then:  arquivo PDF ou CSV é gerado e disponibilizado para download
 ```
+
+---
+
+### US21 — Aluno recebe confirmação ao agendar
+
+**Cenário 1: Flash message após agendamento**
+```
+Given: aluno que acabou de reservar um horário disponível
+When:  o agendamento é confirmado pelo sistema
+Then:  aluno vê mensagem de confirmação com data, hora e nome do monitor
+```
+
+**Cenário 2: Agendamento persiste na agenda**
+```
+Given: aluno que confirmou um agendamento
+When:  acessa a seção "Horários agendados" na agenda
+Then:  o agendamento aparece listado com data, hora, monitor e local
+```
+
+---
+
+### US22 — Lembrete visual para atendimentos próximos
+
+**Cenário 1: Badge de lembrete exibido**
+```
+Given: aluno com agendamento confirmado nas próximas 24 horas
+When:  acessa a tela de agenda
+Then:  sistema exibe badge "Hoje/Amanhã" no agendamento próximo com data e hora
+```
+
+**Cenário 2: Sem agendamentos próximos**
+```
+Given: aluno sem agendamentos nas próximas 24 horas
+When:  acessa a tela de agenda
+Then:  nenhum badge de lembrete é exibido
+```
+
+---
+
+### US24 — Aluno vota em horário preferido para sessão semanal
+
+**Cenário 1: Voto bem-sucedido**
+```
+Given: aluno matriculado na disciplina com votação aberta para a semana
+When:  seleciona uma ou duas opções de horário e confirma
+Then:  voto é registrado e aluno vê mensagem de confirmação de sucesso
+```
+
+**Cenário 2: Número de opções excedido**
+```
+Given: votação configurada para máximo de 1 opção
+When:  aluno tenta enviar mais de uma opção selecionada
+Then:  sistema rejeita com mensagem indicando o limite permitido
+```
+
+**Cenário 3: Votação indisponível**
+```
+Given: disciplina sem votação aberta na semana corrente
+When:  aluno tenta votar
+Then:  sistema rejeita com mensagem de votação indisponível
+```
+
+**Cenário 4: Aluno sem matrícula na disciplina**
+```
+Given: usuário sem matrícula na disciplina
+When:  tenta registrar voto
+Then:  sistema rejeita com erro de permissão
+```
+
+---
+
+### US25 — Monitor configura carga horária e confirma horário semanal
+
+**Cenário 1: Configurar carga de 1 hora**
+```
+Given: monitor autenticado com votação aberta na semana
+When:  define carga horária como 1 hora e salva
+Then:  opções de 1h são geradas para votação dos alunos
+```
+
+**Cenário 2: Configurar carga de 2h consecutivas**
+```
+Given: monitor autenticado com votação aberta
+When:  define 2 horas no modo CONSECUTIVAS
+Then:  opções são geradas como blocos de 2h seguidas
+```
+
+**Cenário 3: Configurar carga de 2h separadas**
+```
+Given: monitor autenticado com votação aberta
+When:  define 2 horas no modo SEPARADAS
+Then:  alunos podem selecionar dois horários distintos na mesma semana
+```
+
+**Cenário 4: Confirmar com votos suficientes**
+```
+Given: votação aberta com ≥50% dos alunos matriculados tendo votado
+When:  monitor seleciona horário(s) e confirma
+Then:  sessão(ões) de monitoria são criadas na semana corrente e votação é encerrada
+```
+
+**Cenário 5: Confirmar sem votos suficientes**
+```
+Given: votação com menos de 50% dos alunos tendo votado
+When:  monitor tenta confirmar
+Then:  sistema rejeita com mensagem de votos insuficientes
+```
+
+**Cenário 6: Monitor sem permissão**
+```
+Given: usuário que não é o monitor ativo da disciplina
+When:  tenta configurar ou confirmar a votação
+Then:  sistema rejeita com erro de permissão
+```
+
+---
+
+### US26 — Aluno confirma ou cancela presença em sessão coletiva
+
+**Cenário 1: Confirmação de presença**
+```
+Given: aluno matriculado com sessão de monitoria futura na semana
+When:  confirma presença na sessão
+Then:  status CONFIRMADA é registrado e exibido na página da disciplina
+```
+
+**Cenário 2: Marcação de ausência**
+```
+Given: aluno matriculado com sessão de monitoria futura
+When:  registra ausência
+Then:  status AUSENTE é registrado
+```
+
+**Cenário 3: Cancelamento com antecedência**
+```
+Given: aluno com presença CONFIRMADA em sessão com mais de 6 horas de antecedência
+When:  cancela a presença
+Then:  status volta para AUSENTE e aluno vê mensagem de confirmação
+```
+
+**Cenário 4: Cancelamento fora do prazo**
+```
+Given: sessão ocorre em menos de 6 horas
+When:  aluno tenta cancelar presença confirmada
+Then:  sistema rejeita com mensagem "Cancelamento não permitido com menos de 6 horas de antecedência"
+```
+
+**Cenário 5: Sessão já começou**
+```
+Given: sessão com data_inicio no passado
+When:  aluno tenta confirmar presença
+Then:  sistema rejeita com mensagem de que a sessão já começou
+```
+
+**Cenário 6: Aluno sem matrícula**
+```
+Given: usuário sem matrícula na disciplina
+When:  tenta confirmar presença
+Then:  sistema rejeita com erro de permissão
+```

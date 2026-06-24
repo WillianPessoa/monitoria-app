@@ -39,9 +39,9 @@
 | `/disciplinas/<id>/alunos` | GET | US06 (gestão) | `test_gerenciar_alunos_disciplina.py` | Página de gestão de alunos |
 | `/disciplinas/<id>/alunos/adicionar` | POST | US06 (gestão) | `test_gerenciar_alunos_disciplina.py` | Substituiu `/matricular` |
 | `/disciplinas/<id>/alunos/remover` | POST | US06 (gestão) | `test_gerenciar_alunos_disciplina.py` | Substituiu `/remover-aluno` |
-| `/disciplinas/<id>/votar` | POST | ⚠️ sem US formal | `test_votacao_aluno_votar.py` | Sistema de votação de horário |
-| `/disciplinas/<id>/presenca` | POST | ⚠️ sem US formal | `test_presenca_sessao.py` | Aluno confirma presença em sessão |
-| `/disciplinas/<id>/cancelar` | POST | ⚠️ sem US formal | `test_presenca_sessao.py` | Aluno cancela presença confirmada |
+| `/disciplinas/<id>/votar` | POST | US24 | `test_votacao_aluno_votar.py` | Aluno vota em horário preferido para sessão semanal |
+| `/disciplinas/<id>/presenca` | POST | US26 | `test_presenca_sessao.py` | Aluno confirma presença em sessão |
+| `/disciplinas/<id>/cancelar` | POST | US26 | `test_presenca_sessao.py` | Aluno cancela presença confirmada |
 | `/disciplinas/<id>/matricular` | POST | 🔴 código morto | — | Supersedido por `/alunos/adicionar` — remover |
 | `/disciplinas/<id>/remover-aluno` | POST | 🔴 código morto | — | Supersedido por `/alunos/remover` — remover |
 
@@ -53,8 +53,8 @@
 | `/monitorias/<id>/aprovar` | POST | US08 | `test_us08_aprovar_rejeitar_indicacao.py` | |
 | `/monitorias/<id>/rejeitar` | POST | US08 | `test_us08_aprovar_rejeitar_indicacao.py` | |
 | `/monitorias/indicar` | GET, POST | US07 | `test_us07_indicar_monitor.py` | |
-| `/monitorias/votacao/<id>/confirmar` | POST | ⚠️ sem US formal | `test_votacao_monitor_confirmar.py` | Monitor confirma horário da semana |
-| `/monitorias/votacao/<id>/configurar` | POST | ⚠️ sem US formal | `test_votacao_monitor_configurar.py` | Monitor configura carga horária da votação |
+| `/monitorias/votacao/<id>/confirmar` | POST | US25 | `test_votacao_monitor_confirmar.py` | Monitor confirma horário da semana |
+| `/monitorias/votacao/<id>/configurar` | POST | US25 | `test_votacao_monitor_configurar.py` | Monitor configura carga horária da votação |
 | `/monitorias/sessoes/<id>/cancelar` | POST | US16-novo | `test_us16_novo_cancelar_sessao.py` | |
 | `/monitorias/sessoes/<id>/registrar` | POST | US16, US17 | `test_us16_us17_registrar_sessao.py` | |
 | `/monitorias/sessoes/<id>` | GET | — | — | Placeholder sem conteúdo de negócio |
@@ -97,20 +97,16 @@
 
 **Recomendação:** remover ambas as rotas mortas antes do deploy final para evitar confusão e reduzir superfície de ataque.
 
-### 2. Funcionalidades sem US formal (implementadas, testadas, precisam de formalização)
+### 2. ~~Funcionalidades sem US formal~~ — RESOLVIDO (24/06/2026)
 
-Estas rotas foram implementadas pelo time sem US formal no backlog. Já têm testes de integração, mas faltam AC BDD no GitHub.
+As seguintes rotas foram formalizadas retroativamente com criação de issues e fechamento pelo QM:
 
-| Funcionalidade | Rotas | Arquivo de teste | Testes |
+| Funcionalidade | Rotas | Issue | Testes |
 |---|---|---|---|
-| Votação de horário (aluno vota) | `POST /disciplinas/<id>/votar` | `test_votacao_aluno_votar.py` | 7 |
-| Votação de horário (monitor configura) | `POST /monitorias/votacao/<id>/configurar` | `test_votacao_monitor_configurar.py` | 7 |
-| Votação de horário (monitor confirma) | `POST /monitorias/votacao/<id>/confirmar` | `test_votacao_monitor_confirmar.py` | 8 |
-| Presença em sessão (aluno confirma/cancela) | `POST /disciplinas/<id>/presenca` + `/cancelar` | `test_presenca_sessao.py` | 8 |
-
-**Recomendação:** abrir issues de US para formalizar no backlog. Sugestão de nomes:
-- `[US-VOT] Sistema de votação de horário de monitoria`
-- `[US-PRE] Aluno confirma/cancela presença em sessão de monitoria`
+| US24 — Aluno vota | `POST /disciplinas/<id>/votar` | [#36](https://github.com/WillianPessoa/monitoria-app/issues/36) | 7 |
+| US25 — Monitor configura | `POST /monitorias/votacao/<id>/configurar` | [#37](https://github.com/WillianPessoa/monitoria-app/issues/37) | 7 |
+| US25 — Monitor confirma | `POST /monitorias/votacao/<id>/confirmar` | [#37](https://github.com/WillianPessoa/monitoria-app/issues/37) | 8 |
+| US26 — Aluno presença | `POST /disciplinas/<id>/presenca` + `/cancelar` | [#38](https://github.com/WillianPessoa/monitoria-app/issues/38) | 8 |
 
 ### 3. Placeholders sem implementação
 
@@ -127,8 +123,7 @@ Estas rotas foram implementadas pelo time sem US formal no backlog. Já têm tes
 
 | Categoria | Qtd |
 |---|:---:|
-| Rotas com US formal e teste | 28 |
-| Rotas com teste mas sem US formal | 5 |
+| Rotas com US formal e teste | 33 |
 | Código morto (sem US, sem template) | 2 |
 | Placeholders (sem conteúdo de negócio) | 2 |
 | **Total de rotas mapeadas** | **37** |

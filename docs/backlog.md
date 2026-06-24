@@ -61,6 +61,10 @@
 | US13 | monitor | ver minha agenda com agendamentos confirmados | me organizar                             | US10       |  **Must**  |
 | US14 | aluno   | cancelar um agendamento                       | liberar o horário se não puder ir        | US12       |   Should   |
 | US15 | monitor | bloquear um horário da agenda                 | marcar quando não estou disponível       | US10       |   Should   |
+| US16-novo | monitor | cancelar uma sessão de monitoria confirmada | reagendar quando houver imprevistos | US25 | **Must** |
+| US24 | aluno | votar em horário preferido para a sessão semanal de monitoria | o monitor possa confirmar o horário mais conveniente | US07/US08, US06 | **Must** |
+| US25 | monitor | configurar a carga horária semanal e confirmar o horário mais votado | os alunos saibam quando a sessão ocorrerá | US24, US10 | **Must** |
+| US26 | aluno | confirmar ou cancelar minha presença em sessão coletiva de monitoria | o monitor saiba quantos alunos comparecerão | US24/US25, US06 | Should |
 
 ### EP04 — Registro de Atendimentos e Bolsas
 
@@ -86,9 +90,10 @@
 
 | Classificação | IDs | Total |
 |---|---|:---:|
-| **Must have** | TT01, TT02, TT03, TT04, TT05, US01, US02, US06, US07, US08, US10, US11, US12, US13, US16, US18, US20 | 17 |
-| **Should have** | US03, US04, US09, US14, US15, US17, US19, US21 | 8 |
-| **Could have** | US05, US22, US23 | 3 |
+| **Must have** | TT01, TT02, TT03, TT04, TT05, US01, US02, US06, US07, US08, US10, US11, US12, US13, US16, US16-novo, US18, US20, US24, US25 | 20 |
+| **Should have** | US03, US04, US09, US14, US15, US17, US19, US21, US26 | 9 |
+| **Could have** | US05, US22 | 2 |
+| **Won't do** | US23 | 1 |
 
 ---
 
