@@ -29,6 +29,7 @@ Cenários extras:
 import datetime
 
 from db.connection import get_connection
+from utils.time import now_sp_naive
 
 
 def _get_sessao_status(sessao_id):
@@ -91,8 +92,7 @@ class TestUS16NovoCancelarSessao:
     def test_cancelar_sessao_com_menos_de_6h_rejeitado(self, client, make_monitoria_ativa, make_user):
         """C2: Sessão em 3h não pode ser cancelada → flash de erro, status AGENDADA."""
         setup = make_monitoria_ativa("us16nc2")
-        now = datetime.datetime.now()
-        data_inicio = now + datetime.timedelta(hours=3)  # menos de 6h
+        data_inicio = now_sp_naive() + datetime.timedelta(hours=3)  # menos de 6h
         data_fim = data_inicio + datetime.timedelta(hours=2)
         sessao_id = _create_sessao_db(setup["disc_id"], setup["aluno_id"], data_inicio, data_fim)
 

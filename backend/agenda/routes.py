@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from flask import flash, redirect, render_template, request, session, url_for
 
@@ -14,14 +14,14 @@ from utils.time import now_sp_naive, week_bounds_for_votacao
 def index():
     user_id = session.get("user_id")
     monitoria = service.get_active_monitoria_for_user(user_id)
-    available_slots = service.list_available_slots_for_aluno(user_id)
     weekly_sessions = service.list_weekly_sessions_for_aluno(user_id)
-    student_agendamentos = service.list_agendamentos_for_aluno(user_id)
-    own_slots = []
     votacao = None
     votacao_resultados = []
     monitor_sessions = []
     session_participants_map = {}
+    session_alunos_map = {}
+    past_sessions_aluno = []
+    votacoes_pendentes_aluno = []
     monitor_hours_total = 0.0
     total_alunos = 0
     required_votes = 0
@@ -30,9 +30,9 @@ def index():
     votacao_cells = {}
     votacao_slot_duration = 1
     votacao_max_select = 1
+    max_votos = 0
     now_value = now_sp_naive()
     if monitoria:
-        own_slots = service.list_slots_for_monitor(user_id)
         monitor_hours_total = monitoria_service.get_monitor_hours_count(user_id)
         semana_inicio, semana_fim = week_bounds_for_votacao(now_value)
         sessoes_semana = monitoria_service.get_weekly_sessions(
@@ -76,31 +76,53 @@ def index():
 
                 votacao_weekdays = sorted({key[0] for key in votacao_cells.keys()})
                 votacao_hours = sorted({key[1] for key in votacao_cells.keys()})
+                max_votos = max((c["votos"] for c in votacao_cells.values()), default=0)
 
         monitor_sessions = monitoria_service.list_monitor_sessions(user_id, now_value)
         for sessao in monitor_sessions:
             participantes = monitoria_service.list_session_participants(sessao["id"])
             session_participants_map[sessao["id"]] = participantes
-    proximas_24h = now_value + timedelta(hours=24)
-    agendamentos_proximas_24h = {
-        ag["agendamento_id"]
-        for ag in student_agendamentos
-        if ag["data_inicio"] <= proximas_24h
-    }
-    sessoes_proximas_24h = {
-        sessao["sessao_id"]
-        for sessao in weekly_sessions
-        if sessao["data_inicio"] <= proximas_24h
-    }
+            if sessao["data_fim"] <= now_value and sessao["status"] != "CONCLUIDA":
+                alunos = monitoria_service.list_alunos_for_sessao(sessao["disciplina_id"], sessao["id"])
+                session_alunos_map[sessao["id"]] = alunos
+    else:
+        past_sessions_aluno = service.list_past_sessions_for_aluno(user_id)
+        semana_inicio, semana_fim = week_bounds_for_votacao(now_value)
+        aluno_disciplinas = disciplinas_service.list_disciplinas_by_aluno(user_id)
+        for disc in aluno_disciplinas:
+            disc_id = disc["id"]
+            sessoes_sem = monitoria_service.get_weekly_sessions(disc_id, semana_inicio, semana_fim)
+            if any(s["data_inicio"] >= now_value for s in sessoes_sem):
+                continue
+            votacao_disc = monitoria_service.get_open_votacao(disc_id, semana_inicio, semana_fim)
+            if not votacao_disc:
+                continue
+            opcoes = monitoria_service.list_votacao_opcoes(votacao_disc["id"])
+            weekly_hours, split_mode = monitoria_service.get_votacao_config(votacao_disc)
+            max_sel = 1 if weekly_hours == 1 or split_mode == "CONSECUTIVAS" else 2
+            voto_atual = monitoria_service.get_voto_by_aluno(votacao_disc["id"], user_id)
+            voto_ids_disc = {item["opcao_id"] for item in voto_atual}
+            votacoes_pendentes_aluno.append({
+                "disciplina_id": disc_id,
+                "disciplina_codigo": disc["codigo"],
+                "disciplina_nome": disc["nome"],
+                "votacao_id": votacao_disc["id"],
+                "opcoes": opcoes,
+                "voto_ids": voto_ids_disc,
+                "max_select": max_sel,
+                "ja_votou": bool(voto_ids_disc),
+            })
     return render_template(
         "agenda/index.html",
         monitoria=monitoria,
-        available_slots=available_slots,
         weekly_sessions=weekly_sessions,
         votacao=votacao,
         votacao_resultados=votacao_resultados,
         monitor_sessions=monitor_sessions,
         session_participants_map=session_participants_map,
+        session_alunos_map=session_alunos_map,
+        past_sessions_aluno=past_sessions_aluno,
+        votacoes_pendentes_aluno=votacoes_pendentes_aluno,
         monitor_hours_total=monitor_hours_total,
         total_alunos=total_alunos,
         required_votes=required_votes,
@@ -109,11 +131,8 @@ def index():
         votacao_cells=votacao_cells,
         votacao_slot_duration=votacao_slot_duration,
         votacao_max_select=votacao_max_select,
-        own_slots=own_slots,
+        max_votos=max_votos,
         now_value=now_value,
-        student_agendamentos=student_agendamentos,
-        agendamentos_proximas_24h=agendamentos_proximas_24h,
-        sessoes_proximas_24h=sessoes_proximas_24h,
     )
 
 

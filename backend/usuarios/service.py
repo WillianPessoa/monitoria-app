@@ -61,12 +61,12 @@ def update_monitor_profile(
     if normalized_valor:
         if normalized_tipo == "email":
             if not _is_valid_email(normalized_valor):
-                return False
+                return False, "E-mail inválido. Verifique o endereço informado."
         elif normalized_tipo == "celular":
             if not _is_valid_br_phone(normalized_valor):
-                return False
+                return False, "Celular inválido. Use o formato (XX) XXXXX-XXXX."
         else:
-            return False
+            return False, "Tipo de contato inválido."
 
     if carga_horaria not in {1, 2}:
         carga_horaria = 1
@@ -78,11 +78,10 @@ def update_monitor_profile(
     if not repository.update_monitor_profile(
         user_id,
         normalized_valor or None,
-        None,
         carga_horaria,
         modo_2h,
     ):
-        return False
+        return False, "Não foi possível salvar o perfil."
 
     slots_payload = []
     for slot in disponibilidade_slots or []:
@@ -111,7 +110,7 @@ def update_monitor_profile(
             semana_inicio,
             semana_fim,
         )
-    return True
+    return True, None
 
 
 def _generate_temp_password(length=10):

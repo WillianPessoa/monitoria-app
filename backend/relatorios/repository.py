@@ -101,6 +101,7 @@ def list_horas_por_monitor(primeiro_dia, ultimo_dia, disciplina_id=None):
             f"""
             SELECT m.aluno_id AS monitor_id,
                    u.nome AS monitor_nome,
+                   m.disciplina_id AS disciplina_id,
                    d.codigo AS disciplina_codigo,
                    d.nome AS disciplina_nome,
                    COALESCE(

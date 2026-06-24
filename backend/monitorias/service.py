@@ -133,8 +133,7 @@ def confirm_votacao(votacao_id, opcao_id, disciplina_id, monitor_id, semana_inic
         return False
 
     sessoes = _build_sessoes_from_opcao(disciplina_id, monitor_id, opcao, semana_inicio)
-    repository.create_sessoes(disciplina_id, monitor_id, sessoes)
-    repository.close_votacao(votacao_id)
+    repository.create_sessoes_and_close_votacao(votacao_id, disciplina_id, monitor_id, sessoes)
     return True
 
 
@@ -203,8 +202,7 @@ def confirm_votacao_slots(
     else:
         return False, "OPCAO_INVALIDA"
 
-    repository.create_sessoes(disciplina_id, monitor_id, sessoes)
-    repository.close_votacao(votacao_id)
+    repository.create_sessoes_and_close_votacao(votacao_id, disciplina_id, monitor_id, sessoes)
     return True, None
 
 
@@ -238,6 +236,23 @@ def get_presenca(sessao_id, aluno_id):
 
 def list_presencas_for_aluno(aluno_id, sessao_ids):
     return repository.list_presencas_for_aluno(aluno_id, sessao_ids)
+
+
+def list_sessao_materiais(sessao_id):
+    return repository.list_sessao_materiais(sessao_id)
+
+
+def save_sessao_materiais(sessao_id, materiais):
+    return repository.save_sessao_materiais(sessao_id, materiais)
+
+
+def list_alunos_for_sessao(disciplina_id, sessao_id):
+    return repository.list_alunos_disciplina_com_presenca(disciplina_id, sessao_id)
+
+
+def list_sessoes_pendentes_disciplina(disciplina_id):
+    from utils.time import now_sp_naive
+    return repository.list_sessoes_pendentes_disciplina(disciplina_id, now_sp_naive())
 
 
 def sync_open_votacao_opcoes_for_monitor(disciplina_id, monitor_id, semana_inicio, semana_fim):

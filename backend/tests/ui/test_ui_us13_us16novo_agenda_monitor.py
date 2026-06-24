@@ -1,7 +1,6 @@
 """
-US13 — Monitor vê agenda com agendamentos confirmados (UI)
-US15 — Monitor bloqueia/desbloqueia horário (UI)
-US16-novo — Monitor cancela sessão confirmada (UI)
+US13 — Monitor vê agenda (Monitorias) (UI)
+US16-novo — Monitor cancela sessão com confirmação (UI)
 
 Rodar:
     pytest tests/ui/test_ui_us13_us16novo_agenda_monitor.py -v --headed --slowmo=400
@@ -25,75 +24,54 @@ class TestUS13AgendaMonitorDesktop:
         assert monitor_desktop.url == AGENDA_URL
         assert monitor_desktop.locator("body").is_visible()
 
+    def test_monitor_ve_titulo_monitorias(self, monitor_desktop):
+        """US13 F1: Página exibe 'Monitorias' como título (renomeado de 'Minha agenda')."""
+        monitor_desktop.goto(AGENDA_URL)
+        body = monitor_desktop.locator("body").inner_text()
+        assert "Monitorias" in body
+
     def test_monitor_ve_secoes_da_agenda(self, monitor_desktop):
-        """US13 C1: Agenda exibe seções de sessões (próximas ou histórico)."""
+        """US13 C1: Agenda exibe seções de sessões (próximas, votação ou histórico)."""
         monitor_desktop.goto(AGENDA_URL)
         body = monitor_desktop.locator("body").inner_text()
-        assert any(k in body for k in ["Próximas sessões", "Votação", "sessão", "Nenhuma sessão"])
-
-    def test_monitor_ve_secao_meus_horarios(self, monitor_desktop):
-        """US13/US15: Seção 'Meus horários cadastrados' visível na agenda do monitor."""
-        monitor_desktop.goto(AGENDA_URL)
-        body = monitor_desktop.locator("body").inner_text()
-        # A seção aparece somente quando há own_slots — verifica que a página carrega
-        assert monitor_desktop.locator("body").is_visible()
+        assert any(k in body for k in ["Próximas sessões", "Votação", "Histórico", "Nenhuma sessão"])
 
 
 # ===========================================================================
-# Desktop — US15 (Monitor bloqueia/desbloqueia horário)
-# ===========================================================================
-
-
-class TestUS15BloquearSlotDesktop:
-
-    def test_botao_bloquear_visivel_em_slots_disponiveis(self, monitor_desktop):
-        """US15 C1: Botão 'Bloquear' visível nos slots com status DISPONIVEL."""
-        monitor_desktop.goto(AGENDA_URL)
-        bloquear_btns = monitor_desktop.locator("button:has-text('Bloquear')")
-        if bloquear_btns.count() == 0:
-            return  # Monitor não tem slots disponíveis no Railway — passa
-
-        assert bloquear_btns.first.is_visible()
-
-    def test_botao_desbloquear_visivel_em_slots_bloqueados(self, monitor_desktop):
-        """US15 C2: Botão 'Desbloquear' visível nos slots com status BLOQUEADO."""
-        monitor_desktop.goto(AGENDA_URL)
-        desbloquear_btns = monitor_desktop.locator("button:has-text('Desbloquear')")
-        if desbloquear_btns.count() == 0:
-            return  # Sem slots bloqueados no Railway — passa
-
-        assert desbloquear_btns.first.is_visible()
-
-    def test_secao_horarios_cadastrados_tem_status_pills(self, monitor_desktop):
-        """US15: Status pills de DISPONIVEL/AGENDADO/BLOQUEADO visíveis nos slots."""
-        monitor_desktop.goto(AGENDA_URL)
-        secao = monitor_desktop.locator("section:has(h3:has-text('Meus horários cadastrados'))")
-        if not secao.is_visible():
-            return  # Sem own_slots no Railway
-
-        pills = secao.locator(".status-pill")
-        assert pills.count() > 0
-
-
-# ===========================================================================
-# Desktop — US16-novo (Monitor cancela sessão)
+# Desktop — US16-novo (Monitor cancela sessão com confirmação)
 # ===========================================================================
 
 
 class TestUS16NovoCancelarSessaoDesktop:
 
-    def test_botao_cancelar_sessao_visivel(self, monitor_desktop):
-        """US16-novo C1: Botão 'Cancelar' visível nas sessões futuras do monitor."""
+    def test_botao_cancelar_abre_dialog(self, monitor_desktop):
+        """US16-novo F1: Clicar em 'Cancelar' abre dialog de confirmação (não submete diretamente)."""
         monitor_desktop.goto(AGENDA_URL)
-        # Botão Cancelar para sessões futuras (na seção de próximas sessões)
         cancel_btns = monitor_desktop.locator(
-            "section:has(h3:has-text('Próximas sessões')) button:has-text('Cancelar'), "
-            ".btn-danger:has-text('Cancelar')"
+            "section:has(h3:has-text('Próximas sessões')) button:has-text('Cancelar')"
         )
         if cancel_btns.count() == 0:
             return  # Sem sessões futuras no Railway — passa
 
-        assert cancel_btns.first.is_visible()
+        cancel_btns.first.click()
+        dialog = monitor_desktop.locator("dialog[open]")
+        assert dialog.is_visible()
+        assert "cancelar" in dialog.inner_text().lower() or "sessão" in dialog.inner_text().lower()
+
+    def test_dialog_tem_botao_confirmar_e_manter(self, monitor_desktop):
+        """US16-novo F1: Dialog de cancelamento exibe 'Confirmar cancelamento' e 'Manter sessão'."""
+        monitor_desktop.goto(AGENDA_URL)
+        cancel_btns = monitor_desktop.locator(
+            "section:has(h3:has-text('Próximas sessões')) button:has-text('Cancelar')"
+        )
+        if cancel_btns.count() == 0:
+            return
+
+        cancel_btns.first.click()
+        dialog = monitor_desktop.locator("dialog[open]")
+        assert dialog.is_visible()
+        body_text = dialog.inner_text()
+        assert "Confirmar cancelamento" in body_text or "Manter sessão" in body_text
 
 
 # ===========================================================================
@@ -109,10 +87,9 @@ class TestAgendaMonitorMobile:
         assert monitor_mobile.url == AGENDA_URL
         assert monitor_mobile.locator("body").is_visible()
 
-    def test_formulario_criar_horario_visivel_no_mobile(self, monitor_mobile):
-        """US10/US15 mobile: Formulário de criar horário e seção de horários visível."""
+    def test_agenda_monitor_sem_erro_500_no_mobile(self, monitor_mobile):
+        """US13 mobile: Página carrega sem erro 500."""
         monitor_mobile.goto(AGENDA_URL)
-        # Verifica que a página do monitor carrega sem erro
-        assert monitor_mobile.locator("body").is_visible()
         content = monitor_mobile.locator("body").inner_text()
         assert "500" not in content[:50]
+        assert monitor_mobile.locator("body").is_visible()

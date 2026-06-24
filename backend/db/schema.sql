@@ -193,3 +193,13 @@ CREATE TABLE IF NOT EXISTS presencas (
   CONSTRAINT uq_presenca_unica
     UNIQUE (sessao_id, aluno_id)
 );
+
+CREATE TABLE IF NOT EXISTS sessao_materiais (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  sessao_id BIGINT UNSIGNED NOT NULL,
+  descricao VARCHAR(500) NOT NULL,
+  url VARCHAR(1000) NULL,
+  criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_sessao_material_sessao
+    FOREIGN KEY (sessao_id) REFERENCES monitoria_sessoes (id) ON DELETE CASCADE
+);

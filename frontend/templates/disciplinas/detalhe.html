@@ -8,6 +8,7 @@
 {% endblock %}
 
 {% block page_action %}
+<a href="{{ url_for('home') }}" class="button btn-outline" style="flex:none;align-self:flex-end;text-decoration:none;">← Início</a>
 {% if current_user.papel == 'PROFESSOR' and current_user.id == disciplina.professor_id %}
 <a href="{{ url_for('disciplinas.historico', disciplina_id=disciplina.id) }}" class="button btn-outline" style="flex:none;align-self:flex-end;text-decoration:none;">
   Ver histórico completo
@@ -55,6 +56,13 @@
 
           {% elif status == 'AUSENTE' %}
           <span class="status-pill error">Ausência confirmada</span>
+          {% if can_cancel_map.get(sessao.id) %}
+          <form method="post" action="{{ url_for('disciplinas.presenca', disciplina_id=disciplina.id) }}" class="inline-form">
+            <input type="hidden" name="sessao_id" value="{{ sessao.id }}" />
+            <input type="hidden" name="status" value="CONFIRMADA" />
+            <button type="submit" class="button btn-sm">Confirmar presença novamente</button>
+          </form>
+          {% endif %}
 
           {% else %}
           <form method="post" action="{{ url_for('disciplinas.presenca', disciplina_id=disciplina.id) }}" class="inline-form">
@@ -175,6 +183,38 @@
         </div>
         <span class="status-pill muted">Finalizada</span>
         <a href="{{ url_for('monitorias.sessao_detalhe', sessao_id=sessao.id) }}" class="button btn-outline btn-sm" style="text-decoration:none;">Detalhes</a>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ─ Monitorias passadas (aluno) ─ #}
+  {% if is_aluno and past_sessions_aluno %}
+  <section>
+    <div class="section-head">
+      <span class="section-dot" style="background:var(--muted);"></span>
+      <h3>Monitorias passadas</h3>
+    </div>
+    <div class="agenda-list">
+      {% for sessao in past_sessions_aluno %}
+      <div class="agenda-row">
+        <div class="agenda-date">
+          <div class="agenda-day">{{ sessao.data_inicio.strftime('%d') }}</div>
+          <div class="agenda-mon">{{ sessao.data_inicio.strftime('%b') }}</div>
+        </div>
+        <div class="agenda-body">
+          <div class="agenda-disc">{{ sessao.data_inicio.strftime('%H:%M') }} — {{ sessao.data_fim.strftime('%H:%M') }}</div>
+          <div class="agenda-meta">{{ sessao.assunto or '—' }}</div>
+        </div>
+        {% if sessao.presenca_status == 'CONFIRMADA' %}
+        <span class="status-pill success">Presente</span>
+        {% elif sessao.presenca_status == 'AUSENTE' %}
+        <span class="status-pill error">Ausente</span>
+        {% else %}
+        <span class="status-pill muted">Não registrado</span>
+        {% endif %}
+        <a href="{{ url_for('monitorias.sessao_detalhe', sessao_id=sessao.sessao_id) }}" class="button btn-outline btn-sm" style="text-decoration:none;">Ver detalhes</a>
       </div>
       {% endfor %}
     </div>

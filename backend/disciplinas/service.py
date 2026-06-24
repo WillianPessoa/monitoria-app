@@ -81,23 +81,24 @@ def update_disciplina(disciplina_id, codigo, nome, professor_id, monitor_id):
     if existing and existing["id"] != disciplina_id:
         return "Código já cadastrado."
 
-    repository.update_disciplina(disciplina_id, normalized_codigo, nome, professor_id)
-
     if monitor_id is not None:
         aluno = usuarios_repository.get_user_by_id(monitor_id)
         if not aluno or aluno["papel"] != "ALUNO" or aluno["status"] != "ATIVO":
             return "Aluno inválido."
 
+    repository.update_disciplina(disciplina_id, normalized_codigo, nome, professor_id)
+
+    if monitor_id is not None:
         if repository.is_aluno_matriculado(disciplina_id, monitor_id):
             repository.remove_aluno_from_disciplina(disciplina_id, monitor_id)
 
-    success, error = monitoria_service.set_monitor_for_disciplina(
-        disciplina_id,
-        professor_id,
-        monitor_id,
-    )
-    if not success:
-        return error
+        success, error = monitoria_service.set_monitor_for_disciplina(
+            disciplina_id,
+            professor_id,
+            monitor_id,
+        )
+        if not success:
+            return error
 
     return None
 
@@ -186,8 +187,11 @@ def bulk_remove_alunos_from_disciplina(disciplina_id, aluno_ids):
     if not disciplina:
         return "Disciplina não encontrada.", 0
 
+    enrolled_ids = {a["id"] for a in repository.list_alunos_by_disciplina(disciplina_id)}
+    to_deactivate = [aid for aid in aluno_ids if aid in enrolled_ids]
+
     removed = repository.remove_alunos_from_disciplina(disciplina_id, aluno_ids)
-    for aluno_id in aluno_ids:
+    for aluno_id in to_deactivate:
         monitoria_service.deactivate_monitoria(
             disciplina_id,
             aluno_id,
@@ -214,3 +218,19 @@ def get_historico_atendimentos(disciplina_id, professor_id):
 
     rows = repository.list_sessoes_com_presencas(disciplina_id)
     return rows, None
+
+
+def list_alunos_com_presencas(disciplina_id):
+    return repository.list_alunos_com_presencas(disciplina_id)
+
+
+def get_total_horas_concluidas(disciplina_id):
+    return repository.get_total_horas_concluidas(disciplina_id)
+
+
+def list_sessoes_resumo(disciplina_id):
+    return repository.list_sessoes_resumo(disciplina_id)
+
+
+def list_disciplinas_admin_filtered(q=None, status="ATIVA", professor_id=None, aluno_id=None, min_hours_not_met=False):
+    return repository.list_disciplinas_admin_filtered(q, status, professor_id, aluno_id, min_hours_not_met)

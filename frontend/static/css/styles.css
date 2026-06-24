@@ -29,13 +29,16 @@
 /* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html, body { height: 100%; margin: 0; }
+html { height: 100%; margin: 0; background: #050d18; }
 body {
+  height: 100%;
+  margin: 0;
   font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-size: 14px;
   line-height: 1.5;
   color: var(--text);
   background: var(--app-bg);
+  background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
 }
 h1,h2,h3,h4,h5,h6 { font-family: 'Space Grotesk', system-ui, sans-serif; margin: 0; line-height: 1.15; }
@@ -732,6 +735,7 @@ td .inline-form { margin-right: .35rem; }
   --error:      #e11d48;
   --error-bg:   rgba(225,29,72,0.09);
 }
+html[data-theme='light'] { background: #eaf0f7; }
 :root[data-theme='light'] select option { background: #fff; color: #0c1a2b; }
 :root[data-theme='light'] input::placeholder,
 :root[data-theme='light'] textarea::placeholder { color: rgba(12,26,43,0.40); }

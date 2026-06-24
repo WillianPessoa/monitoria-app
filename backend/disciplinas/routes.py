@@ -3,6 +3,7 @@ from datetime import datetime, time, timedelta
 from flask import flash, redirect, render_template, request, session, url_for
 
 from auth.decorators import login_required, require_role
+from agenda import service as agenda_service
 from disciplinas import bp, repository, service
 from monitorias import service as monitoria_service
 from usuarios import repository as usuarios_repository
@@ -30,18 +31,44 @@ def index():
             flash("Disciplina criada com sucesso.", "success")
             return redirect(url_for("disciplinas.index"))
 
-    disciplinas = service.list_disciplinas()
+    q = request.args.get("q", "").strip()
+    status_filter = request.args.get("status", "ATIVA")
+    professor_id_filter = request.args.get("professor_id", "")
+    aluno_id_filter = request.args.get("aluno_id", "")
+    min_hours_filter = request.args.get("min_hours_not_met", "")
+
+    try:
+        professor_id_filter_int = int(professor_id_filter) if professor_id_filter else None
+    except (TypeError, ValueError):
+        professor_id_filter_int = None
+
+    try:
+        aluno_id_filter_int = int(aluno_id_filter) if aluno_id_filter else None
+    except (TypeError, ValueError):
+        aluno_id_filter_int = None
+
+    if status_filter not in {"ATIVA", "INATIVA", "TODAS"}:
+        status_filter = "ATIVA"
+
     professores = usuarios_repository.list_active_professors()
     alunos = usuarios_repository.list_active_students()
-    monitorias_ativas = monitoria_service.list_active_monitorias()
-    disciplinas_admin = service.list_disciplinas_admin()
+    disciplinas_admin = service.list_disciplinas_admin_filtered(
+        q or None,
+        status_filter,
+        professor_id_filter_int,
+        aluno_id_filter_int,
+        min_hours_filter == "1",
+    )
     return render_template(
         "disciplinas/index.html",
-        disciplinas=disciplinas,
         disciplinas_admin=disciplinas_admin,
         professores=professores,
         alunos=alunos,
-        monitorias_ativas=monitorias_ativas,
+        q=q,
+        status_filter=status_filter,
+        professor_id_filter=professor_id_filter,
+        aluno_id_filter=aluno_id_filter,
+        min_hours_filter=min_hours_filter,
     )
 
 
@@ -197,10 +224,14 @@ def detalhe(disciplina_id):
 
     presenca_map = {}
     can_cancel_map = {}
+    past_sessions_aluno = []
     if is_aluno and sessoes_semana:
         sessao_ids = [sessao["id"] for sessao in sessoes_semana]
         presencas = monitoria_service.list_presencas_for_aluno(user_id, sessao_ids)
         presenca_map = {item["sessao_id"]: item["status"] for item in presencas}
+
+    if is_aluno:
+        past_sessions_aluno = agenda_service.list_past_sessions_for_aluno_in_disciplina(user_id, disciplina_id)
 
     for sessao in sessoes_futuras:
         can_cancel_map[sessao["id"]] = hours_until(sessao["data_inicio"], now_value) > 6
@@ -214,6 +245,7 @@ def detalhe(disciplina_id):
         sessoes_semana=sessoes_semana,
         sessoes_futuras=sessoes_futuras,
         sessoes_passadas=sessoes_passadas,
+        past_sessions_aluno=past_sessions_aluno,
         can_cancel_map=can_cancel_map,
         presenca_map=presenca_map,
         votacao=votacao,
@@ -344,6 +376,11 @@ def votar(disciplina_id):
     if len(opcao_ids) > max_select:
         message = "Selecione apenas 1 opção de horário." if max_select == 1 else "Selecione no máximo duas opções de horário."
         flash(message, "error")
+        return redirect(url_for("disciplinas.detalhe", disciplina_id=disciplina_id))
+
+    valid_opcao_ids = {opcao["id"] for opcao in monitoria_service.list_votacao_opcoes(votacao["id"])}
+    if not all(oid in valid_opcao_ids for oid in opcao_ids):
+        flash("Opção de horário inválida.", "error")
         return redirect(url_for("disciplinas.detalhe", disciplina_id=disciplina_id))
 
     if monitoria_service.cast_vote(votacao["id"], opcao_ids, user_id):
@@ -489,6 +526,56 @@ def historico(disciplina_id):
         section_title=title,
         disciplina=disciplina,
         registros=registros,
+    )
+
+
+@bp.get("/<int:disciplina_id>/monitoria")
+@login_required
+def monitoria_detalhe(disciplina_id):
+    user_id = session.get("user_id")
+    role = session.get("papel")
+    disciplina = service.get_disciplina_by_id(disciplina_id)
+    if not disciplina:
+        flash("Disciplina não encontrada.", "error")
+        return redirect(url_for("home"))
+
+    is_admin = role == "ADMIN"
+    is_professor_responsavel = (
+        role == "PROFESSOR" and disciplina["professor_id"] == user_id
+    )
+    monitor = monitoria_service.get_active_monitor_for_disciplina(disciplina_id)
+    is_monitor_for_this = bool(monitor and monitor.get("monitor_id") == user_id)
+
+    if not is_admin and not is_professor_responsavel and not is_monitor_for_this:
+        flash("Você não tem permissão para acessar esta página.", "error")
+        return redirect(url_for("home"))
+
+    now_value = now_sp_naive()
+    pode_adicionar = is_admin
+    alunos = service.list_alunos_com_presencas(disciplina_id)
+    total_horas = service.get_total_horas_concluidas(disciplina_id)
+    sessoes = service.list_sessoes_resumo(disciplina_id)
+    proxima_sessao = monitoria_service.get_next_session(disciplina_id, now_value)
+    sessoes_pendentes = monitoria_service.list_sessoes_pendentes_disciplina(disciplina_id)
+
+    session_alunos_map = {}
+    if is_monitor_for_this:
+        for s in sessoes_pendentes:
+            session_alunos_map[s["id"]] = monitoria_service.list_alunos_for_sessao(disciplina_id, s["id"])
+
+    return render_template(
+        "disciplinas/monitoria_detalhe.html",
+        disciplina=disciplina,
+        monitor=monitor,
+        alunos=alunos,
+        total_horas=total_horas,
+        sessoes=sessoes,
+        proxima_sessao=proxima_sessao,
+        sessoes_pendentes=sessoes_pendentes,
+        pode_adicionar=pode_adicionar,
+        is_monitor=is_monitor_for_this,
+        session_alunos_map=session_alunos_map,
+        now_value=now_value,
     )
 
 

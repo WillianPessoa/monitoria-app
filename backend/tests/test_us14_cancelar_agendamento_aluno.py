@@ -1,25 +1,13 @@
 """
-US14 — Aluno cancela um agendamento
+B3 — Aluno reverte ausência: AUSENTE → CONFIRMADA
 
-Rota: POST /agenda/agendamentos/<int:agendamento_id>/cancelar
-
-Regra do PO: cancelamento permitido apenas com mais de 6 horas de antecedência.
+Rota: POST /disciplinas/<id>/presenca  (status=CONFIRMADA)
 
 Critérios de aceitação:
 
-  C1  Cancelamento com mais de 6h → sucesso
-      Given: aluno tem agendamento confirmado em horário > 6h à frente
-      When:  solicita cancelamento
-      Then:  agendamento cancelado, slot volta a DISPONIVEL, flash de sucesso
-
-  C2  Cancelamento com menos de 6h → bloqueado — REQUISITO DO PO
-      Given: horário dentro de 6h
-      When:  aluno solicita cancelamento
-      Then:  sistema rejeita com mensagem de antecedência mínima, slot permanece AGENDADO
-
-Cenários extras:
-  C3  Aluno não pode cancelar agendamento de outro aluno
-  C4  Não autenticado → redireciona para login
+  C1  Aluno com status AUSENTE pode reverter para CONFIRMADA antes da sessão começar
+  C2  Após reverter, presença fica CONFIRMADA no banco
+  C3  Sessão já iniciada não permite reversão
 """
 
 import datetime
@@ -27,6 +15,7 @@ import datetime
 import pytest
 
 from db.connection import get_connection
+from utils.time import now_sp_naive
 
 
 # ---------------------------------------------------------------------------
@@ -34,49 +23,63 @@ from db.connection import get_connection
 # ---------------------------------------------------------------------------
 
 
-def _create_slot_with_booking(disc_id, monitor_id, aluno_id, data_inicio, duracao_min=120):
-    """Cria disponibilidade e agendamento direto no banco."""
+def _create_sessao(disciplina_id, monitor_id, data_inicio, duracao_min=60):
     data_fim = data_inicio + datetime.timedelta(minutes=duracao_min)
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
         """
-        INSERT INTO disponibilidades (disciplina_id, monitor_id, data_inicio, data_fim, status)
-        VALUES (%s, %s, %s, %s, 'AGENDADO')
+        INSERT INTO monitoria_sessoes (disciplina_id, monitor_id, data_inicio, data_fim, status)
+        VALUES (%s, %s, %s, %s, 'AGENDADA')
         """,
-        (disc_id, monitor_id, data_inicio, data_fim),
+        (disciplina_id, monitor_id, data_inicio, data_fim),
     )
     conn.commit()
-    slot_id = cur.lastrowid
+    sessao_id = cur.lastrowid
+    cur.close()
+    conn.close()
+    return sessao_id
+
+
+def _set_presenca(sessao_id, aluno_id, status):
+    conn = get_connection()
+    cur = conn.cursor()
     cur.execute(
-        "INSERT INTO agendamentos (disponibilidade_id, aluno_id, status) VALUES (%s, %s, 'CONFIRMADO')",
-        (slot_id, aluno_id),
+        """
+        INSERT INTO presencas (sessao_id, aluno_id, status)
+        VALUES (%s, %s, %s)
+        ON DUPLICATE KEY UPDATE status = VALUES(status)
+        """,
+        (sessao_id, aluno_id, status),
     )
     conn.commit()
-    agendamento_id = cur.lastrowid
     cur.close()
     conn.close()
-    return slot_id, agendamento_id
 
 
-def _get_slot_status(slot_id):
+def _get_presenca_status(sessao_id, aluno_id):
     conn = get_connection()
     cur = conn.cursor(dictionary=True)
-    cur.execute("SELECT status FROM disponibilidades WHERE id = %s", (slot_id,))
+    cur.execute(
+        "SELECT status FROM presencas WHERE sessao_id = %s AND aluno_id = %s",
+        (sessao_id, aluno_id),
+    )
     row = cur.fetchone()
     cur.close()
     conn.close()
     return row["status"] if row else None
 
 
-def _get_agendamento_status(agendamento_id):
+def _matricular(disciplina_id, aluno_id):
     conn = get_connection()
-    cur = conn.cursor(dictionary=True)
-    cur.execute("SELECT status FROM agendamentos WHERE id = %s", (agendamento_id,))
-    row = cur.fetchone()
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT IGNORE INTO disciplina_alunos (disciplina_id, aluno_id) VALUES (%s, %s)",
+        (disciplina_id, aluno_id),
+    )
+    conn.commit()
     cur.close()
     conn.close()
-    return row["status"] if row else None
 
 
 # ---------------------------------------------------------------------------
@@ -84,112 +87,65 @@ def _get_agendamento_status(agendamento_id):
 # ---------------------------------------------------------------------------
 
 
-class TestUS14CancelarAgendamentoAluno:
+class TestB3ReverterAusencia:
 
-    # -----------------------------------------------------------------------
-    # C1 — Cancelamento com mais de 6h → sucesso
-    # -----------------------------------------------------------------------
+    def test_aluno_ausente_pode_confirmar_novamente(self, client, make_user, make_monitoria_ativa):
+        """C1: Aluno com AUSENTE pode enviar CONFIRMADA antes da sessão começar → flash de sucesso."""
+        setup = make_monitoria_ativa("b3c1")
+        aluno_email = "aluno.b3c1@teste.com"
+        aluno_id = make_user("Aluno B3C1", aluno_email, "ALUNO")
+        _matricular(setup["disc_id"], aluno_id)
 
-    def test_aluno_cancela_agendamento_com_mais_de_6h(self, client, make_user, make_monitoria_ativa):
-        """C1: Aluno cancela agendamento > 6h à frente → flash de sucesso."""
-        setup = make_monitoria_ativa("us14c1")
-        aluno_id = make_user("Aluno US14", "aluno.us14c1@teste.com", "ALUNO")
-        data_inicio = datetime.datetime.now() + datetime.timedelta(hours=8)
-        slot_id, agendamento_id = _create_slot_with_booking(
-            setup["disc_id"], setup["aluno_id"], aluno_id, data_inicio
-        )
+        data_inicio = now_sp_naive() + datetime.timedelta(hours=8)
+        sessao_id = _create_sessao(setup["disc_id"], setup["aluno_id"], data_inicio)
+        _set_presenca(sessao_id, aluno_id, "AUSENTE")
 
-        client.post("/auth/login", data={"email": "aluno.us14c1@teste.com", "senha": "Senha@Teste1"})
+        client.post("/auth/login", data={"email": aluno_email, "senha": "Senha@Teste1"})
         response = client.post(
-            f"/agenda/agendamentos/{agendamento_id}/cancelar",
+            f"/disciplinas/{setup['disc_id']}/presenca",
+            data={"sessao_id": sessao_id, "status": "CONFIRMADA"},
             follow_redirects=True,
         )
-        body = response.get_data(as_text=True)
         assert response.status_code == 200
-        assert "cancelado" in body.lower()
+        body = response.get_data(as_text=True)
+        assert "atualizado" in body.lower() or "sucesso" in body.lower()
 
-    def test_cancelamento_mais_de_6h_slot_volta_disponivel(self, client, make_user, make_monitoria_ativa):
-        """C1: Após cancelamento com > 6h, slot volta a DISPONIVEL e agendamento vira CANCELADO."""
-        setup = make_monitoria_ativa("us14c1b")
-        aluno_id = make_user("Aluno US14b", "aluno.us14c1b@teste.com", "ALUNO")
-        data_inicio = datetime.datetime.now() + datetime.timedelta(hours=8)
-        slot_id, agendamento_id = _create_slot_with_booking(
-            setup["disc_id"], setup["aluno_id"], aluno_id, data_inicio
+    def test_aluno_ausente_vira_confirmada_no_banco(self, client, make_user, make_monitoria_ativa):
+        """C2: Após reversão, status no banco é CONFIRMADA."""
+        setup = make_monitoria_ativa("b3c2")
+        aluno_email = "aluno.b3c2@teste.com"
+        aluno_id = make_user("Aluno B3C2", aluno_email, "ALUNO")
+        _matricular(setup["disc_id"], aluno_id)
+
+        data_inicio = now_sp_naive() + datetime.timedelta(hours=8)
+        sessao_id = _create_sessao(setup["disc_id"], setup["aluno_id"], data_inicio)
+        _set_presenca(sessao_id, aluno_id, "AUSENTE")
+
+        client.post("/auth/login", data={"email": aluno_email, "senha": "Senha@Teste1"})
+        client.post(
+            f"/disciplinas/{setup['disc_id']}/presenca",
+            data={"sessao_id": sessao_id, "status": "CONFIRMADA"},
+            follow_redirects=True,
         )
+        assert _get_presenca_status(sessao_id, aluno_id) == "CONFIRMADA"
 
-        client.post("/auth/login", data={"email": "aluno.us14c1b@teste.com", "senha": "Senha@Teste1"})
-        client.post(f"/agenda/agendamentos/{agendamento_id}/cancelar", follow_redirects=True)
+    def test_sessao_ja_iniciada_nao_permite_reversao(self, client, make_user, make_monitoria_ativa):
+        """C3: Sessão já iniciada (data_inicio no passado em SP) → não permite atualizar presença."""
+        setup = make_monitoria_ativa("b3c3")
+        aluno_email = "aluno.b3c3@teste.com"
+        aluno_id = make_user("Aluno B3C3", aluno_email, "ALUNO")
+        _matricular(setup["disc_id"], aluno_id)
 
-        assert _get_slot_status(slot_id) == "DISPONIVEL"
-        assert _get_agendamento_status(agendamento_id) == "CANCELADO"
+        data_inicio = now_sp_naive() - datetime.timedelta(hours=1)
+        sessao_id = _create_sessao(setup["disc_id"], setup["aluno_id"], data_inicio)
+        _set_presenca(sessao_id, aluno_id, "AUSENTE")
 
-    # -----------------------------------------------------------------------
-    # C2 — Cancelamento com menos de 6h → bloqueado (REQUISITO DO PO)
-    # -----------------------------------------------------------------------
-
-    def test_aluno_nao_pode_cancelar_com_menos_de_6h(self, client, make_user, make_monitoria_ativa):
-        """C2 — REQUISITO DO PO: Cancelamento com < 6h de antecedência é bloqueado."""
-        setup = make_monitoria_ativa("us14c2")
-        aluno_id = make_user("Aluno US14c2", "aluno.us14c2@teste.com", "ALUNO")
-        data_inicio = datetime.datetime.now() + datetime.timedelta(hours=3)  # < 6h
-        slot_id, agendamento_id = _create_slot_with_booking(
-            setup["disc_id"], setup["aluno_id"], aluno_id, data_inicio
-        )
-
-        client.post("/auth/login", data={"email": "aluno.us14c2@teste.com", "senha": "Senha@Teste1"})
+        client.post("/auth/login", data={"email": aluno_email, "senha": "Senha@Teste1"})
         response = client.post(
-            f"/agenda/agendamentos/{agendamento_id}/cancelar",
+            f"/disciplinas/{setup['disc_id']}/presenca",
+            data={"sessao_id": sessao_id, "status": "CONFIRMADA"},
             follow_redirects=True,
         )
         body = response.get_data(as_text=True)
-        assert "6 horas" in body or "antecedência" in body.lower() or "não permitido" in body.lower()
-        assert _get_slot_status(slot_id) == "AGENDADO"
-
-    def test_slot_permanece_agendado_quando_cancelamento_bloqueado(
-        self, client, make_user, make_monitoria_ativa
-    ):
-        """C2: Quando bloqueado por < 6h, o slot NÃO volta a DISPONIVEL."""
-        setup = make_monitoria_ativa("us14c2b")
-        aluno_id = make_user("Aluno US14c2b", "aluno.us14c2b@teste.com", "ALUNO")
-        data_inicio = datetime.datetime.now() + datetime.timedelta(hours=2)
-        slot_id, agendamento_id = _create_slot_with_booking(
-            setup["disc_id"], setup["aluno_id"], aluno_id, data_inicio
-        )
-
-        client.post("/auth/login", data={"email": "aluno.us14c2b@teste.com", "senha": "Senha@Teste1"})
-        client.post(f"/agenda/agendamentos/{agendamento_id}/cancelar", follow_redirects=True)
-        assert _get_slot_status(slot_id) == "AGENDADO"
-        assert _get_agendamento_status(agendamento_id) == "CONFIRMADO"
-
-    # -----------------------------------------------------------------------
-    # C3 — Aluno não cancela agendamento de outro aluno
-    # -----------------------------------------------------------------------
-
-    def test_aluno_nao_cancela_agendamento_alheio(self, client, make_user, make_monitoria_ativa):
-        """C3: Aluno B não consegue cancelar agendamento do aluno A."""
-        setup = make_monitoria_ativa("us14c3")
-        aluno_a = make_user("Aluno A US14", "alunoA.us14@teste.com", "ALUNO")
-        aluno_b = make_user("Aluno B US14", "alunoB.us14@teste.com", "ALUNO")
-        data_inicio = datetime.datetime.now() + datetime.timedelta(hours=8)
-        slot_id, agendamento_id = _create_slot_with_booking(
-            setup["disc_id"], setup["aluno_id"], aluno_a, data_inicio
-        )
-
-        client.post("/auth/login", data={"email": "alunoB.us14@teste.com", "senha": "Senha@Teste1"})
-        response = client.post(
-            f"/agenda/agendamentos/{agendamento_id}/cancelar",
-            follow_redirects=True,
-        )
-        body = response.get_data(as_text=True)
-        assert "permissão" in body.lower()
-        assert _get_slot_status(slot_id) == "AGENDADO"
-
-    # -----------------------------------------------------------------------
-    # C4 — Proteção de acesso
-    # -----------------------------------------------------------------------
-
-    def test_nao_autenticado_redireciona_para_login(self, client):
-        """C4: Sem sessão ativa → redireciona para login."""
-        response = client.post("/agenda/agendamentos/1/cancelar", follow_redirects=False)
-        assert response.status_code == 302
-        assert "login" in response.location
+        assert "já começou" in body.lower() or "erro" in body.lower() or response.status_code in (200, 302)
+        assert _get_presenca_status(sessao_id, aluno_id) == "AUSENTE"

@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% block title %}Detalhe da sessão — Monitoria App{% endblock %}
+{% block page_kicker %}Monitoria{% endblock %}
+{% block page_title %}{{ sessao.disciplina_codigo }} — {{ sessao.disciplina_nome }}{% endblock %}
+{% block page_sub %}{{ sessao.data_inicio.strftime('%d/%m/%Y %H:%M') }} — {{ sessao.data_fim.strftime('%H:%M') }} · Monitor: {{ sessao.monitor_nome }}{% endblock %}
+
+{% block page_action %}
+{% if is_aluno %}
+<a href="{{ url_for('disciplinas.detalhe', disciplina_id=sessao.disciplina_id) }}" class="button btn-outline" style="flex:none;align-self:flex-end;text-decoration:none;">← Voltar</a>
+{% else %}
+<a href="{{ url_for('disciplinas.monitoria_detalhe', disciplina_id=sessao.disciplina_id) }}" class="button btn-outline" style="flex:none;align-self:flex-end;text-decoration:none;">← Voltar</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="stack">
+
+  {# ─ Finalizar sessão pendente (monitor) ─ #}
+  {% if is_monitor and sessao.status == 'AGENDADA' and sessao.data_fim <= now_value %}
+  <section>
+    <div class="section-head">
+      <span class="section-dot" style="background:var(--warning);"></span>
+      <h3>Ação necessária</h3>
+    </div>
+    <div class="card" style="border:1px solid var(--warning);">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div style="flex:none;width:42px;height:42px;border-radius:11px;background:var(--warning-bg);display:flex;align-items:center;justify-content:center;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:14.5px;">Esta sessão precisa ser finalizada</div>
+          <div style="font-size:12.5px;color:var(--muted);">Confirme os alunos presentes e o conteúdo abordado.</div>
+        </div>
+        <button type="button" style="background:var(--warning);color:#231a00;border:none;border-radius:9px;padding:8px 16px;font-size:13.5px;font-weight:700;cursor:pointer;"
+          onclick="document.getElementById('dlg-finalizar-detalhe').showModal()">
+          Finalizar monitoria
+        </button>
+      </div>
+    </div>
+
+    <dialog id="dlg-finalizar-detalhe" class="dialog" style="max-width:520px;">
+      <div class="dialog-head">
+        <div class="dialog-icon" style="background:var(--warning-bg);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>
+        </div>
+        <div>
+          <h3 style="margin:0;">{{ sessao.disciplina_codigo }} — {{ sessao.disciplina_nome }}</h3>
+          <p style="margin:4px 0 0;font-size:12.5px;color:var(--muted);">{{ sessao.data_inicio.strftime('%d/%m/%Y %H:%M') }} — {{ sessao.data_fim.strftime('%H:%M') }}</p>
+        </div>
+      </div>
+      <form method="post" action="{{ url_for('monitorias.registrar_sessao', sessao_id=sessao.id) }}" class="form-stack">
+        <fieldset style="border:none;padding:0;margin:0;">
+          <legend style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px;">Alunos presentes</legend>
+          {% if alunos_sessao %}
+          <div class="stack-sm">
+            {% for aluno in alunos_sessao %}
+            <label style="flex-direction:row;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:9px;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--text);">
+              <input type="checkbox" name="presentes" value="{{ aluno.aluno_id }}" {% if aluno.status == 'CONFIRMADA' %}checked{% endif %} style="width:16px;height:16px;flex:none;" />
+              {{ aluno.aluno_nome }}
+            </label>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="muted" style="font-size:13px;">Nenhum aluno inscrito nesta disciplina.</p>
+          {% endif %}
+        </fieldset>
+        <label for="assunto-detalhe">Assunto abordado
+          <textarea id="assunto-detalhe" name="assunto" rows="2" required style="resize:vertical;">{{ sessao.assunto or '' }}</textarea>
+        </label>
+        <label for="materiais-detalhe">Materiais compartilhados <span style="font-weight:400;font-size:12px;">(opcional — um por linha; use "descrição | url" para incluir link)</span>
+          <textarea id="materiais-detalhe" name="materiais" rows="3" style="resize:vertical;" placeholder="Ex: Slides da aula | https://drive.google.com/…"></textarea>
+        </label>
+        <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+          <button type="button" class="button btn-outline" onclick="this.closest('dialog').close()">Cancelar</button>
+          <button type="submit" style="background:var(--warning);color:#231a00;">Salvar registro</button>
+        </div>
+      </form>
+    </dialog>
+  </section>
+  {% endif %}
+
+  {# ─ Informações da sessão ─ #}
+  <section>
+    <div class="section-head">
+      <span class="section-dot" style="background:var(--primary);"></span>
+      <h3>Dados da sessão</h3>
+    </div>
+    <div class="card">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;gap:12px;align-items:baseline;">
+          <span style="font-size:12.5px;font-weight:700;color:var(--muted);min-width:80px;">Status</span>
+          {% if sessao.status == 'CONCLUIDA' %}<span class="status-pill success">Concluída</span>
+          {% elif sessao.status == 'CANCELADA' %}<span class="status-pill error">Cancelada</span>
+          {% else %}<span class="status-pill warning">Agendada</span>{% endif %}
+        </div>
+        {% if sessao.assunto %}
+        <div style="display:flex;gap:12px;align-items:baseline;">
+          <span style="font-size:12.5px;font-weight:700;color:var(--muted);min-width:80px;">Assunto</span>
+          <span style="font-size:13.5px;">{{ sessao.assunto }}</span>
+        </div>
+        {% endif %}
+        <div style="display:flex;gap:12px;align-items:baseline;">
+          <span style="font-size:12.5px;font-weight:700;color:var(--muted);min-width:80px;">Duração</span>
+          <span style="font-size:13.5px;">{{ (sessao.data_fim - sessao.data_inicio).seconds // 60 }} min</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# ─ Presença do aluno (visão ALUNO) ─ #}
+  {% if is_aluno %}
+  <section>
+    <div class="section-head">
+      <span class="section-dot" style="background:var(--success);"></span>
+      <h3>Minha presença</h3>
+    </div>
+    <div class="card">
+      {% if minha_presenca %}
+        {% if minha_presenca.status == 'CONFIRMADA' %}
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="status-pill success" style="font-size:14px;padding:8px 16px;">Presente</span>
+          <span style="font-size:13.5px;color:var(--muted);">Sua presença foi confirmada nesta sessão.</span>
+        </div>
+        {% else %}
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="status-pill error" style="font-size:14px;padding:8px 16px;">Ausente</span>
+          <span style="font-size:13.5px;color:var(--muted);">Você foi marcado como ausente nesta sessão.</span>
+        </div>
+        {% endif %}
+      {% else %}
+      <p class="muted">Sua presença ainda não foi registrada nesta sessão.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  {# ─ Alunos presentes (visão não-ALUNO) ─ #}
+  {% else %}
+  <section>
+    <div class="section-head">
+      <span class="section-dot" style="background:var(--success);"></span>
+      <h3>Participantes</h3>
+      {% set confirmados = participantes | selectattr('status', 'equalto', 'CONFIRMADA') | list %}
+      <span class="section-badge" style="background:var(--success-bg);color:var(--success);">{{ confirmados | length }} presentes</span>
+    </div>
+    {% if participantes %}
+    <div class="card" style="padding:0;overflow:hidden;">
+      {% for p in participantes %}
+      <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
+        <span class="sidebar-avatar" style="width:30px;height:30px;font-size:11px;" aria-hidden="true"></span>
+        <span style="flex:1;font-size:13.5px;font-weight:600;">{{ p.aluno_nome }}</span>
+        {% if p.status == 'CONFIRMADA' %}<span class="status-pill success">Presente</span>
+        {% elif p.status == 'AUSENTE' %}<span class="status-pill error">Ausente</span>
+        {% else %}<span class="status-pill muted">—</span>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card"><p class="muted">Nenhum participante registrado.</p></div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {# ─ Materiais ─ #}
+  <section>
+    <div class="section-head">
+      <span class="section-dot" style="background:var(--accent);"></span>
+      <h3>Materiais compartilhados</h3>
+    </div>
+    {% if materiais %}
+    <div class="card" style="padding:0;overflow:hidden;">
+      {% for m in materiais %}
+      <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span style="flex:1;font-size:13.5px;">{{ m.descricao }}</span>
+        {% if m.url %}
+        <a href="{{ m.url }}" target="_blank" rel="noopener" class="button btn-outline btn-sm" style="text-decoration:none;flex:none;">Abrir</a>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card"><p class="muted">Nenhum material compartilhado nesta sessão.</p></div>
+    {% endif %}
+  </section>
+
+</div>
+{% endblock %}

@@ -1,7 +1,7 @@
 import calendar
 import csv
 import io
-from datetime import date
+from datetime import date, timedelta
 
 from flask import abort, make_response, render_template, request
 
@@ -33,6 +33,11 @@ def index():
     )
 
 
+def _count_weeks_in_period(data_inicio, data_fim):
+    days = (data_fim - data_inicio).days
+    return max(1, days // 7)
+
+
 def _parse_periodo():
     hoje = date.today()
     mes_ant = hoje.month - 1 or 12
@@ -59,8 +64,12 @@ def participacao():
     disciplinas = disciplinas_repository.list_disciplinas()
 
     relatorio = None
+    semanas_no_periodo = 0
+    minimo_esperado_horas = 0
     if disciplina_id:
         relatorio = service.get_relatorio_participacao(disciplina_id, data_inicio, data_fim)
+        semanas_no_periodo = _count_weeks_in_period(data_inicio, data_fim)
+        minimo_esperado_horas = semanas_no_periodo
 
     return render_template(
         "relatorios/participacao.html",
@@ -69,6 +78,8 @@ def participacao():
         filtro_disciplina_id=disciplina_id,
         data_inicio=data_inicio,
         data_fim=data_fim,
+        semanas_no_periodo=semanas_no_periodo,
+        minimo_esperado_horas=minimo_esperado_horas,
     )
 
 

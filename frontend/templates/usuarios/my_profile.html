@@ -17,18 +17,17 @@
   {# ─ Formulário ─ #}
   <div class="card">
     <h3 style="font-size:15px;margin-bottom:18px;">Configurações de monitoria</h3>
-    <form method="post" class="form-stack">
+    <form method="post" class="form-stack" data-profile-config>
 
       <label for="contato_tipo">Tipo de contato
-        <select id="contato_tipo" name="contato_tipo" data-contact-type>
-          <option value="">Selecione</option>
-          <option value="celular" {% if contato_tipo == 'celular' %}selected{% endif %}>Celular</option>
-          <option value="email" {% if contato_tipo == 'email' %}selected{% endif %}>Email</option>
+        <select id="contato_tipo" name="contato_tipo" required>
+          <option value="celular" {% if contato_tipo == 'celular' or not contato_tipo %}selected{% endif %}>Celular</option>
+          <option value="email" {% if contato_tipo == 'email' %}selected{% endif %}>E-mail</option>
         </select>
       </label>
-
       <label for="contato_valor">Contato
-        <input id="contato_valor" name="contato_valor" value="{{ contato_valor or '' }}" data-contact-input placeholder="Digite o contato" />
+        <input id="contato_valor" name="contato_valor" value="{{ contato_valor or '' }}"
+          placeholder="{% if contato_tipo == 'email' %}Ex: nome@email.com{% else %}Ex: (21) 98765-4321{% endif %}" required />
       </label>
 
       <label for="carga_horaria">Carga horária semanal
@@ -38,7 +37,7 @@
         </select>
       </label>
 
-      <label for="modo_2h" data-modo-2h {% if carga_horaria != 2 %}hidden{% endif %}>Formato das 2h
+      <label for="modo_2h" data-modo-2h-label {% if carga_horaria != 2 %}hidden{% endif %}>Formato das 2h
         <select id="modo_2h" name="modo_2h" data-modo-2h>
           <option value="CONSECUTIVAS" {% if modo_2h == 'CONSECUTIVAS' %}selected{% endif %}>Uma sessão de 2h</option>
           <option value="SEPARADAS" {% if modo_2h == 'SEPARADAS' %}selected{% endif %}>Duas sessões de 1h</option>
@@ -107,4 +106,32 @@
   </div>
 
 </div>
+
+<script>
+(function () {
+  var tipo  = document.getElementById('contato_tipo');
+  var valor = document.getElementById('contato_valor');
+
+  function maskPhone(input) {
+    var v = input.value.replace(/\D/g, '').slice(0, 11);
+    if (v.length > 6)      v = '(' + v.slice(0,2) + ') ' + v.slice(2,7) + '-' + v.slice(7);
+    else if (v.length > 2) v = '(' + v.slice(0,2) + ') ' + v.slice(2);
+    else if (v.length)     v = '(' + v;
+    input.value = v;
+  }
+
+  function applyTipo() {
+    if (tipo.value === 'celular') {
+      valor.placeholder = 'Ex: (21) 98765-4321';
+      valor.addEventListener('input', function () { maskPhone(this); });
+    } else {
+      valor.placeholder = 'Ex: nome@email.com';
+      valor.removeEventListener('input', maskPhone);
+    }
+  }
+
+  tipo.addEventListener('change', applyTipo);
+  applyTipo();
+})();
+</script>
 {% endblock %}

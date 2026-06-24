@@ -4,30 +4,31 @@ from db.connection import get_connection
 def list_pending_monitorias():
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute(
-        """
-        SELECT m.id,
-               m.disciplina_id,
-               d.nome AS disciplina,
-               d.codigo AS disciplina_codigo,
-               m.professor_id,
-               p.nome AS professor_nome,
-               m.aluno_id,
-               a.nome AS aluno_nome,
-               m.criado_em
-        FROM monitorias m
-        JOIN disciplinas d ON d.id = m.disciplina_id
-        JOIN usuarios p ON p.id = m.professor_id
-        JOIN usuarios a ON a.id = m.aluno_id
-        WHERE m.status = 'PENDENTE_APROVACAO'
-          AND d.status = 'ATIVA'
-        ORDER BY m.criado_em DESC
-        """
-    )
-    rows = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return rows
+    try:
+        cursor.execute(
+            """
+            SELECT m.id,
+                   m.disciplina_id,
+                   d.nome AS disciplina,
+                   d.codigo AS disciplina_codigo,
+                   m.professor_id,
+                   p.nome AS professor_nome,
+                   m.aluno_id,
+                   a.nome AS aluno_nome,
+                   m.criado_em
+            FROM monitorias m
+            JOIN disciplinas d ON d.id = m.disciplina_id
+            JOIN usuarios p ON p.id = m.professor_id
+            JOIN usuarios a ON a.id = m.aluno_id
+            WHERE m.status = 'PENDENTE_APROVACAO'
+              AND d.status = 'ATIVA'
+            ORDER BY m.criado_em DESC
+            """
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
 
 
 def approve_monitoria(monitoria_id):
@@ -116,30 +117,31 @@ def reject_monitoria(monitoria_id, motivo_rejeicao=None):
 def list_active_monitorias():
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute(
-        """
-        SELECT m.id,
-               m.disciplina_id,
-               d.codigo AS disciplina_codigo,
-               d.nome AS disciplina_nome,
-               m.professor_id,
-               p.nome AS professor_nome,
-               m.aluno_id,
-               a.nome AS aluno_nome,
-               m.criado_em
-        FROM monitorias m
-        JOIN disciplinas d ON d.id = m.disciplina_id
-        JOIN usuarios p ON p.id = m.professor_id
-                JOIN usuarios a ON a.id = m.aluno_id
-                WHERE m.status = 'ATIVO'
-                    AND d.status = 'ATIVA'
-        ORDER BY m.criado_em DESC
-        """
-    )
-    rows = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return rows
+    try:
+        cursor.execute(
+            """
+            SELECT m.id,
+                   m.disciplina_id,
+                   d.codigo AS disciplina_codigo,
+                   d.nome AS disciplina_nome,
+                   m.professor_id,
+                   p.nome AS professor_nome,
+                   m.aluno_id,
+                   a.nome AS aluno_nome,
+                   m.criado_em
+            FROM monitorias m
+            JOIN disciplinas d ON d.id = m.disciplina_id
+            JOIN usuarios p ON p.id = m.professor_id
+            JOIN usuarios a ON a.id = m.aluno_id
+            WHERE m.status = 'ATIVO'
+              AND d.status = 'ATIVA'
+            ORDER BY m.criado_em DESC
+            """
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
 
 
 def create_indicacao(disciplina_id, professor_id, aluno_id):
@@ -151,10 +153,10 @@ def create_indicacao(disciplina_id, professor_id, aluno_id):
             INSERT INTO monitorias (disciplina_id, professor_id, aluno_id, status)
             VALUES (%s, %s, %s, 'PENDENTE_APROVACAO')
             ON DUPLICATE KEY UPDATE
-                status = 'PENDENTE_APROVACAO',
-                professor_id = VALUES(professor_id),
-                motivo_rejeicao = NULL,
-                atualizado_em = CURRENT_TIMESTAMP
+                status          = IF(status = 'REJEITADO', 'PENDENTE_APROVACAO', status),
+                professor_id    = IF(status = 'REJEITADO', VALUES(professor_id), professor_id),
+                motivo_rejeicao = IF(status = 'REJEITADO', NULL, motivo_rejeicao),
+                atualizado_em   = CURRENT_TIMESTAMP
             """,
             (disciplina_id, professor_id, aluno_id),
         )
@@ -168,112 +170,119 @@ def create_indicacao(disciplina_id, professor_id, aluno_id):
 def has_active_monitoria(aluno_id):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute(
-        """
-        SELECT 1
-        FROM monitorias
-        WHERE aluno_id = %s
-          AND status = 'ATIVO'
-        LIMIT 1
-        """,
-        (aluno_id,),
-    )
-    exists = cursor.fetchone() is not None
-    cursor.close()
-    conn.close()
-    return exists
+    try:
+        cursor.execute(
+            """
+            SELECT 1
+            FROM monitorias
+            WHERE aluno_id = %s
+              AND status = 'ATIVO'
+            LIMIT 1
+            """,
+            (aluno_id,),
+        )
+        return cursor.fetchone() is not None
+    finally:
+        cursor.close()
+        conn.close()
 
 
 def list_by_professor(professor_id):
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute(
-        """
-        SELECT m.id,
-               d.id AS disciplina_id,
-               d.codigo AS disciplina_codigo,
-               d.nome AS disciplina_nome,
-               a.nome AS aluno_nome,
-               m.status,
-               m.motivo_rejeicao,
-               m.criado_em
-        FROM monitorias m
-        JOIN disciplinas d ON d.id = m.disciplina_id
-        JOIN usuarios a ON a.id = m.aluno_id
-        WHERE m.professor_id = %s
-        ORDER BY m.criado_em DESC
-        """,
-        (professor_id,),
-    )
-    rows = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return rows
+    try:
+        cursor.execute(
+            """
+            SELECT m.id,
+                   d.id AS disciplina_id,
+                   d.codigo AS disciplina_codigo,
+                   d.nome AS disciplina_nome,
+                   a.nome AS aluno_nome,
+                   m.status,
+                   m.motivo_rejeicao,
+                   m.criado_em
+            FROM monitorias m
+            JOIN disciplinas d ON d.id = m.disciplina_id
+            JOIN usuarios a ON a.id = m.aluno_id
+            WHERE m.professor_id = %s
+            ORDER BY m.criado_em DESC
+            """,
+            (professor_id,),
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
 
 
 def get_active_by_aluno(aluno_id):
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute(
-        """
-        SELECT m.id,
-               d.id AS disciplina_id,
-               d.codigo AS disciplina_codigo,
-               d.nome AS disciplina_nome,
-               p.nome AS professor_nome
-        FROM monitorias m
-        JOIN disciplinas d ON d.id = m.disciplina_id
-        JOIN usuarios p ON p.id = m.professor_id
-        WHERE m.aluno_id = %s
-          AND m.status = 'ATIVO'
-          AND d.status = 'ATIVA'
-        LIMIT 1
-        """,
-        (aluno_id,),
-    )
-    row = cursor.fetchone()
-    cursor.close()
-    conn.close()
-    return row
+    try:
+        cursor.execute(
+            """
+            SELECT m.id,
+                   d.id AS disciplina_id,
+                   d.codigo AS disciplina_codigo,
+                   d.nome AS disciplina_nome,
+                   p.nome AS professor_nome
+            FROM monitorias m
+            JOIN disciplinas d ON d.id = m.disciplina_id
+            JOIN usuarios p ON p.id = m.professor_id
+            WHERE m.aluno_id = %s
+              AND m.status = 'ATIVO'
+              AND d.status = 'ATIVA'
+            LIMIT 1
+            """,
+            (aluno_id,),
+        )
+        return cursor.fetchone()
+    finally:
+        cursor.close()
+        conn.close()
 
 
 def deactivate_monitorias_by_disciplina(disciplina_id, motivo):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute(
-        """
-        UPDATE monitorias
-        SET status = 'REJEITADO',
-            motivo_rejeicao = %s,
-            atualizado_em = CURRENT_TIMESTAMP
-        WHERE disciplina_id = %s
-          AND status = 'ATIVO'
-        """,
-        (motivo, disciplina_id),
-    )
-    conn.commit()
-    cursor.close()
-    conn.close()
+    try:
+        cursor.execute(
+            """
+            UPDATE monitorias
+            SET status = 'REJEITADO',
+                motivo_rejeicao = %s,
+                atualizado_em = CURRENT_TIMESTAMP
+            WHERE disciplina_id = %s
+              AND status = 'ATIVO'
+            """,
+            (motivo, disciplina_id),
+        )
+        conn.commit()
+    finally:
+        cursor.close()
+        conn.close()
 
 
 def deactivate_monitoria(disciplina_id, aluno_id, motivo):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute(
-        """
-        UPDATE monitorias
-        SET status = 'REJEITADO',
-            motivo_rejeicao = %s,
-            atualizado_em = CURRENT_TIMESTAMP
-        WHERE disciplina_id = %s
-          AND aluno_id = %s
-          AND status = 'ATIVO'
-        """,
-        (motivo, disciplina_id, aluno_id),
-    )
-    conn.commit()
-    cursor.close()
-    conn.close()
+    try:
+        cursor.execute(
+            """
+            UPDATE monitorias
+            SET status = 'REJEITADO',
+                motivo_rejeicao = %s,
+                atualizado_em = CURRENT_TIMESTAMP
+            WHERE disciplina_id = %s
+              AND aluno_id = %s
+              AND status = 'ATIVO'
+            """,
+            (motivo, disciplina_id, aluno_id),
+        )
+        conn.commit()
+    finally:
+        cursor.close()
+        conn.close()
 
 
 def set_monitor_for_disciplina(disciplina_id, professor_id, aluno_id):
@@ -733,9 +742,14 @@ def get_sessao_by_id(sessao_id):
     try:
         cursor.execute(
             """
-            SELECT id, disciplina_id, monitor_id, data_inicio, data_fim, status
-            FROM monitoria_sessoes
-            WHERE id = %s
+            SELECT s.id, s.disciplina_id, s.monitor_id, s.data_inicio, s.data_fim,
+                   s.status, s.assunto,
+                   d.codigo AS disciplina_codigo, d.nome AS disciplina_nome,
+                   u.nome AS monitor_nome
+            FROM monitoria_sessoes s
+            JOIN disciplinas d ON d.id = s.disciplina_id
+            JOIN usuarios u ON u.id = s.monitor_id
+            WHERE s.id = %s
             """,
             (sessao_id,),
         )
@@ -839,6 +853,7 @@ def save_session_report(sessao_id, assunto):
                 status = 'CONCLUIDA',
                 atualizado_em = CURRENT_TIMESTAMP
             WHERE id = %s
+              AND status = 'AGENDADA'
             """,
             (assunto, sessao_id),
         )
@@ -864,6 +879,36 @@ def create_sessoes(disciplina_id, monitor_id, sessoes):
         )
         conn.commit()
         return cursor.rowcount
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def create_sessoes_and_close_votacao(votacao_id, disciplina_id, monitor_id, sessoes):
+    """Cria sessões e fecha votação atomicamente na mesma transação."""
+    if not sessoes:
+        return 0
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.executemany(
+            """
+            INSERT INTO monitoria_sessoes (disciplina_id, monitor_id, data_inicio, data_fim, status)
+            VALUES (%s, %s, %s, %s, 'AGENDADA')
+            """,
+            sessoes,
+        )
+        inserted = cursor.rowcount
+        cursor.execute(
+            """
+            UPDATE votacoes
+            SET status = 'FECHADA', atualizado_em = CURRENT_TIMESTAMP
+            WHERE id = %s
+            """,
+            (votacao_id,),
+        )
+        conn.commit()
+        return inserted
     finally:
         cursor.close()
         conn.close()
@@ -945,6 +990,94 @@ def list_presencas_for_aluno(aluno_id, sessao_ids):
               AND sessao_id IN ({placeholders})
             """,
             (aluno_id, *sessao_ids),
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def list_sessao_materiais(sessao_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT id, descricao, url, criado_em
+            FROM sessao_materiais
+            WHERE sessao_id = %s
+            ORDER BY criado_em
+            """,
+            (sessao_id,),
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def save_sessao_materiais(sessao_id, materiais):
+    if not materiais:
+        return
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "DELETE FROM sessao_materiais WHERE sessao_id = %s",
+            (sessao_id,),
+        )
+        for item in materiais:
+            cursor.execute(
+                """
+                INSERT INTO sessao_materiais (sessao_id, descricao, url)
+                VALUES (%s, %s, %s)
+                """,
+                (sessao_id, item["descricao"], item.get("url")),
+            )
+        conn.commit()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def list_sessoes_pendentes_disciplina(disciplina_id, now_value):
+    """Sessões passadas que ainda estão com status AGENDADA (pendentes de finalização)."""
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT s.id, s.data_inicio, s.data_fim, s.assunto, s.status
+            FROM monitoria_sessoes s
+            WHERE s.disciplina_id = %s
+              AND s.status = 'AGENDADA'
+              AND s.data_fim <= %s
+            ORDER BY s.data_inicio DESC
+            """,
+            (disciplina_id, now_value),
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def list_alunos_disciplina_com_presenca(disciplina_id, sessao_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT u.id AS aluno_id,
+                   u.nome AS aluno_nome,
+                   COALESCE(p.status, 'PENDENTE') AS status
+            FROM disciplina_alunos da
+            JOIN usuarios u ON u.id = da.aluno_id
+            LEFT JOIN presencas p ON p.sessao_id = %s AND p.aluno_id = da.aluno_id
+            WHERE da.disciplina_id = %s
+            ORDER BY u.nome ASC
+            """,
+            (sessao_id, disciplina_id),
         )
         return cursor.fetchall()
     finally:

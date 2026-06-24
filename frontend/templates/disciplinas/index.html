@@ -14,39 +14,85 @@
 {% block content %}
 <div class="stack">
 
-  {# ─ Cards de disciplinas ─ #}
+  {# ─ Filtros ─ #}
+  <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+    <div style="flex:1;min-width:180px;">
+      <label style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px;display:block;">Buscar</label>
+      <div style="position:relative;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" name="q" value="{{ q }}" placeholder="Código ou nome…" style="padding-left:32px;width:100%;box-sizing:border-box;" />
+      </div>
+    </div>
+    <div style="min-width:130px;">
+      <label style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px;display:block;">Status</label>
+      <select name="status" style="width:100%;">
+        <option value="ATIVA" {% if status_filter == 'ATIVA' %}selected{% endif %}>Ativas</option>
+        <option value="INATIVA" {% if status_filter == 'INATIVA' %}selected{% endif %}>Inativas</option>
+        <option value="TODAS" {% if status_filter == 'TODAS' %}selected{% endif %}>Todas</option>
+      </select>
+    </div>
+    <div style="min-width:160px;">
+      <label style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px;display:block;">Professor</label>
+      <select name="professor_id" style="width:100%;">
+        <option value="">Todos</option>
+        {% for professor in professores %}
+        <option value="{{ professor.id }}" {% if professor_id_filter == professor.id|string %}selected{% endif %}>{{ professor.nome }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="min-width:160px;">
+      <label style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px;display:block;">Aluno matriculado</label>
+      <select name="aluno_id" style="width:100%;">
+        <option value="">Todos</option>
+        {% for aluno in alunos %}
+        <option value="{{ aluno.id }}" {% if aluno_id_filter == aluno.id|string %}selected{% endif %}>{{ aluno.nome }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="display:flex;align-items:flex-end;gap:8px;">
+      <label style="display:flex;align-items:center;gap:6px;padding:9px 0;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;">
+        <input type="checkbox" name="min_hours_not_met" value="1" {% if min_hours_filter == '1' %}checked{% endif %} style="width:15px;height:15px;" />
+        Horas mínimas não cumpridas
+      </label>
+    </div>
+    <button type="submit" class="button" style="align-self:flex-end;">Filtrar</button>
+    {% if q or status_filter != 'ATIVA' or professor_id_filter or aluno_id_filter or min_hours_filter %}
+    <a href="{{ url_for('disciplinas.index') }}" class="button btn-outline" style="text-decoration:none;align-self:flex-end;">Limpar</a>
+    {% endif %}
+  </form>
+
+  {# ─ Tabela de disciplinas ─ #}
   {% if disciplinas_admin %}
-  <div class="disc-grid">
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div style="display:grid;grid-template-columns:90px 1fr 1fr 1fr 60px 80px 120px;gap:0;padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;">
+      <span>Código</span>
+      <span>Nome</span>
+      <span>Professor</span>
+      <span>Monitor</span>
+      <span style="text-align:center;">Alunos</span>
+      <span style="text-align:center;">Status</span>
+      <span style="text-align:right;">Ações</span>
+    </div>
     {% for d in disciplinas_admin %}
-    <div class="disc-card">
-      <div class="disc-card-top">
-        <div class="disc-code">{{ d.codigo[:4] }}</div>
-        {% if d.status == 'ATIVA' %}
-        <span class="status-pill success">Ativa</span>
-        {% else %}
-        <span class="status-pill muted">Inativa</span>
-        {% endif %}
-      </div>
-      <div>
-        <a href="{{ url_for('disciplinas.detalhe', disciplina_id=d.id) }}" class="disc-card-name" style="text-decoration:none;color:inherit;">{{ d.nome }}</a>
-        <div class="disc-card-meta">
-          {% for professor in professores %}{% if professor.id == d.professor_id %}{{ professor.nome }}{% endif %}{% endfor %}
-          · {{ d.alunos_count }} alunos
-        </div>
-      </div>
-      <div class="disc-card-foot">
-        <span>
-          {% if d.monitor_aluno_id %}
-          {% for aluno in alunos %}{% if aluno.id == d.monitor_aluno_id %}Monitor: {{ aluno.nome }}{% endif %}{% endfor %}
-          {% else %}Sem monitor{% endif %}
-        </span>
+    <div style="display:grid;grid-template-columns:90px 1fr 1fr 1fr 60px 80px 120px;gap:0;padding:12px 16px;align-items:center;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}font-size:13.5px;">
+      <span style="font-weight:700;font-family:'Space Grotesk',sans-serif;color:var(--primary);font-size:12.5px;">{{ d.codigo }}</span>
+      <span style="font-weight:600;">{{ d.nome }}</span>
+      <span style="color:var(--muted);">{{ d.professor_nome }}</span>
+      <span style="color:var(--muted);">{{ d.monitor_nome or '—' }}</span>
+      <span style="text-align:center;color:var(--muted);">{{ d.alunos_count }}</span>
+      <span style="text-align:center;">
+        {% if d.status == 'ATIVA' %}<span class="status-pill success">Ativa</span>
+        {% else %}<span class="status-pill muted">Inativa</span>{% endif %}
+      </span>
+      <div style="display:flex;gap:6px;justify-content:flex-end;">
+        <a href="{{ url_for('disciplinas.monitoria_detalhe', disciplina_id=d.id) }}" class="button btn-outline btn-sm" style="text-decoration:none;">Ver</a>
         <button type="button" class="button btn-outline btn-sm"
           onclick="document.getElementById('dlg-edit-{{ d.id }}').showModal()">Editar</button>
       </div>
     </div>
 
     {# Dialog editar disciplina #}
-    <dialog id="dlg-edit-{{ d.id }}" class="dialog" style="max-width:520px;">
+    <dialog id="dlg-edit-{{ d.id }}" class="dialog" style="max-width:480px;">
       <div class="dialog-head">
         <div class="dialog-icon" style="background:var(--surface2);">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h12a1 1 0 011 1v15l-7-3-7 3V5a1 1 0 011-1z"/></svg>
@@ -64,14 +110,6 @@
           <select name="professor_id" required>
             {% for professor in professores %}
             <option value="{{ professor.id }}" {% if professor.id == d.professor_id %}selected{% endif %}>{{ professor.nome }}</option>
-            {% endfor %}
-          </select>
-        </label>
-        <label>Monitor
-          <select name="monitor_id">
-            <option value="">Sem monitor</option>
-            {% for aluno in alunos %}
-            <option value="{{ aluno.id }}" {% if aluno.id == d.monitor_aluno_id %}selected{% endif %}>{{ aluno.nome }}</option>
             {% endfor %}
           </select>
         </label>
@@ -96,30 +134,7 @@
   </div>
 
   {% else %}
-  <div class="card"><p class="muted">Nenhuma disciplina cadastrada ainda.</p></div>
-  {% endif %}
-
-  {# ─ Monitorias ativas ─ #}
-  {% if monitorias_ativas %}
-  <div class="card">
-    <div class="section-head"><h3>Monitorias ativas</h3></div>
-    <div class="user-list" style="box-shadow:none;border:none;">
-      <div class="user-list-head" style="padding:8px 0;">
-        <span style="flex:1;">Disciplina</span>
-        <span style="flex:1;">Monitor</span>
-        <span style="flex:1;">Professor</span>
-        <span style="flex:none;width:100px;">Desde</span>
-      </div>
-      {% for m in monitorias_ativas %}
-      <div style="display:flex;gap:14px;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);font-size:13.5px;">
-        <div style="flex:1;font-weight:600;">{{ m.disciplina_codigo }} — {{ m.disciplina_nome }}</div>
-        <div style="flex:1;color:var(--muted);">{{ m.aluno_nome }}</div>
-        <div style="flex:1;color:var(--muted);">{{ m.professor_nome }}</div>
-        <div style="flex:none;width:100px;font-size:12px;color:var(--muted);">{{ m.criado_em }}</div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
+  <div class="card"><p class="muted">Nenhuma disciplina encontrada com os filtros aplicados.</p></div>
   {% endif %}
 
 </div>

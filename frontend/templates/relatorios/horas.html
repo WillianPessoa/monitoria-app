@@ -57,16 +57,20 @@
         <span style="flex:1;">Monitor</span>
         <span style="flex:1;">Disciplina</span>
         <span style="flex:none;width:80px;text-align:right;">Horas</span>
+        <span style="flex:none;width:100px;"></span>
       </div>
       {% for linha in painel.linhas %}
-      <div class="user-row" style="flex-wrap:wrap;">
+      <div class="user-row" style="flex-wrap:wrap;gap:14px;">
         <div class="user-avatar" aria-hidden="true"></div>
-        <div class="user-info">
+        <div style="flex:1;min-width:0;">
           <div class="user-name">{{ linha.monitor_nome }}</div>
-          <div class="user-email">{{ linha.disciplina_codigo }} — {{ linha.disciplina_nome }}</div>
         </div>
+        <div style="flex:1;font-size:13px;color:var(--muted);">{{ linha.disciplina_codigo }} — {{ linha.disciplina_nome }}</div>
         <div style="flex:none;width:80px;text-align:right;">
           <span class="status-pill {% if linha.abaixo_minimo %}error{% else %}success{% endif %}">{{ linha.total_horas }}h</span>
+        </div>
+        <div style="flex:none;width:100px;text-align:right;">
+          <a href="{{ url_for('disciplinas.monitoria_detalhe', disciplina_id=linha.disciplina_id) }}" class="button btn-outline btn-sm" style="text-decoration:none;white-space:nowrap;">Ver sessões</a>
         </div>
       </div>
       {% endfor %}

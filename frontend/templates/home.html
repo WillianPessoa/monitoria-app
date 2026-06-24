@@ -20,7 +20,7 @@
 {% if role == 'ADMIN' %}Gerencie usuários, disciplinas e monitores do programa.
 {% elif role == 'PROFESSOR' %}Acompanhe suas disciplinas e gerencie indicações de monitores.
 {% elif current_user.is_monitor and monitoria %}{{ monitoria.disciplina_codigo }} — {{ monitoria.disciplina_nome }}
-{% elif role == 'ALUNO' %}Encontre monitores e agende seus atendimentos.
+{% elif role == 'ALUNO' %}Acompanhe suas disciplinas e veja as monitorias agendadas.
 {% endif %}
 {% endblock %}
 
@@ -102,7 +102,7 @@
           {% if d.monitor_nome %}<span class="status-pill success">Monitor ativo</span>
           {% elif d.status == 'ATIVA' %}<span class="status-pill warning">Sem monitor</span>
           {% else %}<span class="status-pill muted">Inativa</span>{% endif %}
-          <a href="{{ url_for('disciplinas.detalhe', disciplina_id=d.id) }}" class="section-link">Abrir →</a>
+          <a href="{{ url_for('disciplinas.monitoria_detalhe', disciplina_id=d.id) }}" class="button btn-outline btn-sm" style="text-decoration:none;flex:none;">Ver detalhes</a>
         </div>
         {% else %}
         <p class="muted" style="padding:12px 0;">Nenhuma disciplina vinculada a você.</p>
@@ -129,10 +129,15 @@
       <div style="font-size:11.5px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;">Sua monitoria</div>
       <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;margin:8px 0 4px;">{{ monitoria.disciplina_codigo }} — {{ monitoria.disciplina_nome }}</div>
       <p class="muted" style="font-size:13.5px;">Você é monitor ativo nesta disciplina.</p>
-      <a href="{{ url_for('agenda.index') }}" class="button" style="margin-top:16px;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v16H4zM4 9h16M8 3v4M16 3v4"/></svg>
-        Ver minha agenda
-      </a>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;">
+        <a href="{{ url_for('agenda.index') }}" class="button" style="text-decoration:none;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v16H4zM4 9h16M8 3v4M16 3v4"/></svg>
+          Ver monitorias
+        </a>
+        <a href="{{ url_for('disciplinas.monitoria_detalhe', disciplina_id=monitoria.disciplina_id) }}" class="button btn-outline" style="text-decoration:none;">
+          Ver turma
+        </a>
+      </div>
     </div>
 
     {% if aluno_disciplinas %}
@@ -196,17 +201,7 @@
     {% endif %}
     <a href="{{ url_for('agenda.index') }}" class="button btn-outline" style="justify-content:center;text-decoration:none;">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v16H4zM4 9h16M8 3v4M16 3v4"/></svg>
-      Ver meus agendamentos
-    </a>
-  </div>
-
-  <div>
-    <a href="{{ url_for('agenda.index') }}" class="cta-card">
-      <div class="cta-card-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary-fg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
-      </div>
-      <div class="cta-card-title">Buscar monitoria</div>
-      <div class="cta-card-sub">Encontre horários livres nas suas disciplinas →</div>
+      Ver monitorias agendadas
     </a>
   </div>
 </div>

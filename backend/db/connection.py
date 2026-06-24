@@ -130,6 +130,89 @@ def _seed_admins(conn):
     cursor.close()
 
 
+def _seed_demo(conn):
+    """Insere dados de demonstração se admin@ufrj.br ainda não existir."""
+    import datetime as _dt
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM usuarios WHERE email = 'admin@ufrj.br'")
+    if cursor.fetchone():
+        cursor.close()
+        return
+
+    senha_hash = generate_password_hash("senha123")
+    now = _dt.datetime.now()
+
+    def _user(nome, email, papel):
+        cursor.execute(
+            "INSERT INTO usuarios (nome, email, senha_hash, papel, status, senha_temporaria) VALUES (%s,%s,%s,%s,'ATIVO',FALSE)",
+            (nome, email, senha_hash, papel),
+        )
+        return cursor.lastrowid
+
+    admin_id = _user("Admin UFRJ", "admin@ufrj.br", "ADMIN")
+    prof1_id = _user("Professor Um", "professor1@ufrj.br", "PROFESSOR")
+    prof2_id = _user("Professor Dois", "professor2@ufrj.br", "PROFESSOR")
+    mon1_id = _user("Monitor Um", "monitor1@ufrj.br", "ALUNO")
+    mon2_id = _user("Monitor Dois", "monitor2@ufrj.br", "ALUNO")
+    aluno1_id = _user("Aluno Um", "aluno1@ufrj.br", "ALUNO")
+    aluno2_id = _user("Aluno Dois", "aluno2@ufrj.br", "ALUNO")
+    aluno3_id = _user("Aluno Três", "aluno3@ufrj.br", "ALUNO")
+    aluno4_id = _user("Aluno Quatro", "aluno4@ufrj.br", "ALUNO")
+
+    cursor.execute("INSERT INTO disciplinas (codigo, nome, professor_id, status) VALUES (%s,%s,%s,'ATIVA')", ("MAB001", "Cálculo I", prof1_id))
+    disc1_id = cursor.lastrowid
+    cursor.execute("INSERT INTO disciplinas (codigo, nome, professor_id, status) VALUES (%s,%s,%s,'ATIVA')", ("MAB002", "Álgebra Linear", prof2_id))
+    disc2_id = cursor.lastrowid
+
+    cursor.execute("INSERT INTO monitorias (disciplina_id, professor_id, aluno_id, status) VALUES (%s,%s,%s,'ATIVO')", (disc1_id, prof1_id, mon1_id))
+    cursor.execute("INSERT INTO monitorias (disciplina_id, professor_id, aluno_id, status) VALUES (%s,%s,%s,'ATIVO')", (disc2_id, prof2_id, mon2_id))
+
+    for aluno_id in [aluno1_id, aluno2_id]:
+        cursor.execute("INSERT INTO disciplina_alunos (disciplina_id, aluno_id) VALUES (%s,%s)", (disc1_id, aluno_id))
+    for aluno_id in [aluno3_id, aluno4_id]:
+        cursor.execute("INSERT INTO disciplina_alunos (disciplina_id, aluno_id) VALUES (%s,%s)", (disc2_id, aluno_id))
+
+    def _session(disc_id, mon_id, dt_inicio, dt_fim, status, assunto=None):
+        cursor.execute(
+            "INSERT INTO monitoria_sessoes (disciplina_id, monitor_id, data_inicio, data_fim, status, assunto) VALUES (%s,%s,%s,%s,%s,%s)",
+            (disc_id, mon_id, dt_inicio, dt_fim, status, assunto),
+        )
+        return cursor.lastrowid
+
+    def _presenca(sessao_id, aluno_id, status):
+        cursor.execute("INSERT INTO presencas (sessao_id, aluno_id, status) VALUES (%s,%s,%s)", (sessao_id, aluno_id, status))
+
+    # disc1: 4 sessões CONCLUIDAS (3, 8, 15, 21 dias atrás — todas no mês corrente)
+    for days_ago in [3, 8, 15, 21]:
+        dt = (now - _dt.timedelta(days=days_ago)).replace(hour=14, minute=0, second=0, microsecond=0)
+        sid = _session(disc1_id, mon1_id, dt, dt + _dt.timedelta(hours=1), "CONCLUIDA", "Revisão de conteúdo")
+        _presenca(sid, aluno1_id, "CONFIRMADA")
+        _presenca(sid, aluno2_id, "AUSENTE")
+
+    # disc2: 2 sessões CONCLUIDAS (5, 12 dias atrás) — não cumpre mínimo de 4h
+    for days_ago in [5, 12]:
+        dt = (now - _dt.timedelta(days=days_ago)).replace(hour=10, minute=0, second=0, microsecond=0)
+        sid = _session(disc2_id, mon2_id, dt, dt + _dt.timedelta(hours=1), "CONCLUIDA", "Revisão de conteúdo")
+        _presenca(sid, aluno3_id, "CONFIRMADA")
+        _presenca(sid, aluno4_id, "AUSENTE")
+
+    # Sessões futuras (2 dias à frente)
+    fut = (now + _dt.timedelta(days=2)).replace(hour=14, minute=0, second=0, microsecond=0)
+    _session(disc1_id, mon1_id, fut, fut + _dt.timedelta(hours=1), "AGENDADA")
+    fut2 = (now + _dt.timedelta(days=2)).replace(hour=10, minute=0, second=0, microsecond=0)
+    _session(disc2_id, mon2_id, fut2, fut2 + _dt.timedelta(hours=1), "AGENDADA")
+
+    # Sessões pendentes de finalização (ontem, ainda AGENDADA)
+    pend = (now - _dt.timedelta(days=1)).replace(hour=14, minute=0, second=0, microsecond=0)
+    _session(disc1_id, mon1_id, pend, pend + _dt.timedelta(hours=1), "AGENDADA")
+    pend2 = (now - _dt.timedelta(days=1)).replace(hour=10, minute=0, second=0, microsecond=0)
+    _session(disc2_id, mon2_id, pend2, pend2 + _dt.timedelta(hours=1), "AGENDADA")
+
+    conn.commit()
+    cursor.close()
+    logging.info("Dados de demo inseridos: admin@ufrj.br e usuários de teste.")
+
+
 def init_db(app):
     try:
         _build_pool(app)
@@ -137,6 +220,7 @@ def init_db(app):
         _apply_schema(conn)
         _apply_migrations(conn)
         _seed_admins(conn)
+        _seed_demo(conn)
         conn.close()
     except mysql.connector.Error as exc:
         logging.exception("Falha ao conectar no MySQL durante a inicializacao")

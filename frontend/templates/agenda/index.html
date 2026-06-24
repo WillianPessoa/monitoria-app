@@ -2,12 +2,12 @@
 {% block title %}Agenda — Monitoria App{% endblock %}
 
 {% block page_kicker %}{% if monitoria %}Monitor{% else %}Aluno{% endif %}{% endblock %}
-{% block page_title %}{% if monitoria %}Minha agenda{% else %}Agenda{% endif %}{% endblock %}
+{% block page_title %}Monitorias{% endblock %}
 {% block page_sub %}
 {% if monitoria %}
   {{ monitoria.disciplina_codigo }} — {{ monitoria.disciplina_nome }} · {{ "%.1f"|format(monitor_hours_total) }}h registradas no mês
 {% else %}
-  Busque horários disponíveis e veja seus agendamentos.
+  Veja suas monitorias agendadas da semana.
 {% endif %}
 {% endblock %}
 
@@ -34,7 +34,7 @@
     </div>
     <div class="stack-sm">
       {% for sessao in pendentes_passadas %}
-      {% set participantes = session_participants_map.get(sessao.id, []) %}
+      {% set alunos = session_alunos_map.get(sessao.id, []) %}
       <div class="card" style="border:1px solid var(--warning);">
         <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
           <div style="flex:none;width:42px;height:42px;border-radius:11px;background:var(--warning-bg);display:flex;align-items:center;justify-content:center;">
@@ -44,29 +44,51 @@
             <div style="font-weight:700;font-size:14.5px;">{{ sessao.disciplina_codigo }} — {{ sessao.disciplina_nome }}</div>
             <div style="font-size:12.5px;color:var(--muted);">{{ sessao.data_inicio.strftime('%d/%m/%Y %H:%M') }} · {{ (sessao.data_fim - sessao.data_inicio).seconds // 60 }} min</div>
           </div>
+          <button type="button" style="background:var(--warning);color:#231a00;border:none;border-radius:9px;padding:8px 16px;font-size:13.5px;font-weight:700;cursor:pointer;"
+            onclick="document.getElementById('dlg-finalizar-{{ sessao.id }}').showModal()">
+            Finalizar monitoria
+          </button>
         </div>
-        {% if participantes %}
-        <form method="post" action="{{ url_for('monitorias.registrar_sessao', sessao_id=sessao.id) }}" style="display:flex;flex-direction:column;gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+      </div>
+
+      <dialog id="dlg-finalizar-{{ sessao.id }}" class="dialog" style="max-width:520px;">
+        <div class="dialog-head">
+          <div class="dialog-icon" style="background:var(--warning-bg);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>
+          </div>
+          <div>
+            <h3 style="margin:0;">{{ sessao.disciplina_codigo }} — {{ sessao.disciplina_nome }}</h3>
+            <p style="margin:4px 0 0;font-size:12.5px;color:var(--muted);">{{ sessao.data_inicio.strftime('%d/%m/%Y %H:%M') }} — {{ sessao.data_fim.strftime('%H:%M') }}</p>
+          </div>
+        </div>
+        <form method="post" action="{{ url_for('monitorias.registrar_sessao', sessao_id=sessao.id) }}" class="form-stack">
           <fieldset style="border:none;padding:0;margin:0;">
-            <legend style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px;">Presença dos alunos</legend>
+            <legend style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px;">Alunos presentes</legend>
+            {% if alunos %}
             <div class="stack-sm">
-              {% for p in participantes %}
+              {% for aluno in alunos %}
               <label style="flex-direction:row;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:9px;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--text);">
-                <input type="checkbox" name="presentes" value="{{ p.aluno_id }}" {% if p.status == 'CONFIRMADA' %}checked{% endif %} style="width:16px;height:16px;flex:none;" />
-                {{ p.aluno_nome }}
+                <input type="checkbox" name="presentes" value="{{ aluno.aluno_id }}" {% if aluno.status == 'CONFIRMADA' %}checked{% endif %} style="width:16px;height:16px;flex:none;" />
+                {{ aluno.aluno_nome }}
               </label>
               {% endfor %}
             </div>
+            {% else %}
+            <p class="muted" style="font-size:13px;">Nenhum aluno inscrito nesta disciplina.</p>
+            {% endif %}
           </fieldset>
           <label for="assunto-{{ sessao.id }}">Assunto abordado
             <textarea id="assunto-{{ sessao.id }}" name="assunto" rows="2" required style="resize:vertical;">{{ sessao.assunto or '' }}</textarea>
           </label>
-          <button type="submit" style="align-self:flex-start;background:var(--warning);color:#231a00;">Salvar registro</button>
+          <label for="materiais-{{ sessao.id }}">Materiais compartilhados <span style="font-weight:400;font-size:12px;">(opcional — um por linha; use "descrição | url" para incluir link)</span>
+            <textarea id="materiais-{{ sessao.id }}" name="materiais" rows="3" style="resize:vertical;" placeholder="Ex: Slides da aula | https://drive.google.com/…"></textarea>
+          </label>
+          <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+            <button type="button" class="button btn-outline" onclick="this.closest('dialog').close()">Cancelar</button>
+            <button type="submit" style="background:var(--warning);color:#231a00;">Salvar registro</button>
+          </div>
         </form>
-        {% else %}
-        <p class="muted" style="margin-top:10px;font-size:13px;">Nenhum aluno confirmado para esta sessão.</p>
-        {% endif %}
-      </div>
+      </dialog>
       {% endfor %}
     </div>
   </section>
@@ -81,6 +103,15 @@
     </div>
     <div class="card">
       {% if votacao_resultados %}
+      {% if max_votos < required_votes %}
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--warning-bg);border-radius:9px;border:1px solid var(--warning);margin-bottom:14px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--warning);">Aguardando votos dos alunos</div>
+          <div style="font-size:12px;color:var(--muted);">{{ max_votos }} de {{ required_votes }} votos mínimos recebidos. A confirmação estará disponível após atingir o mínimo.</div>
+        </div>
+      </div>
+      {% endif %}
       <p class="muted" style="margin-bottom:12px;">
         {% if votacao_max_select == 1 %}Selecione 1 horário de {{ votacao_slot_duration }}h após ao menos {{ required_votes }} votos.
         {% else %}Selecione até 2 horários de 1h após ao menos {{ required_votes }} votos.{% endif %}
@@ -112,7 +143,13 @@
         <button type="submit" style="margin-top:12px;">Confirmar monitoria</button>
       </form>
       {% else %}
-      <p class="muted">Ainda não há votos registrados.</p>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--warning-bg);border-radius:9px;border:1px solid var(--warning);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--warning);">Aguardando votos dos alunos</div>
+          <div style="font-size:12px;color:var(--muted);">0 de {{ required_votes }} votos mínimos recebidos. A grade de horários aparecerá quando os alunos votarem.</div>
+        </div>
+      </div>
       {% endif %}
     </div>
   </section>
@@ -142,9 +179,21 @@
           <div class="agenda-meta">{{ sessao.data_inicio.strftime('%H:%M') }} — {{ sessao.data_fim.strftime('%H:%M') }} · {{ (sessao.data_fim - sessao.data_inicio).seconds // 60 }} min</div>
         </div>
         <span class="status-pill success">Agendada</span>
-        <form method="post" action="{{ url_for('monitorias.cancelar_sessao', sessao_id=sessao.id) }}" class="inline-form">
-          <button type="submit" class="button btn-danger btn-sm">Cancelar</button>
-        </form>
+        <button type="button" class="button btn-danger btn-sm"
+          onclick="document.getElementById('dialog-cancel-{{ sessao.id }}').showModal()">Cancelar</button>
+        <dialog id="dialog-cancel-{{ sessao.id }}" style="border-radius:14px;border:1px solid var(--border);background:var(--card);color:var(--text);padding:24px;max-width:380px;">
+          <p style="font-weight:700;font-size:15px;margin-bottom:8px;">Cancelar sessão?</p>
+          <p style="font-size:13.5px;color:var(--muted);margin-bottom:20px;">
+            A sessão de {{ sessao.disciplina_codigo }} em {{ sessao.data_inicio.strftime('%d/%m às %H:%M') }} será cancelada e uma nova votação será aberta para a semana.
+          </p>
+          <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button type="button" class="button btn-outline btn-sm"
+              onclick="document.getElementById('dialog-cancel-{{ sessao.id }}').close()">Manter sessão</button>
+            <form method="post" action="{{ url_for('monitorias.cancelar_sessao', sessao_id=sessao.id) }}" class="inline-form">
+              <button type="submit" class="button btn-danger btn-sm">Confirmar cancelamento</button>
+            </form>
+          </div>
+        </dialog>
       </div>
       {% endfor %}
     </div>
@@ -156,91 +205,24 @@
   {# ─ Histórico ─ #}
   {% set concluidas = monitor_sessions | selectattr('status', 'equalto', 'CONCLUIDA') | list %}
   {% if concluidas %}
-  <details class="card">
-    <summary style="cursor:pointer;font-weight:700;font-size:14px;list-style:none;">
-      Histórico de sessões ({{ concluidas | length }})
-    </summary>
-    <div style="margin-top:12px;">
-      {% for sessao in concluidas %}
-      {% set participantes = session_participants_map.get(sessao.id, []) %}
-      <div style="display:flex;align-items:flex-start;gap:14px;padding:12px 0;border-top:1px solid var(--border);">
-        <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;font-size:13px;">{{ sessao.disciplina_codigo }} · {{ sessao.data_inicio.strftime('%d/%m/%Y %H:%M') }}</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px;">{{ sessao.assunto or '—' }}</div>
-          <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">
-            {% for p in participantes %}{% if p.status == 'CONFIRMADA' %}{{ p.aluno_nome }}{% if not loop.last %}, {% endif %}{% endif %}{% endfor %}
-          </div>
-        </div>
-        <span class="status-pill success">Concluída</span>
-      </div>
-      {% endfor %}
-    </div>
-  </details>
-  {% endif %}
-
-  {# ─ Criar horário de atendimento (US10) ─ #}
-  <section>
-    <div class="section-head">
-      <span class="section-dot" style="background:var(--primary);"></span>
-      <h3>Criar horário de atendimento</h3>
-    </div>
-    <div class="card">
-      <form method="post" action="{{ url_for('agenda.create_slot') }}" style="display:flex;flex-direction:column;gap:14px;">
-        <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;">
-          <div class="stack-sm">
-            <label for="data_inicio" style="font-size:13px;font-weight:600;color:var(--muted);">Data e horário de início</label>
-            <input type="datetime-local" id="data_inicio" name="data_inicio" required
-                   style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--surface2);color:var(--text);" />
-          </div>
-          <div class="stack-sm" style="min-width:110px;">
-            <label for="duracao" style="font-size:13px;font-weight:600;color:var(--muted);">Duração (min)</label>
-            <input type="number" id="duracao" name="duracao" value="60" min="30" max="180" required
-                   style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--surface2);color:var(--text);" />
-          </div>
-        </div>
-        <div class="stack-sm">
-          <label for="local" style="font-size:13px;font-weight:600;color:var(--muted);">Local <span style="font-weight:400;">(opcional)</span></label>
-          <input type="text" id="local" name="local" placeholder="Ex: Sala 101, Lab 3, Online…"
-                 style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--surface2);color:var(--text);" />
-        </div>
-        <div>
-          <button type="submit">Criar horário</button>
-        </div>
-      </form>
-    </div>
-  </section>
-
-  {# ─ Meus horários (own_slots) com bloquear/desbloquear ─ #}
-  {% if own_slots %}
   <section>
     <div class="section-head">
       <span class="section-dot" style="background:var(--muted);"></span>
-      <h3>Meus horários cadastrados</h3>
+      <h3>Histórico de sessões</h3>
     </div>
     <div class="agenda-list">
-      {% for slot in own_slots %}
+      {% for sessao in concluidas %}
       <div class="agenda-row">
         <div class="agenda-date">
-          <div class="agenda-day">{{ slot.data_inicio.strftime('%d') }}</div>
-          <div class="agenda-mon">{{ slot.data_inicio.strftime('%b') }}</div>
+          <div class="agenda-day">{{ sessao.data_inicio.strftime('%d') }}</div>
+          <div class="agenda-mon">{{ sessao.data_inicio.strftime('%b') }}</div>
         </div>
         <div class="agenda-body">
-          <div class="agenda-disc">{{ slot.disciplina_codigo }} — {{ slot.disciplina_nome }}</div>
-          <div class="agenda-meta">{{ slot.data_inicio.strftime('%H:%M') }} — {{ slot.data_fim.strftime('%H:%M') }}{% if slot.aluno_nome %} · {{ slot.aluno_nome }}{% endif %}</div>
+          <div class="agenda-disc">{{ sessao.disciplina_codigo }} — {{ sessao.disciplina_nome }}</div>
+          <div class="agenda-meta">{{ sessao.data_inicio.strftime('%H:%M') }} — {{ sessao.data_fim.strftime('%H:%M') }} · {{ sessao.assunto or '—' }}</div>
         </div>
-        {% if slot.status == 'DISPONIVEL' %}
-          <span class="status-pill success">Disponível</span>
-          <form method="post" action="{{ url_for('agenda.block_slot', slot_id=slot.disponibilidade_id) }}" class="inline-form">
-            <button type="submit" class="button outline btn-sm">Bloquear</button>
-          </form>
-        {% elif slot.status == 'AGENDADO' %}
-          <span class="status-pill warning">Agendado</span>
-        {% elif slot.status == 'BLOQUEADO' %}
-          <span class="status-pill error">Bloqueado</span>
-          <form method="post" action="{{ url_for('agenda.unblock_slot', slot_id=slot.disponibilidade_id) }}" class="inline-form">
-            <button type="submit" class="button outline btn-sm">Desbloquear</button>
-          </form>
-        {% endif %}
+        <span class="status-pill success">Concluída</span>
+        <a href="{{ url_for('monitorias.sessao_detalhe', sessao_id=sessao.id) }}" class="button btn-outline btn-sm" style="text-decoration:none;">Ver detalhes</a>
       </div>
       {% endfor %}
     </div>
@@ -253,75 +235,72 @@
 {% else %}
 <div class="stack">
 
+  {# ─ Votações pendentes ─ #}
+  {% if votacoes_pendentes_aluno %}
   <section>
     <div class="section-head">
-      <span class="section-dot" style="background:var(--primary);"></span>
-      <h3>Horários disponíveis</h3>
+      <span class="section-dot" style="background:var(--accent);"></span>
+      <h3>Votações abertas</h3>
+      <span class="section-badge" style="background:var(--accent-bg,#eff6ff);color:var(--accent);">{{ votacoes_pendentes_aluno | length }}</span>
     </div>
-    {% if available_slots %}
-    <div class="slot-grid">
-      {% for slot in available_slots %}
-      <div class="slot-card">
-        <div class="slot-card-head">
-          <div class="slot-disc-code">{{ slot.disciplina_codigo[:4] }}</div>
-          <div>
-            <div class="slot-disc-name">{{ slot.disciplina_nome }}</div>
-            <div class="slot-monitor">Monitor {{ slot.monitor_nome }}</div>
+    <div class="stack-sm">
+      {% set weekday_labels = {1:'Segunda',2:'Terça',3:'Quarta',4:'Quinta',5:'Sexta'} %}
+      {% for v in votacoes_pendentes_aluno %}
+      <div class="card" style="border:1px solid var(--accent);">
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:14px;">{{ v.disciplina_codigo }} — {{ v.disciplina_nome }}</div>
+            <div style="font-size:12.5px;color:var(--muted);margin-top:2px;">
+              {% if v.ja_votou %}Seu voto já foi registrado. Você pode alterá-lo.
+              {% else %}Selecione {{ 'um horário' if v.max_select == 1 else 'até 2 horários' }} para a monitoria desta semana.{% endif %}
+            </div>
           </div>
+          {% if v.ja_votou %}<span class="status-pill success">Votou</span>{% endif %}
+          <button type="button" class="button {% if not v.ja_votou %}{% else %}btn-outline{% endif %} btn-sm"
+            onclick="document.getElementById('dlg-votar-{{ v.votacao_id }}').showModal()">
+            {% if v.ja_votou %}Alterar voto{% else %}Votar{% endif %}
+          </button>
         </div>
-        <div class="slot-info">
-          <div class="slot-info-row">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v16H4zM4 9h16M8 3v4M16 3v4"/></svg>
-            {{ slot.data_inicio.strftime('%d/%m/%Y · %H:%M') }} — {{ slot.data_fim.strftime('%H:%M') }}
-          </div>
-          <div class="slot-info-row">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l2.5 2"/></svg>
-            {{ (slot.data_fim - slot.data_inicio).seconds // 60 }} min
-          </div>
-          {% if slot.local %}
-          <div class="slot-info-row">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-            {{ slot.local }}
-          </div>
-          {% endif %}
-        </div>
-        <form method="post" action="{{ url_for('agenda.book_slot', slot_id=slot.disponibilidade_id) }}">
-          <button type="submit" style="width:100%;justify-content:center;">Agendar</button>
-        </form>
       </div>
-      {% endfor %}
-    </div>
-    {% else %}
-    <div class="card">
-      <p class="muted">Nenhum horário disponível para as disciplinas em que você está matriculado.</p>
-    </div>
-    {% endif %}
-  </section>
 
-  {# ─ Horários agendados individualmente (disponibilidades) ─ #}
-  {% if student_agendamentos %}
-  <section>
-    <div class="section-head">
-      <span class="section-dot" style="background:var(--primary);"></span>
-      <h3>Horários agendados</h3>
-      <span class="section-badge">{{ student_agendamentos | length }}</span>
-    </div>
-    <div class="agenda-list">
-      {% for ag in student_agendamentos %}
-      <div class="agenda-row">
-        <div class="agenda-date">
-          <div class="agenda-day">{{ ag.data_inicio.strftime('%d') }}</div>
-          <div class="agenda-mon">{{ ag.data_inicio.strftime('%b') }}</div>
+      <dialog id="dlg-votar-{{ v.votacao_id }}" class="dialog" style="max-width:480px;">
+        <div class="dialog-head">
+          <div class="dialog-icon" style="background:var(--accent-bg,#eff6ff);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          </div>
+          <div>
+            <h3 style="margin:0;">{{ v.disciplina_codigo }} — {{ v.disciplina_nome }}</h3>
+            <p style="margin:4px 0 0;font-size:12.5px;color:var(--muted);">Selecione {{ 'um horário' if v.max_select == 1 else 'até 2 horários' }} para esta semana.</p>
+          </div>
         </div>
-        <div class="agenda-body">
-          <div class="agenda-disc">{{ ag.disciplina_codigo }} — {{ ag.disciplina_nome }}</div>
-          <div class="agenda-meta">{{ ag.monitor_nome }} · {{ ag.data_inicio.strftime('%H:%M') }} — {{ ag.data_fim.strftime('%H:%M') }}{% if ag.local %} · {{ ag.local }}{% endif %}</div>
-        </div>
-        {% if ag.agendamento_id in agendamentos_proximas_24h %}<span class="status-pill error" title="Atendimento nas próximas 24 horas">Hoje/Amanhã</span>{% else %}<span class="status-pill warning">Confirmado</span>{% endif %}
-        <form method="post" action="{{ url_for('agenda.cancel_agendamento', agendamento_id=ag.agendamento_id) }}" class="inline-form">
-          <button type="submit" class="button btn-danger btn-sm">Cancelar</button>
+        <form method="post" action="{{ url_for('disciplinas.votar', disciplina_id=v.disciplina_id) }}" class="form-stack">
+          <fieldset style="border:none;padding:0;margin:0;">
+            <legend style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px;">Horários disponíveis</legend>
+            {% if v.opcoes %}
+            <div class="stack-sm">
+              {% for opcao in v.opcoes %}
+              {% set hour = (opcao.slot1_hora_inicio.seconds // 3600) %}
+              {% set duration = 2 if opcao.modo == 'BLOCO_2H' else 1 %}
+              <label style="flex-direction:row;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:9px;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--text);">
+                <input type="checkbox" name="opcao_ids" value="{{ opcao.id }}"
+                  {% if opcao.id in v.voto_ids %}checked{% endif %}
+                  style="width:16px;height:16px;flex:none;" />
+                {{ weekday_labels.get(opcao.slot1_weekday, '?') }}, {{ '%02d:00'|format(hour) }}–{{ '%02d:00'|format(hour + duration) }}
+              </label>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="muted" style="font-size:13px;">Nenhum horário disponível para votação.</p>
+            {% endif %}
+          </fieldset>
+          <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+            <button type="button" class="button btn-outline" onclick="this.closest('dialog').close()">Cancelar</button>
+            {% if v.opcoes %}
+            <button type="submit">{% if v.ja_votou %}Atualizar voto{% else %}Registrar voto{% endif %}</button>
+            {% endif %}
+          </div>
         </form>
-      </div>
+      </dialog>
       {% endfor %}
     </div>
   </section>
@@ -355,6 +334,33 @@
     <div class="card"><p class="muted">Você não tem nenhum atendimento agendado.</p></div>
     {% endif %}
   </section>
+
+  {% if past_sessions_aluno %}
+  <section>
+    <div class="section-head">
+      <span class="section-dot" style="background:var(--muted);"></span>
+      <h3>Monitorias passadas</h3>
+    </div>
+    <div class="agenda-list">
+      {% for sessao in past_sessions_aluno %}
+      <div class="agenda-row">
+        <div class="agenda-date">
+          <div class="agenda-day">{{ sessao.data_inicio.strftime('%d') }}</div>
+          <div class="agenda-mon">{{ sessao.data_inicio.strftime('%b') }}</div>
+        </div>
+        <div class="agenda-body">
+          <div class="agenda-disc">{{ sessao.disciplina_codigo }} — {{ sessao.disciplina_nome }}</div>
+          <div class="agenda-meta">{{ sessao.monitor_nome }} · {{ sessao.data_inicio.strftime('%H:%M') }} — {{ sessao.data_fim.strftime('%H:%M') }}{% if sessao.assunto %} · {{ sessao.assunto }}{% endif %}</div>
+        </div>
+        {% if sessao.presenca_status == 'CONFIRMADA' %}<span class="status-pill success">Presente</span>
+        {% elif sessao.presenca_status == 'AUSENTE' %}<span class="status-pill error">Ausente</span>
+        {% else %}<span class="status-pill muted">—</span>{% endif %}
+        <a href="{{ url_for('monitorias.sessao_detalhe', sessao_id=sessao.sessao_id) }}" class="button btn-outline btn-sm" style="text-decoration:none;">Ver detalhes</a>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 
 </div>
 {% endif %}

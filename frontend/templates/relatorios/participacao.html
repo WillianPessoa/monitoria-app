@@ -27,11 +27,12 @@
       </div>
       <div class="filter-field">
         <label for="data_inicio">De</label>
-        <input id="data_inicio" type="date" name="data_inicio" value="{{ data_inicio }}" />
+        <input id="data_inicio" type="date" name="data_inicio" value="{{ data_inicio }}"
+          onchange="var f=document.getElementById('data_fim');f.min=this.value;if(f.value&&f.value<this.value)f.value=this.value;" />
       </div>
       <div class="filter-field">
         <label for="data_fim">Até</label>
-        <input id="data_fim" type="date" name="data_fim" value="{{ data_fim }}" />
+        <input id="data_fim" type="date" name="data_fim" value="{{ data_fim }}" min="{{ data_inicio }}" />
       </div>
       <button type="submit" style="align-self:flex-end;">Gerar relatório</button>
     </div>
@@ -64,7 +65,7 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
       <div>
         <div style="font-size:11.5px;color:var(--muted);">{{ s.disciplina_codigo }} — {{ s.disciplina_nome }}</div>
-        <div style="font-size:12.5px;color:var(--muted);">{{ data_inicio }} a {{ data_fim }}</div>
+        <div style="font-size:12.5px;color:var(--muted);">{{ data_inicio }} a {{ data_fim }} · {{ semanas_no_periodo }} semana{{ 's' if semanas_no_periodo != 1 }} · mínimo esperado: {{ minimo_esperado_horas }}h/monitor</div>
       </div>
       <a href="{{ url_for('relatorios.participacao_csv', disciplina_id=filtro_disciplina_id, data_inicio=data_inicio, data_fim=data_fim) }}"
          class="button btn-outline btn-sm">
@@ -80,6 +81,7 @@
         <span style="flex:none;width:80px;text-align:right;">Sessões</span>
         <span style="flex:none;width:70px;text-align:right;">Horas</span>
         <span style="flex:none;width:100px;text-align:right;">Alunos</span>
+        <span style="flex:none;width:130px;text-align:right;">Mínimo 1h/sem.</span>
       </div>
       {% for m in relatorio.monitores %}
       <div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);">
@@ -88,6 +90,13 @@
         <span style="flex:none;width:80px;text-align:right;font-family:'Space Grotesk',sans-serif;font-weight:700;">{{ m.sessoes }}</span>
         <span style="flex:none;width:70px;text-align:right;font-family:'Space Grotesk',sans-serif;font-weight:700;">{{ m.horas }}h</span>
         <span style="flex:none;width:100px;text-align:right;font-family:'Space Grotesk',sans-serif;font-weight:700;">{{ m.alunos_atendidos }}</span>
+        <span style="flex:none;width:130px;text-align:right;">
+          {% if m.horas >= minimo_esperado_horas %}
+          <span class="status-pill success" style="font-size:11.5px;">Atingiu</span>
+          {% else %}
+          <span class="status-pill error" style="font-size:11.5px;">{{ m.horas }}/{{ minimo_esperado_horas }}h</span>
+          {% endif %}
+        </span>
       </div>
       {% endfor %}
     </div>

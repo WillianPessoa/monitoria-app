@@ -26,7 +26,7 @@ def create_slot(monitor_id, data_inicio, duracao_minutes, local=None):
     if not monitoria:
         return False, "Você não tem monitoria ativa para criar horários."
 
-    if data_inicio <= datetime.datetime.now():
+    if data_inicio <= now_sp_naive():
         return False, "A data e hora devem estar no futuro."
 
     if duracao_minutes <= 0:
@@ -46,7 +46,7 @@ def book_slot(slot_id, aluno_id):
     if not slot or slot["status"] != "DISPONIVEL":
         return False, "Horário indisponível."
 
-    now = datetime.datetime.now()
+    now = now_sp_naive()
     if slot["data_inicio"] <= now:
         return False, "Não é possível agendar horários no passado."
 
@@ -64,6 +64,14 @@ def list_weekly_sessions_for_aluno(aluno_id):
     return repository.list_weekly_sessions_for_aluno(aluno_id, now_sp_naive())
 
 
+def list_past_sessions_for_aluno(aluno_id):
+    return repository.list_past_sessions_for_aluno(aluno_id, now_sp_naive())
+
+
+def list_past_sessions_for_aluno_in_disciplina(aluno_id, disciplina_id):
+    return repository.list_past_sessions_for_aluno(aluno_id, now_sp_naive(), disciplina_id)
+
+
 def list_agendamentos_for_aluno(aluno_id):
     return repository.list_agendamentos_for_aluno(aluno_id, now_sp_naive())
 
@@ -76,7 +84,7 @@ def cancel_agendamento(agendamento_id, aluno_id):
         return False, "Você não tem permissão para cancelar este agendamento."
     if agendamento["status"] != "CONFIRMADO":
         return False, "Agendamento já cancelado."
-    if hours_until(agendamento["data_inicio"], now_sp_naive()) <= 6:
+    if hours_until(agendamento["data_inicio"], now_sp_naive()) < 6:
         return False, "Cancelamento permitido somente com mais de 6 horas de antecedência."
     if repository.cancel_agendamento_db(agendamento_id):
         return True, None

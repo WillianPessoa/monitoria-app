@@ -162,18 +162,19 @@ def my_profile():
                 slot_keys.add(slot_key)
                 slots_payload.append({"weekday": weekday, "hora_inicio": f"{h:02d}:00:00"})
 
-        if service.update_monitor_profile(
+        ok, error_msg = service.update_monitor_profile(
             user_id,
             contato_tipo,
             contato_valor,
             slots_payload,
             carga_horaria,
             modo_2h,
-        ):
+        )
+        if ok:
             flash("Perfil atualizado com sucesso.", "success")
             return redirect(url_for("usuarios.my_profile"))
 
-        flash("Contato inválido. Informe e-mail ou celular BR válido.", "error")
+        flash(error_msg, "error")
 
     contato_tipo = ""
     contato_valor = user.get("contato") or ""

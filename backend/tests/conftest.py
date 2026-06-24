@@ -280,8 +280,9 @@ def make_sessao(make_monitoria_ativa):
     import datetime as _dt
 
     def _create(prefix, past=True, aluno_id=None):
+        from utils.time import now_sp_naive as _now_sp
         setup = make_monitoria_ativa(prefix)
-        now = _dt.datetime.now()
+        now = _now_sp()
 
         if past:
             data_inicio = now - _dt.timedelta(hours=4)

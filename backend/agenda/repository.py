@@ -188,12 +188,12 @@ def reserve_slot(disponibilidade_id, aluno_id):
         )
         row = cursor.fetchone()
         if not row:
-            conn.commit()
+            conn.rollback()
             return False, "Horário não encontrado."
 
         status, data_inicio, data_fim = row
         if status != 'DISPONIVEL':
-            conn.commit()
+            conn.rollback()
             return False, "Horário indisponível."
 
         cursor.execute(
@@ -210,7 +210,7 @@ def reserve_slot(disponibilidade_id, aluno_id):
             (aluno_id, data_fim, data_inicio),
         )
         if cursor.fetchone():
-            conn.commit()
+            conn.rollback()
             return False, "Você já possui um agendamento no mesmo período."
 
         cursor.execute(
@@ -222,7 +222,7 @@ def reserve_slot(disponibilidade_id, aluno_id):
             (disponibilidade_id,),
         )
         if cursor.rowcount == 0:
-            conn.commit()
+            conn.rollback()
             return False, "Horário indisponível."
 
         cursor.execute(
@@ -382,6 +382,43 @@ def unblock_slot(disponibilidade_id, monitor_id):
         conn.close()
 
 
+def list_past_sessions_for_aluno(aluno_id, now_value, disciplina_id=None):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        extra = "AND d.id = %s" if disciplina_id else ""
+        params = [aluno_id, aluno_id, now_value]
+        if disciplina_id:
+            params.append(disciplina_id)
+        cursor.execute(
+            f"""
+            SELECT s.id AS sessao_id,
+                   s.data_inicio,
+                   s.data_fim,
+                   s.assunto,
+                   d.codigo AS disciplina_codigo,
+                   d.nome AS disciplina_nome,
+                   u.nome AS monitor_nome,
+                   p.status AS presenca_status
+            FROM monitoria_sessoes s
+            JOIN disciplinas d ON d.id = s.disciplina_id
+            JOIN usuarios u ON u.id = s.monitor_id
+            JOIN disciplina_alunos da ON da.disciplina_id = d.id AND da.aluno_id = %s
+            LEFT JOIN presencas p ON p.sessao_id = s.id AND p.aluno_id = %s
+            WHERE s.data_fim < %s
+              AND s.status = 'CONCLUIDA'
+              {extra}
+            ORDER BY s.data_inicio DESC
+            LIMIT 30
+            """,
+            params,
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
+
+
 def list_weekly_sessions_for_aluno(aluno_id, now_value):
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
@@ -398,8 +435,7 @@ def list_weekly_sessions_for_aluno(aluno_id, now_value):
                    p.status AS presenca_status
             FROM monitoria_sessoes s
             JOIN disciplinas d ON d.id = s.disciplina_id
-            JOIN monitorias m ON m.disciplina_id = d.id AND m.status = 'ATIVO'
-            JOIN usuarios u ON u.id = m.aluno_id
+            JOIN usuarios u ON u.id = s.monitor_id
             JOIN disciplina_alunos da ON da.disciplina_id = d.id AND da.aluno_id = %s
             LEFT JOIN presencas p ON p.sessao_id = s.id AND p.aluno_id = %s
             WHERE s.data_inicio >= %s

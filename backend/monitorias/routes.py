@@ -248,11 +248,25 @@ def registrar_sessao(sessao_id):
         except (TypeError, ValueError):
             continue
 
-    participantes = service.list_session_participants(sessao_id)
-    for participante in participantes:
-        aluno_id = participante["aluno_id"]
+    alunos = disciplinas_repository.list_alunos_by_disciplina(sessao["disciplina_id"])
+    for aluno in alunos:
+        aluno_id = aluno["id"]
         status = "CONFIRMADA" if aluno_id in presentes else "AUSENTE"
         service.set_presenca(sessao_id, aluno_id, status)
+
+    materiais_raw = request.form.get("materiais", "").strip()
+    materiais = []
+    for line in materiais_raw.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if "|" in line:
+            parts = line.split("|", 1)
+            materiais.append({"descricao": parts[0].strip(), "url": parts[1].strip() or None})
+        else:
+            materiais.append({"descricao": line, "url": None})
+    if materiais:
+        service.save_sessao_materiais(sessao_id, materiais)
 
     if service.save_session_report(sessao_id, assunto):
         flash("Registro da monitoria salvo com sucesso.", "success")
@@ -282,4 +296,23 @@ def sessao_detalhe(sessao_id):
         flash("Você não tem permissão para acessar esta sessão.", "error")
         return redirect(url_for("home"))
 
-    return render_template("placeholder.html", section_title="Detalhes da monitoria")
+    participantes = service.list_session_participants(sessao_id)
+    materiais = service.list_sessao_materiais(sessao_id)
+    minha_presenca = None
+    if is_aluno:
+        minha_presenca = next((p for p in participantes if p["aluno_id"] == user_id), None)
+    alunos_sessao = []
+    now_value = now_sp_naive()
+    if is_monitor and sessao["status"] == "AGENDADA" and sessao["data_fim"] <= now_value:
+        alunos_sessao = service.list_alunos_for_sessao(sessao["disciplina_id"], sessao_id)
+    return render_template(
+        "monitorias/sessao_detalhe.html",
+        sessao=sessao,
+        participantes=participantes,
+        materiais=materiais,
+        is_monitor=is_monitor,
+        is_aluno=is_aluno,
+        minha_presenca=minha_presenca,
+        alunos_sessao=alunos_sessao,
+        now_value=now_value,
+    )

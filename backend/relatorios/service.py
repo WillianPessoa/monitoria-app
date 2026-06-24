@@ -18,8 +18,10 @@ def get_painel_horas(disciplina_id=None):
     primeiro_dia = hoje.replace(day=1)
     ultimo_dia = hoje.replace(day=calendar.monthrange(hoje.year, hoje.month)[1])
 
-    semanas_no_mes = len(calendar.monthcalendar(hoje.year, hoje.month))
-    minimo_horas = round(semanas_no_mes * 1, 2)
+    minimo_horas = sum(
+        1 for week in calendar.monthcalendar(hoje.year, hoje.month)
+        if week[6] > 0 and date(hoje.year, hoje.month, week[6]) < hoje
+    )
 
     linhas = repository.list_horas_por_monitor(primeiro_dia, ultimo_dia, disciplina_id)
 

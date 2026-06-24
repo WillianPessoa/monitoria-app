@@ -225,16 +225,17 @@ document.addEventListener('DOMContentLoaded', function(){
 
   const profileConfig = document.querySelector('[data-profile-config]');
   if(profileConfig){
-    const form = profileConfig.closest('form');
+    const form = profileConfig.closest('form') || profileConfig;
     const cargaSelect = form.querySelector('[data-carga-horaria]');
-    const modoSelect = form.querySelector('[data-modo-2h]');
+    const modoLabel = form.querySelector('[data-modo-2h-label]');
+    const modoSelect = form.querySelector('select[data-modo-2h]');
     const grid1h = form.querySelector('[data-grid-1h]');
     const grid2h = form.querySelector('[data-grid-2h]');
     const actions = form.querySelector('[data-profile-actions]');
     const cancelBtn = form.querySelector('[data-profile-cancel]');
     const saveBtn = form.querySelector('[data-profile-save]');
 
-    if(cargaSelect && modoSelect && grid1h && grid2h && actions && cancelBtn && saveBtn){
+    if(cargaSelect && modoLabel && modoSelect && grid1h && grid2h && actions && cancelBtn && saveBtn){
       const initialCarga = cargaSelect.value;
       const initialModo = modoSelect.value;
 
@@ -277,42 +278,14 @@ document.addEventListener('DOMContentLoaded', function(){
       }
 
       function update2hOverlaps(){
-        if(grid2h.hidden){
-          return;
-        }
-        const selected = new Set();
-        grid2h.querySelectorAll('input[name="slots"]:checked').forEach(function(cb){
-          const weekday = cb.getAttribute('data-weekday');
-          const hour = parseInt(cb.getAttribute('data-hour') || '0', 10);
-          if(!weekday || Number.isNaN(hour)){
-            return;
-          }
-          selected.add(weekday + '|' + hour);
-          selected.add(weekday + '|' + (hour + 1));
-        });
-
         grid2h.querySelectorAll('input[name="slots"]').forEach(function(cb){
-          const weekday = cb.getAttribute('data-weekday');
-          const hour = parseInt(cb.getAttribute('data-hour') || '0', 10);
-          if(!weekday || Number.isNaN(hour)){
-            return;
-          }
-          if(cb.checked){
-            cb.disabled = false;
-            return;
-          }
-          const overlaps = selected.has(weekday + '|' + hour) || selected.has(weekday + '|' + (hour + 1));
-          cb.disabled = overlaps;
+          cb.disabled = false;
         });
       }
 
       function toggleModeSelect(){
         const carga = cargaSelect.value;
-        if(carga === '2'){
-          modoSelect.hidden = false;
-        }else{
-          modoSelect.hidden = true;
-        }
+        modoLabel.hidden = (carga !== '2');
       }
 
       function showActions(){
