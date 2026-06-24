@@ -146,6 +146,26 @@ Este arquivo será usado na apresentação final para demonstrar o valor dos tes
 
 ---
 
+---
+
+## BUG-05 — Admin não consegue adicionar alunos a disciplinas (navegação quebrada)
+
+| Campo | Detalhe |
+|---|---|
+| **Onde** | `frontend/templates/disciplinas/index.html` — card de disciplina |
+| **Relatado por** | Colega de time durante uso da aplicação em produção (Railway) |
+| **Comportamento observado** | Admin acessa `/disciplinas/` e não consegue chegar à tela de gerenciamento de alunos. O disc-card exibe apenas o botão "Editar" (que abre o modal de edição); não há nenhum link para a página de detalhe da disciplina |
+| **Comportamento esperado** | Admin deveria conseguir navegar para `/disciplinas/<id>` (detalhe) e de lá clicar em "Ver alunos" para adicionar/remover alunos. Professores e alunos têm esse link disponível na home — apenas o admin ficou sem acesso |
+| **Causa** | O `disc-card-name` era uma `<div>` sem âncora. A rota `disciplinas.detalhe` existe e funciona — só faltava o link. A refatoração de design (`design/refactor`) redesenhou os cards sem preservar a navegação para o detalhe |
+| **Impacto** | Admin não conseguia matricular alunos em disciplinas via UI. A funcionalidade de adicionar alunos por email (`POST /disciplinas/<id>/alunos/adicionar`) está correta no backend — o problema era puramente de navegação |
+| **Corrigido em** | `frontend/templates/disciplinas/index.html` — `<div class="disc-card-name">` → `<a href="{{ url_for('disciplinas.detalhe', ...) }}" class="disc-card-name">` |
+
+**Código morto identificado durante investigação:**
+- `POST /disciplinas/<id>/matricular` (`routes.py:105`) — nenhum template referencia esta rota; supersedida por `/alunos/adicionar`
+- `POST /disciplinas/<id>/remover-aluno` (`routes.py:138`) — nenhum template referencia esta rota; supersedida por `/alunos/remover`
+
+---
+
 ## Próximas US a testar
 
 À medida que os testes forem escritos e executados para as US seguintes, novos bugs encontrados devem ser registrados aqui neste mesmo formato.

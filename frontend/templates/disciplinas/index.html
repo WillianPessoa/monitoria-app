@@ -28,7 +28,7 @@
         {% endif %}
       </div>
       <div>
-        <div class="disc-card-name">{{ d.nome }}</div>
+        <a href="{{ url_for('disciplinas.detalhe', disciplina_id=d.id) }}" class="disc-card-name" style="text-decoration:none;color:inherit;">{{ d.nome }}</a>
         <div class="disc-card-meta">
           {% for professor in professores %}{% if professor.id == d.professor_id %}{{ professor.nome }}{% endif %}{% endfor %}
           · {{ d.alunos_count }} alunos
