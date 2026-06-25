@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Teste: iframe Railway</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; font-family: 'Manrope', system-ui, sans-serif; background: #071225; color: #e6eef6; }
+
+  .shell {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  .top-bar {
+    flex-shrink: 0;
+    background: #0a1525;
+    border-bottom: 1px solid rgba(125,211,252,0.12);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .top-bar h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #4fd1c5;
+    margin: 0;
+  }
+
+  .status {
+    font-size: 0.78rem;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 700;
+  }
+  .status.loading { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+  .status.ok      { background: rgba(52,211,153,0.12);  color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+  .status.blocked { background: rgba(251,113,133,0.12); color: #fb7185; border: 1px solid rgba(251,113,133,0.3); }
+
+  .info {
+    font-size: 0.72rem;
+    color: #8da0b0;
+    max-width: 540px;
+    line-height: 1.5;
+  }
+
+  .iframe-area {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
+
+  .blocked-msg {
+    display: none;
+    position: absolute;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    background: #071225;
+    text-align: center;
+    padding: 24px;
+  }
+  .blocked-msg h2 { font-family: 'Space Grotesk', sans-serif; color: #fb7185; font-size: 1.2rem; }
+  .blocked-msg p  { font-size: 0.82rem; color: #8da0b0; max-width: 420px; line-height: 1.6; }
+  .blocked-msg code { background: #0d1626; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; color: #7dd3fc; }
+
+  .console-out {
+    flex-shrink: 0;
+    background: #0a1322;
+    border-top: 1px solid rgba(125,211,252,0.1);
+    padding: 8px 20px;
+    font-size: 0.7rem;
+    color: #4a6070;
+    font-family: 'SF Mono', 'Fira Mono', monospace;
+    max-height: 64px;
+    overflow-y: auto;
+  }
+  .console-out .log  { color: #8da0b0; }
+  .console-out .ok   { color: #34d399; }
+  .console-out .err  { color: #fb7185; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="top-bar">
+    <div>
+      <h1>Teste: iframe Railway</h1>
+      <div class="info">Verifica se o Railway permite ser embutido num iframe. Resultado em 5–10 s.</div>
+    </div>
+    <span class="status loading" id="status">Carregando…</span>
+  </div>
+
+  <div class="iframe-area" id="iframe-area">
+    <div class="blocked-msg" id="blocked-msg">
+      <h2>iframe bloqueado</h2>
+      <p>
+        O Railway enviou o header <code>X-Frame-Options: DENY</code> ou
+        <code>X-Frame-Options: SAMEORIGIN</code>. O iframe não vai funcionar
+        na apresentação com essa configuração.
+      </p>
+      <p>
+        <strong>Solução:</strong> adicione <code>response.headers["X-Frame-Options"] = "ALLOWALL"</code>
+        no <code>backend/app.py</code> (ou remova o header se o Railway o adiciona
+        automaticamente nas configurações do serviço).
+      </p>
+    </div>
+    <iframe
+      id="app-frame"
+      src="https://web-production-1f724.up.railway.app"
+      title="Monitoria App — Railway"
+    ></iframe>
+  </div>
+
+  <div class="console-out" id="console-out">
+    <div class="log">› aguardando resposta do iframe…</div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var frame  = document.getElementById('app-frame');
+  var status = document.getElementById('status');
+  var blockedMsg = document.getElementById('blocked-msg');
+  var out    = document.getElementById('console-out');
+  var timer;
+
+  function log(msg, cls) {
+    var d = document.createElement('div');
+    d.className = cls || 'log';
+    d.textContent = '› ' + msg;
+    out.appendChild(d);
+    out.scrollTop = out.scrollHeight;
+  }
+
+  /* Se o iframe carregar com sucesso */
+  frame.addEventListener('load', function () {
+    clearTimeout(timer);
+    try {
+      /* Tentar acessar contentDocument — se CORS/X-Frame bloqueou, lança erro */
+      var doc = frame.contentDocument || frame.contentWindow.document;
+      /* Chegou aqui: mesmo origin ou permissão — mas Railway é cross-origin,
+         então sempre lança. O que importa é o load ter disparado. */
+      status.className = 'status ok';
+      status.textContent = '✓ iframe carregou';
+      log('iframe disparou o evento load — provavelmente sem X-Frame-Options bloqueando.', 'ok');
+      log('Verifique visualmente se a app aparece abaixo.', 'ok');
+    } catch (e) {
+      /* cross-origin mas carregou: normal */
+      status.className = 'status ok';
+      status.textContent = '✓ iframe carregou';
+      log('iframe carregou (cross-origin normal).', 'ok');
+    }
+  });
+
+  /* Se o iframe for bloqueado, o evento load nunca dispara de forma limpa */
+  /* Usamos um timeout como fallback */
+  timer = setTimeout(function () {
+    /* Verificar via fetch se há header X-Frame-Options */
+    log('timeout — verificando headers via fetch…');
+    fetch('https://web-production-1f724.up.railway.app', { method: 'HEAD', mode: 'no-cors' })
+      .then(function () {
+        /* no-cors: não conseguimos ler os headers, mas se chegou aqui o servidor respondeu */
+        log('Servidor respondeu ao fetch. Se o iframe estiver em branco, verifique o DevTools (aba Network → Response Headers → X-Frame-Options).', 'log');
+      })
+      .catch(function (err) {
+        log('Erro no fetch: ' + err.message, 'err');
+      });
+  }, 8000);
+
+  /* Listener para mensagem de erro de CSP/X-Frame no window */
+  window.addEventListener('securitypolicyviolation', function (e) {
+    clearTimeout(timer);
+    status.className = 'status blocked';
+    status.textContent = '✗ bloqueado';
+    blockedMsg.style.display = 'flex';
+    frame.style.display = 'none';
+    log('CSP/X-Frame violation: ' + e.blockedURI, 'err');
+  });
+
+  log('iframe apontado para https://web-production-1f724.up.railway.app');
+})();
+</script>
+</body>
+</html>

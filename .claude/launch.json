@@ -6,6 +6,12 @@
       "runtimeExecutable": "flask",
       "runtimeArgs": ["--app", "backend/app:create_app", "run", "--port", "5050", "--debug"],
       "port": 5050
+    },
+    {
+      "name": "apresentacao",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "5051", "--directory", "docs"],
+      "port": 5051
     }
   ]
 }

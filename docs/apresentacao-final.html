@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitoria App — Apresentação Final</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;width:100%;overflow:hidden}
+body{font-family:"Manrope",system-ui,sans-serif;background:var(--bg);color:var(--text);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+html{--pad-y:clamp(36px,4.5vh,80px);--pad-x:clamp(30px,4vw,80px)}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+.grotesk{font-family:"Space Grotesk",sans-serif}
+
+html[data-theme="light"]{
+  --bg:linear-gradient(180deg,#f4f7fb,#eaf0f7);
+  --card:#ffffff;--surface2:#f1f5fa;
+  --border:rgba(13,40,71,0.10);--border-strong:rgba(13,40,71,0.18);
+  --shadow:0 8px 24px rgba(13,40,71,0.08);--shadow-lg:0 18px 48px rgba(13,40,71,0.14);
+  --text:#0c1a2b;--muted:#5b6b7a;
+  --primary:#0e9c8e;--accent:#2b8bd6;
+  --success:#0f9d6b;--warning:#a86a00;--error:#e11d48;
+  --hairline:rgba(13,40,71,0.14);--grid:rgba(13,40,71,0.055);
+  --on-color:#ffffff;
+}
+html[data-theme="dark"]{
+  --bg:radial-gradient(1100px 700px at 15% -10%,#0a1b2e,#050d18);
+  --card:#0d1626;--surface2:#0a1322;
+  --border:rgba(125,211,252,0.10);--border-strong:rgba(125,211,252,0.22);
+  --shadow:0 8px 24px rgba(0,0,0,0.45);--shadow-lg:0 24px 60px rgba(0,0,0,0.55);
+  --text:#e6eef6;--muted:#8da0b0;
+  --primary:#4fd1c5;--accent:#7dd3fc;
+  --success:#34d399;--warning:#fbbf24;--error:#fb7185;
+  --hairline:rgba(125,211,252,0.16);--grid:rgba(125,211,252,0.05);
+  --on-color:#04121f;
+}
+body{transition:background .5s ease,color .35s ease}
+
+.stage{position:fixed;inset:0}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;
+  opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity .4s ease;
+  padding:var(--pad-y) var(--pad-x)}
+.slide.active{opacity:1;visibility:visible;pointer-events:auto}
+.slide-inner{width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;
+  position:relative;z-index:2}
+
+.kicker{font-family:"JetBrains Mono",monospace;font-size:clamp(12px,.95vw,16px);
+  letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.sec-num{font-family:"Space Grotesk",sans-serif;font-weight:700;color:var(--primary);
+  font-size:clamp(20px,1.8vw,30px);opacity:.9}
+.dot{width:.5em;height:.5em;border-radius:50%;display:inline-block;background:currentColor}
+
+@keyframes blobFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3%) scale(1.04)}}
+[data-anim]{opacity:0;
+  transition:opacity .6s ease,transform .7s cubic-bezier(.2,.7,.2,1);
+  transition-delay:calc(var(--d,0)*1ms)}
+[data-anim="up"]{transform:translateY(28px)}
+[data-anim="right"]{transform:translateX(-30px)}
+[data-anim="pop"]{transform:scale(.92)}
+.slide.active [data-anim]{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){[data-anim]{transition:none!important;opacity:1!important;transform:none!important}}
+html.no-anim [data-anim]{transition:none!important;opacity:1!important;transform:none!important}
+html.no-anim *{animation:none!important;transition:none!important}
+
+.hud{position:fixed;z-index:50;display:flex;align-items:center;gap:10px}
+.hud.top-right{top:clamp(14px,1.8vh,24px);right:clamp(14px,1.8vw,24px)}
+.hud.bottom{left:50%;transform:translateX(-50%);bottom:clamp(12px,1.8vh,22px);
+  opacity:0;pointer-events:none;transition:opacity .35s ease}
+.hud.bottom.show{opacity:1;pointer-events:auto}
+.ctl{display:inline-flex;align-items:center;gap:8px;height:clamp(36px,2.8vw,44px);
+  padding:0 clamp(10px,1vw,14px);border-radius:999px;background:var(--card);
+  border:1px solid var(--border);box-shadow:var(--shadow);color:var(--text);
+  font-size:clamp(11px,.9vw,14px);font-weight:600;
+  transition:transform .15s ease,box-shadow .2s ease,border-color .2s ease}
+.ctl:hover{transform:translateY(-1px);box-shadow:var(--shadow-lg);border-color:var(--border-strong)}
+.ctl svg{width:clamp(14px,1.2vw,18px);height:clamp(14px,1.2vw,18px)}
+.counter{font-family:"JetBrains Mono",monospace;font-size:clamp(12px,.95vw,15px);
+  color:var(--muted);min-width:58px;text-align:center;font-weight:500}
+.navbtn{width:clamp(38px,3vw,48px);height:clamp(38px,3vw,48px);border-radius:999px;
+  background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);
+  display:inline-flex;align-items:center;justify-content:center;transition:all .15s ease}
+.navbtn:hover{transform:translateY(-1px);box-shadow:var(--shadow-lg);color:var(--primary)}
+.navbtn svg{width:clamp(18px,1.5vw,22px);height:clamp(18px,1.5vw,22px)}
+.progress{position:fixed;top:0;left:0;height:3px;background:var(--primary);z-index:60;
+  transition:width .45s cubic-bezier(.4,0,.2,1);box-shadow:0 0 10px var(--primary);width:0}
+
+/* COVER */
+.slide-cover{padding:0}
+.cover-inner{padding:var(--pad-y) var(--pad-x);height:100%;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;position:relative}
+.cover-blob{position:absolute;right:-6%;top:-14%;width:48vw;height:48vw;border-radius:50%;
+  background:radial-gradient(circle at 32% 32%,var(--accent),transparent 68%);
+  opacity:.5;filter:blur(6px);pointer-events:none;z-index:1;animation:blobFloat 9s ease-in-out infinite}
+.slide-cover .slide-inner::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(150deg,color-mix(in oklab,var(--primary) 22%,transparent),transparent 50%)}
+.brand-mark{display:flex;align-items:center;gap:12px;font-weight:700;letter-spacing:-.01em;
+  font-size:clamp(16px,1.4vw,22px)}
+.brand-glyph{width:clamp(36px,3vw,48px);height:clamp(36px,3vw,48px);border-radius:12px;
+  background:var(--primary);display:grid;place-items:center;color:var(--on-color);flex:none;box-shadow:var(--shadow)}
+.brand-glyph svg{width:58%;height:58%}
+.cover-title{font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:-.025em;
+  font-size:clamp(56px,10vw,190px);line-height:.86}
+.cover-title .accentword{color:var(--primary)}
+.cover-sub{font-size:clamp(16px,1.5vw,26px);color:var(--muted);max-width:30ch;line-height:1.45;
+  margin-top:clamp(16px,1.8vw,28px)}
+.cover-rule{height:1px;background:var(--hairline);width:100%;margin:clamp(16px,2vw,32px) 0}
+.cover-meta{display:flex;gap:clamp(24px,3vw,52px);align-items:flex-end;flex-wrap:wrap}
+.cover-meta .mi{display:flex;flex-direction:column;gap:5px}
+.cover-meta .mk{font-family:"JetBrains Mono",monospace;font-size:clamp(10px,.8vw,13px);
+  letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.cover-meta .mv{font-size:clamp(14px,1.2vw,20px);font-weight:600}
+
+/* TEAM */
+.team-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;
+  margin-bottom:clamp(20px,2.2vw,38px)}
+.team-title{font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:-.02em;
+  line-height:1;font-size:clamp(32px,4.8vw,76px)}
+.team-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(10px,1.2vw,18px)}
+.member{position:relative;border-radius:8px;padding:clamp(14px,1.5vw,22px);box-shadow:var(--shadow);
+  display:flex;flex-direction:column;gap:clamp(8px,.9vw,13px);overflow:hidden;
+  background:color-mix(in oklab,var(--c) 14%,var(--card));
+  border:1px solid color-mix(in oklab,var(--c) 28%,transparent);
+  border-top:8px solid var(--c);
+  transition:transform .25s ease,box-shadow .25s ease}
+.member:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.m-avatar{width:clamp(44px,3.8vw,64px);height:clamp(44px,3.8vw,64px);border-radius:50%;
+  display:grid;place-items:center;font-family:"Space Grotesk",sans-serif;font-weight:700;
+  font-size:clamp(16px,1.6vw,26px);background:var(--c);color:var(--on-color)}
+.m-name{font-family:"Space Grotesk",sans-serif;font-weight:600;letter-spacing:-.01em;
+  font-size:clamp(14px,1.3vw,20px);line-height:1.15}
+.m-role{display:inline-flex;align-items:center;gap:7px;font-size:clamp(11px,.9vw,14px);
+  font-weight:600;color:var(--c)}
+.m-role .dot{background:var(--c)}
+.m-desc{font-size:clamp(11px,.85vw,13px);color:var(--muted);line-height:1.45}
+
+/* PILLAR */
+.pillar-inner{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(28px,3.5vw,68px);align-items:center;height:100%}
+.pillar-text{display:flex;flex-direction:column;gap:clamp(12px,1.4vw,22px);justify-content:center}
+.pillar-index{display:flex;align-items:baseline;gap:12px}
+.pillar-index .big{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(40px,4.8vw,84px);color:var(--primary);line-height:1}
+.pillar-index .tot{font-family:"JetBrains Mono",monospace;color:var(--muted);font-size:clamp(13px,1.1vw,18px);letter-spacing:.08em}
+.pillar-title{font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:-.02em;line-height:1.02;font-size:clamp(40px,5.8vw,110px)}
+.pillar-desc{font-size:clamp(15px,1.3vw,22px);color:var(--muted);line-height:1.55;max-width:34ch}
+.pillar-tags{display:flex;gap:9px;flex-wrap:wrap;margin-top:4px}
+.tag{font-family:"JetBrains Mono",monospace;font-size:clamp(11px,.85vw,14px);padding:6px 12px;border-radius:999px;
+  background:var(--surface2);border:1px solid var(--border);color:var(--text)}
+.pillar-art{display:flex;align-items:center;justify-content:center;height:100%;min-height:0}
+.pillar-art svg{width:100%;max-width:clamp(280px,30vw,480px);height:auto;overflow:visible}
+.hub-line{stroke:var(--accent);stroke-width:2;stroke-dasharray:7 9;animation:dash 2.4s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-64}}
+.hub-center{transform-box:fill-box;transform-origin:center;animation:pulse 3.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.hub-node{transform-box:fill-box;transform-origin:center}
+.slide-pillar .slide-inner::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(120deg,color-mix(in oklab,var(--primary) 16%,transparent),transparent 55%)}
+.pillar-ghost{position:absolute;right:-2%;bottom:-14%;font-family:"Space Grotesk",sans-serif;
+  font-weight:700;font-size:44vw;line-height:.7;color:var(--primary);opacity:.08;pointer-events:none;z-index:0}
+
+/* TIMELINE */
+.tl-inner{display:flex;flex-direction:column;justify-content:flex-start;gap:clamp(10px,1.8vh,24px)}
+.slide-timeline .slide-inner::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(120deg,color-mix(in oklab,var(--primary) 14%,transparent),transparent 55%)}
+.tl-ghost{position:absolute;right:-1%;bottom:-18%;font-family:"Space Grotesk",sans-serif;font-weight:700;
+  font-size:40vw;line-height:.7;color:var(--primary);opacity:.08;pointer-events:none;z-index:0}
+.tl-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px}
+.tl-title{font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:-.02em;
+  font-size:clamp(28px,3.8vw,62px);line-height:1}
+.tl-track{position:relative;display:flex;justify-content:space-between;align-items:flex-start;
+  padding:0 1.5%;margin-top:clamp(6px,1.2vh,16px)}
+.tl-line,.tl-fill{position:absolute;top:clamp(20px,1.8vw,28px);height:3px;border-radius:3px}
+.tl-line{left:3%;right:3%;background:var(--border-strong)}
+.tl-fill{left:3%;width:0;background:var(--primary);transition:width .5s cubic-bezier(.4,0,.2,1)}
+.tl-node{display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;z-index:2;
+  flex:1;background:none;text-align:center}
+.tl-c{width:clamp(40px,3.6vw,54px);height:clamp(40px,3.6vw,54px);border-radius:50%;display:grid;place-items:center;
+  font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(13px,1.2vw,18px);
+  background:var(--card);border:2.5px solid var(--border-strong);color:var(--muted);
+  transition:all .35s cubic-bezier(.4,0,.2,1)}
+.tl-node.done .tl-c{border-color:var(--primary);color:var(--primary)}
+.tl-node.active .tl-c{background:var(--primary);border-color:var(--primary);color:var(--on-color);
+  transform:scale(1.25);box-shadow:0 0 0 8px color-mix(in oklab,var(--primary) 18%,transparent)}
+.tl-nl{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:clamp(11px,.95vw,16px);
+  color:var(--muted);transition:color .3s}
+.tl-nd{font-family:"JetBrains Mono",monospace;font-size:clamp(9px,.7vw,12px);color:var(--muted);opacity:.7}
+.tl-node.active .tl-nl,.tl-node.done .tl-nl{color:var(--text)}
+.tl-detail{flex:1;position:relative;display:flex;align-items:center;min-height:0}
+.tl-hint{font-family:"JetBrains Mono",monospace;font-size:clamp(13px,1.1vw,18px);color:var(--muted);
+  letter-spacing:.04em;display:flex;align-items:center;gap:10px}
+.tl-hint .dot{background:var(--primary)}
+.tl-panel{display:none}
+.tl-panel.on{display:block;animation:tlUp .4s ease both}
+@keyframes tlUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.tl-pk{font-family:"JetBrains Mono",monospace;font-size:clamp(12px,.95vw,15px);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--primary);margin-bottom:clamp(6px,.8vw,12px)}
+.tl-pt{font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:-.02em;line-height:1.02;
+  font-size:clamp(28px,4.2vw,72px);margin-bottom:clamp(10px,1.2vw,18px)}
+.tl-pd{font-size:clamp(15px,1.3vw,22px);color:var(--muted);line-height:1.5;max-width:44ch;
+  margin-bottom:clamp(12px,1.4vw,20px)}
+.tl-ptags{display:flex;gap:9px;flex-wrap:wrap}
+
+/* STATS */
+.stats-inner{display:flex;flex-direction:column;gap:clamp(16px,2vh,30px)}
+.slide-stats .slide-inner::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(135deg,color-mix(in oklab,var(--success) 12%,transparent),transparent 55%)}
+.stats-ghost{position:absolute;right:-2%;bottom:-16%;font-family:"Space Grotesk",sans-serif;
+  font-weight:700;font-size:38vw;line-height:.7;color:var(--success);opacity:.07;pointer-events:none;z-index:0}
+.stats-head{display:flex;justify-content:space-between;align-items:flex-end}
+.stats-title{font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:-.02em;
+  line-height:1;font-size:clamp(30px,4.2vw,68px)}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(10px,1.2vw,18px)}
+.stat-card{background:color-mix(in oklab,var(--sc) 14%,var(--card));
+  border:1px solid color-mix(in oklab,var(--sc) 28%,transparent);
+  border-radius:12px;padding:clamp(14px,1.5vw,22px);display:flex;flex-direction:column;gap:6px}
+.stat-num{font-family:"Space Grotesk",sans-serif;font-weight:700;
+  font-size:clamp(28px,3.2vw,52px);color:var(--sc);line-height:1}
+.stat-lbl{font-size:clamp(11px,.85vw,13px);color:var(--muted);line-height:1.4;font-weight:600}
+.stat-note{font-size:clamp(9px,.72vw,11px);color:var(--muted);opacity:.7;font-style:italic}
+.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(10px,1.2vw,18px)}
+.detail-card{background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:clamp(12px,1.3vw,18px);border-left:3px solid var(--primary)}
+.detail-card.warn{border-left-color:var(--warning)}
+.detail-card.success{border-left-color:var(--success)}
+.detail-card h4{font-family:"Space Grotesk",sans-serif;font-size:clamp(12px,1vw,15px);
+  font-weight:700;margin-bottom:6px;color:var(--text)}
+.detail-card p{font-size:clamp(10px,.8vw,12px);color:var(--muted);line-height:1.5}
+
+/* STACK */
+.stack-inner{display:flex;flex-direction:column;gap:clamp(14px,1.8vh,26px)}
+.slide-stack .slide-inner::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(130deg,color-mix(in oklab,var(--accent) 12%,transparent),transparent 55%)}
+.stack-head{display:flex;justify-content:space-between;align-items:flex-end}
+.stack-title{font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:-.02em;
+  line-height:1;font-size:clamp(28px,4vw,64px)}
+.stack-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(10px,1.2vw,18px)}
+.stack-card{background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:clamp(14px,1.5vw,22px);display:flex;flex-direction:column;gap:8px;
+  border-top:4px solid var(--sc,var(--primary))}
+.stack-card .sc-name{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(16px,1.5vw,24px);
+  color:var(--sc,var(--primary))}
+.stack-card .sc-ver{font-family:"JetBrains Mono",monospace;font-size:clamp(11px,.85vw,13px);
+  color:var(--muted);letter-spacing:.05em}
+.stack-card p{font-size:clamp(11px,.85vw,13px);color:var(--muted);line-height:1.5}
+.arch-row{display:grid;grid-template-columns:repeat(5,1fr);gap:0;align-items:center}
+.arch-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  padding:clamp(10px,1vw,14px);text-align:center}
+.arch-box .ab-lbl{font-family:"Space Grotesk",sans-serif;font-size:clamp(12px,1vw,15px);font-weight:700;color:var(--text)}
+.arch-box .ab-sub{font-size:clamp(9px,.72vw,11px);color:var(--muted);margin-top:3px}
+.arch-arrow{text-align:center;color:var(--muted);font-size:clamp(16px,1.4vw,22px)}
+
+/* QSCRUM */
+.qs-inner{display:flex;flex-direction:column;gap:clamp(14px,1.8vh,26px)}
+.slide-qscrum .slide-inner::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(130deg,color-mix(in oklab,var(--warning) 10%,transparent),transparent 55%)}
+.qs-ghost{position:absolute;right:-2%;bottom:-18%;font-family:"Space Grotesk",sans-serif;
+  font-weight:700;font-size:36vw;line-height:.7;color:var(--warning);opacity:.07;pointer-events:none;z-index:0}
+.qs-head{display:flex;justify-content:space-between;align-items:flex-end}
+.qs-title{font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:-.02em;
+  line-height:1;font-size:clamp(28px,4vw,64px)}
+.qs-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(10px,1.2vw,18px)}
+.qs-col{display:flex;flex-direction:column;gap:clamp(8px,.9vw,13px)}
+.qs-card{background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:clamp(12px,1.3vw,18px)}
+.qs-card.accent{border-left:3px solid var(--primary)}
+.qs-card.warn{border-left:3px solid var(--warning)}
+.qs-card.err{border-left:3px solid var(--error)}
+.qs-card.ok{border-left:3px solid var(--success)}
+.qs-card h4{font-family:"Space Grotesk",sans-serif;font-size:clamp(12px,1vw,15px);
+  font-weight:700;margin-bottom:5px;color:var(--text)}
+.qs-card p,.qs-card ul{font-size:clamp(10px,.8vw,12px);color:var(--muted);line-height:1.55}
+.qs-card ul{padding-left:1.1em}
+.qs-card ul li{margin-bottom:2px}
+.qs-num{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(22px,2vw,34px);
+  color:var(--primary);line-height:1;margin-bottom:4px}
+
+/* DEMO */
+.slide-demo{align-items:center;justify-content:center}
+.demo-inner{text-align:center;display:flex;flex-direction:column;align-items:center;gap:clamp(16px,2vh,28px)}
+.slide-demo .slide-inner::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(135deg,color-mix(in oklab,var(--accent) 14%,transparent),transparent 50%)}
+.demo-icon{width:clamp(64px,6vw,100px);height:clamp(64px,6vw,100px);border-radius:20px;
+  background:var(--primary);display:grid;place-items:center;color:var(--on-color)}
+.demo-icon svg{width:55%;height:55%}
+.demo-title{font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:-.025em;
+  font-size:clamp(44px,7vw,120px);line-height:.88}
+.demo-url{font-family:"JetBrains Mono",monospace;font-size:clamp(13px,1.1vw,18px);
+  color:var(--primary);letter-spacing:.04em;margin-top:4px}
+.demo-creds{background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:clamp(12px,1.3vw,18px);text-align:left;min-width:min(420px,80vw)}
+.demo-creds h4{font-family:"JetBrains Mono",monospace;font-size:clamp(10px,.8vw,12px);
+  letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.demo-creds table{width:100%;font-size:clamp(11px,.85vw,13px);border-collapse:collapse}
+.demo-creds td{padding:3px 0;color:var(--text)}
+.demo-creds td:first-child{color:var(--muted);width:40%;font-weight:600}
+.demo-creds code{font-family:"JetBrains Mono",monospace;color:var(--primary);font-size:.9em}
+
+/* RETRO */
+.retro-inner{display:flex;flex-direction:column;gap:clamp(14px,1.8vh,26px)}
+.slide-retro .slide-inner::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(130deg,color-mix(in oklab,var(--accent) 12%,transparent),transparent 55%)}
+.retro-head{display:flex;justify-content:space-between;align-items:flex-end}
+.retro-title{font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:-.02em;
+  line-height:1;font-size:clamp(28px,4vw,64px)}
+.retro-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(10px,1.2vw,18px)}
+.retro-col{background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:clamp(14px,1.5vw,22px);display:flex;flex-direction:column;gap:10px}
+.retro-col h4{font-family:"Space Grotesk",sans-serif;font-size:clamp(13px,1.1vw,17px);
+  font-weight:700;display:flex;align-items:center;gap:8px}
+.retro-col h4 .dot{flex-shrink:0}
+.retro-col ul{list-style:none;padding:0;display:flex;flex-direction:column;gap:7px}
+.retro-col ul li{font-size:clamp(10px,.8vw,12px);color:var(--muted);line-height:1.5;
+  padding-left:1em;position:relative}
+.retro-col ul li::before{content:"›";color:var(--primary);position:absolute;left:0;font-weight:700}
+.retro-action{background:color-mix(in oklab,var(--primary) 10%,var(--card));
+  border:1px solid color-mix(in oklab,var(--primary) 25%,transparent);
+  border-radius:8px;padding:clamp(10px,1vw,14px)}
+.retro-action h4{font-family:"Space Grotesk",sans-serif;font-size:clamp(12px,.95vw,15px);
+  font-weight:700;color:var(--primary);margin-bottom:5px}
+.retro-action p{font-size:clamp(10px,.8vw,12px);color:var(--muted);line-height:1.5}
+
+/* CLOSING */
+.slide-close{align-items:center;justify-content:center}
+.close-inner{text-align:center;display:flex;flex-direction:column;align-items:center;gap:clamp(14px,1.8vh,26px)}
+.slide-close .slide-inner::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(150deg,color-mix(in oklab,var(--primary) 22%,transparent),transparent 50%)}
+.close-blob{position:absolute;right:-8%;bottom:-16%;width:50vw;height:50vw;border-radius:50%;
+  background:radial-gradient(circle at 40% 40%,var(--primary),transparent 65%);
+  opacity:.35;filter:blur(8px);pointer-events:none;z-index:1;animation:blobFloat 10s ease-in-out infinite}
+.close-title{font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:-.025em;
+  font-size:clamp(44px,8vw,140px);line-height:.86}
+.close-title .accentword{color:var(--primary)}
+.close-sub{font-size:clamp(15px,1.3vw,22px);color:var(--muted);max-width:32ch;line-height:1.5}
+.close-rule{height:1px;background:var(--hairline);width:100%;max-width:500px}
+.close-url{font-family:"JetBrains Mono",monospace;font-size:clamp(13px,1.1vw,18px);
+  color:var(--primary);letter-spacing:.04em}
+.close-tags{display:flex;gap:9px;flex-wrap:wrap;justify-content:center}
+
+@media (max-width:900px){
+  .team-grid{grid-template-columns:repeat(2,1fr)!important}
+  .stat-grid{grid-template-columns:repeat(2,1fr)!important}
+  .stack-grid{grid-template-columns:repeat(2,1fr)!important}
+  .retro-grid{grid-template-columns:1fr!important}
+}
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<div class="hud top-right">
+  <button class="ctl" id="themeToggle" aria-label="Alternar tema">
+    <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    <span id="themeLabel">Claro</span>
+  </button>
+</div>
+
+<div class="hud bottom" id="navHud">
+  <button class="navbtn" id="prevBtn" aria-label="Anterior">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+  <div class="counter mono" id="counter">01 / 11</div>
+  <button class="navbtn" id="nextBtn" aria-label="Próximo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+</div>
+
+<div class="stage" id="stage">
+
+  <!-- ============ SLIDE 1 — CAPA ============ -->
+  <section class="slide slide-cover active" data-screen-label="Capa">
+    <div class="slide-inner cover-inner">
+      <div class="cover-blob"></div>
+      <div data-anim="up" style="--d:0">
+        <div class="brand-mark">
+          <span class="brand-glyph">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9l8-5 8 5v10"/><path d="M9 19v-6h6v6"/></svg>
+          </span>
+          <span>Monitoria<span style="color:var(--primary)">App</span></span>
+        </div>
+      </div>
+
+      <div>
+        <div class="kicker" data-anim="up" style="--d:80;margin-bottom:clamp(12px,1.2vw,20px)">Apresentação final · Oficina de Eng. de Software · UFRJ</div>
+        <h1 class="cover-title" data-anim="up" style="--d:140">Monitoria<br><span class="accentword">acadêmica,</span><br>do jeito certo.</h1>
+        <p class="cover-sub" data-anim="up" style="--d:260">Sistema web de gestão de monitoria — Flask · MySQL · Jinja2, em produção no Railway.</p>
+      </div>
+
+      <div data-anim="up" style="--d:360">
+        <div class="cover-rule"></div>
+        <div class="cover-meta">
+          <div class="mi"><span class="mk">Disciplina</span><span class="mv">Oficina de Eng. de Software</span></div>
+          <div class="mi"><span class="mk">Processo</span><span class="mv">QScrum</span></div>
+          <div class="mi"><span class="mk">Sprints</span><span class="mv">S0 → S5</span></div>
+          <div class="mi"><span class="mk">Status</span><span class="mv" style="color:var(--success)">● Em produção</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 2 — TIME ============ -->
+  <section class="slide" data-screen-label="Time">
+    <div class="slide-inner">
+      <div class="team-head">
+        <div>
+          <div class="kicker" data-anim="up" style="--d:0;margin-bottom:12px">A equipe · QScrum</div>
+          <h2 class="team-title" data-anim="up" style="--d:60">Quem<br>construiu.</h2>
+        </div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 01</div>
+      </div>
+      <div class="team-grid">
+        <div class="member" data-anim="pop" style="--c:#2b8bd6;--d:140">
+          <div class="m-avatar">BT</div>
+          <div class="m-name">Bruna &amp; Thais</div>
+          <div class="m-role"><span class="dot"></span>Product Owner</div>
+          <div class="m-desc">Monitoras da disciplina. Backlog priorizado por MoSCoW, critérios de aceitação e validação a cada sprint.</div>
+        </div>
+        <div class="member" data-anim="pop" style="--c:#0e9c8e;--d:200">
+          <div class="m-avatar">JP</div>
+          <div class="m-name">João Pedro Bianco</div>
+          <div class="m-role"><span class="dot"></span>Scrum Master</div>
+          <div class="m-desc">Cerimônias e daily assíncrona, coordenação de merges e releases, gestão do board no GitHub Projects.</div>
+        </div>
+        <div class="member" data-anim="pop" style="--c:#0f9d6b;--d:260">
+          <div class="m-avatar">WG</div>
+          <div class="m-name">Willian G. Pessoa</div>
+          <div class="m-role"><span class="dot"></span>Quality Manager</div>
+          <div class="m-desc">Validação BDD de cada US antes do merge, testes automatizados e registro de flags por sprint.</div>
+        </div>
+        <div class="member" data-anim="pop" style="--c:#e11d48;--d:320">
+          <div class="m-avatar">PC</div>
+          <div class="m-name">Pedro Chaves</div>
+          <div class="m-role"><span class="dot"></span>Desenvolvedor</div>
+          <div class="m-desc">Implementação de user stories na arquitetura routes → service → repository e code review cruzado.</div>
+        </div>
+        <div class="member" data-anim="pop" style="--c:#7c5cff;--d:380">
+          <div class="m-avatar">GR</div>
+          <div class="m-name">Gabriel Benevides</div>
+          <div class="m-role"><span class="dot"></span>Desenvolvedor</div>
+          <div class="m-desc">Implementação de user stories, modelagem do banco em SQL puro e revisão de pull requests.</div>
+        </div>
+        <div class="member" data-anim="pop" style="--c:#a86a00;--d:440">
+          <div class="m-avatar">GB</div>
+          <div class="m-name">Gustavo Blandy</div>
+          <div class="m-role"><span class="dot"></span>Desenvolvedor</div>
+          <div class="m-desc">Implementação de user stories, integrações e deploy contínuo no Railway a cada push.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 3 — O PROBLEMA (PILAR) ============ -->
+  <section class="slide slide-pillar" data-screen-label="Problema">
+    <div class="slide-inner pillar-inner">
+      <div class="pillar-ghost">?</div>
+      <div style="display:contents">
+        <div class="pillar-text">
+          <div class="pillar-index" data-anim="up" style="--d:0">
+            <span class="big">01</span><span class="tot mono">/ 03 · O problema</span>
+          </div>
+          <h2 class="pillar-title" data-anim="up" style="--d:90">Planilha,<br>e-mail e<br>boca a boca.</h2>
+          <p class="pillar-desc" data-anim="up" style="--d:180">Aluno não sabe quando tem monitoria. Monitor não tem como organizar horários. Professor não enxerga nada. Secretaria controla tudo no Excel, todo mês.</p>
+          <div class="pillar-tags" data-anim="up" style="--d:260">
+            <span class="tag">Aluno perdido</span><span class="tag">Monitor sobrecarregado</span><span class="tag">Prof. sem dados</span><span class="tag">Admin no manual</span>
+          </div>
+        </div>
+        <div class="pillar-art" data-anim="pop" style="--d:200">
+          <svg viewBox="0 0 360 320" fill="none" aria-hidden="true">
+            <g opacity=".22"><line x1="40" y1="60" x2="190" y2="160" stroke="var(--error)" stroke-width="1.5" stroke-dasharray="4 6"/><line x1="310" y1="60" x2="190" y2="160" stroke="var(--warning)" stroke-width="1.5" stroke-dasharray="4 6"/><line x1="60" y1="270" x2="190" y2="160" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 6"/><line x1="310" y1="270" x2="190" y2="160" stroke="var(--success)" stroke-width="1.5" stroke-dasharray="4 6"/></g>
+            <g><circle cx="40" cy="60" r="30" fill="color-mix(in oklab,var(--error) 15%,transparent)" stroke="var(--error)" stroke-width="1.5"/><text x="40" y="55" text-anchor="middle" font-family="Space Grotesk" font-size="10" font-weight="700" fill="var(--error)">ANA</text><text x="40" y="68" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="var(--muted)">Aluna</text></g>
+            <g><circle cx="310" cy="60" r="30" fill="color-mix(in oklab,var(--warning) 15%,transparent)" stroke="var(--warning)" stroke-width="1.5"/><text x="310" y="55" text-anchor="middle" font-family="Space Grotesk" font-size="10" font-weight="700" fill="var(--warning)">LUCAS</text><text x="310" y="68" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="var(--muted)">Monitor</text></g>
+            <g><circle cx="60" cy="270" r="30" fill="color-mix(in oklab,var(--accent) 15%,transparent)" stroke="var(--accent)" stroke-width="1.5"/><text x="60" y="265" text-anchor="middle" font-family="Space Grotesk" font-size="10" font-weight="700" fill="var(--accent)">PROF.</text><text x="60" y="278" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="var(--muted)">Carlos</text></g>
+            <g><circle cx="310" cy="270" r="30" fill="color-mix(in oklab,var(--success) 15%,transparent)" stroke="var(--success)" stroke-width="1.5"/><text x="310" y="265" text-anchor="middle" font-family="Space Grotesk" font-size="10" font-weight="700" fill="var(--success)">SEC.</text><text x="310" y="278" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="var(--muted)">Admin</text></g>
+            <rect x="152" y="132" width="76" height="56" rx="14" fill="color-mix(in oklab,var(--muted) 20%,var(--card))" stroke="var(--muted)" stroke-width="1.5"/>
+            <text x="190" y="157" text-anchor="middle" font-family="Space Grotesk" font-size="13" font-weight="700" fill="var(--muted)">?</text>
+            <text x="190" y="174" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="var(--muted)">sem centro</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 4 — A SOLUÇÃO (PILAR) ============ -->
+  <section class="slide slide-pillar" data-screen-label="Solução">
+    <div class="slide-inner pillar-inner">
+      <div class="pillar-ghost">✓</div>
+      <div style="display:contents">
+        <div class="pillar-text">
+          <div class="pillar-index" data-anim="up" style="--d:0">
+            <span class="big">02</span><span class="tot mono">/ 03 · A solução</span>
+          </div>
+          <h2 class="pillar-title" data-anim="up" style="--d:90">Um só lugar<br>para todos.</h2>
+          <p class="pillar-desc" data-anim="up" style="--d:180">Sistema web que centraliza cadastro de monitores, agenda de atendimentos, registro de presença e relatórios — em produção, acessível por URL pública no Railway.</p>
+          <div class="pillar-tags" data-anim="up" style="--d:260">
+            <span class="tag">Agendar</span><span class="tag">Registrar presença</span><span class="tag">Controlar bolsas</span><span class="tag">Relatórios</span>
+          </div>
+        </div>
+        <div class="pillar-art" data-anim="pop" style="--d:200">
+          <svg viewBox="0 0 360 320" fill="none" aria-hidden="true">
+            <line class="hub-line" x1="180" y1="160" x2="50" y2="60"/><line class="hub-line" x1="180" y1="160" x2="310" y2="60"/><line class="hub-line" x1="180" y1="160" x2="50" y2="270"/><line class="hub-line" x1="180" y1="160" x2="310" y2="270"/>
+            <g class="hub-node"><circle cx="50" cy="60" r="32" fill="color-mix(in oklab,var(--error) 18%,transparent)" stroke="var(--error)" stroke-width="2"/><text x="50" y="55" text-anchor="middle" font-family="Space Grotesk" font-size="10" font-weight="700" fill="var(--error)">ANA</text><text x="50" y="68" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="var(--muted)">Aluna</text></g>
+            <g class="hub-node"><circle cx="310" cy="60" r="32" fill="color-mix(in oklab,var(--warning) 18%,transparent)" stroke="var(--warning)" stroke-width="2"/><text x="310" y="55" text-anchor="middle" font-family="Space Grotesk" font-size="10" font-weight="700" fill="var(--warning)">LUCAS</text><text x="310" y="68" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="var(--muted)">Monitor</text></g>
+            <g class="hub-node"><circle cx="50" cy="270" r="32" fill="color-mix(in oklab,var(--accent) 18%,transparent)" stroke="var(--accent)" stroke-width="2"/><text x="50" y="265" text-anchor="middle" font-family="Space Grotesk" font-size="10" font-weight="700" fill="var(--accent)">PROF.</text><text x="50" y="278" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="var(--muted)">Carlos</text></g>
+            <g class="hub-node"><circle cx="310" cy="270" r="32" fill="color-mix(in oklab,var(--success) 18%,transparent)" stroke="var(--success)" stroke-width="2"/><text x="310" y="265" text-anchor="middle" font-family="Space Grotesk" font-size="10" font-weight="700" fill="var(--success)">SEC.</text><text x="310" y="278" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="var(--muted)">Admin</text></g>
+            <g class="hub-center">
+              <rect x="144" y="124" width="72" height="72" rx="18" fill="var(--primary)"/>
+              <path d="M162 186v-28l18-12 18 12v28" stroke="var(--on-color)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 5 — STACK TÉCNICA ============ -->
+  <section class="slide slide-stack" data-screen-label="Stack">
+    <div class="slide-inner stack-inner">
+      <div class="stack-head">
+        <div>
+          <div class="kicker" data-anim="up" style="--d:0;margin-bottom:10px">Bloco 3 · Tecnologia</div>
+          <h2 class="stack-title" data-anim="up" style="--d:60">Stack<br>técnica.</h2>
+        </div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 03</div>
+      </div>
+      <div class="stack-grid" data-anim="up" style="--d:140">
+        <div class="stack-card" style="--sc:var(--accent)">
+          <div class="sc-name">Flask 3.0.3</div>
+          <div class="sc-ver">Python 3.12</div>
+          <p>Framework web minimalista. Blueprints para modularizar auth, usuários, disciplinas, monitorias, agenda e atendimentos.</p>
+        </div>
+        <div class="stack-card" style="--sc:var(--warning)">
+          <div class="sc-name">MySQL 8.0</div>
+          <div class="sc-ver">mysql-connector-python 9.0.0</div>
+          <p>Banco relacional com queries SQL diretas — sem ORM — para máxima transparência e revisão técnica pelo QM.</p>
+        </div>
+        <div class="stack-card" style="--sc:var(--primary)">
+          <div class="sc-name">Railway</div>
+          <div class="sc-ver">gunicorn · Plugin MySQL</div>
+          <p>Deploy automático a cada push. Plugin MySQL nativo injeta variáveis de conexão. Schema aplicado na inicialização.</p>
+        </div>
+        <div class="stack-card" style="--sc:var(--success)">
+          <div class="sc-name">Jinja2</div>
+          <div class="sc-ver">Templates server-side</div>
+          <p>Renderização de HTML no servidor. Herança de templates com base e layouts reutilizáveis por papel (admin, professor, monitor, aluno).</p>
+        </div>
+        <div class="stack-card" style="--sc:var(--error)">
+          <div class="sc-name">Docker</div>
+          <div class="sc-ver">MySQL em container local</div>
+          <p>Ambiente de desenvolvimento padronizado para o time. Eliminou o problema "na minha máquina funciona" da Sprint 1.</p>
+        </div>
+        <div class="stack-card" style="--sc:#7c5cff">
+          <div class="sc-name">GitHub Projects</div>
+          <div class="sc-ver">Issues · PRs · Branch dev</div>
+          <p>Sprint Backlog rastreado em GitHub Projects. Branch dev criada na Sprint 2 para fluxo estruturado de integração.</p>
+        </div>
+      </div>
+      <div class="arch-row" data-anim="up" style="--d:280">
+        <div class="arch-box"><div class="ab-lbl">Browser</div><div class="ab-sub">HTML / Jinja2</div></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box"><div class="ab-lbl">Flask routes</div><div class="ab-sub">blueprints</div></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box"><div class="ab-lbl">Service</div><div class="ab-sub">regras de negócio</div></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box" style="background:color-mix(in oklab,var(--warning) 14%,var(--card));border-color:color-mix(in oklab,var(--warning) 28%,transparent)"><div class="ab-lbl">Repository</div><div class="ab-sub">queries SQL</div></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box" style="background:color-mix(in oklab,var(--accent) 14%,var(--card));border-color:color-mix(in oklab,var(--accent) 28%,transparent)"><div class="ab-lbl">MySQL</div><div class="ab-sub">Railway</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 6 — TIMELINE (substeps) ============ -->
+  <section class="slide slide-timeline" data-screen-label="Timeline" data-steps="7">
+    <div class="slide-inner tl-inner">
+      <div class="tl-ghost" id="tlGhost"></div>
+      <div class="tl-head">
+        <div>
+          <div class="kicker">Bloco 4 · Processo</div>
+          <h2 class="tl-title">Linha do<br>tempo.</h2>
+        </div>
+        <div class="sec-num">/ 04</div>
+      </div>
+
+      <div class="tl-track" id="tlTrack">
+        <div class="tl-line"></div>
+        <div class="tl-fill" id="tlFill"></div>
+        <button class="tl-node" data-k="0"><div class="tl-c">S0</div><div class="tl-nl">Fundação</div><div class="tl-nd">30/04–06/05</div></button>
+        <button class="tl-node" data-k="1"><div class="tl-c">S1</div><div class="tl-nl">EP01</div><div class="tl-nd">07–13/05</div></button>
+        <button class="tl-node" data-k="2"><div class="tl-c">S2</div><div class="tl-nl">EP02</div><div class="tl-nd">14–20/05</div></button>
+        <button class="tl-node" data-k="3"><div class="tl-c">S3</div><div class="tl-nl">EP03</div><div class="tl-nd">21–27/05</div></button>
+        <button class="tl-node" data-k="4"><div class="tl-c">S4</div><div class="tl-nl">EP04</div><div class="tl-nd">28/05–19/06</div></button>
+        <button class="tl-node" data-k="5"><div class="tl-c">S5</div><div class="tl-nl">Entrega</div><div class="tl-nd">20–24/06</div></button>
+      </div>
+
+      <div class="tl-detail">
+        <div class="tl-hint" id="tlHint"><span class="dot"></span>Pressione → para percorrer cada sprint</div>
+
+        <div class="tl-panel" data-k="0">
+          <div class="tl-pk">Sprint 0 · Fundação</div>
+          <h3 class="tl-pt">Infra antes<br>de qualquer US.</h3>
+          <p class="tl-pd">Repositório, skeleton Flask com blueprints, banco em Docker e base no Railway no ar — tudo pronto para entregar valor desde a S1.</p>
+          <div class="tl-ptags"><span class="tag">Stack definida</span><span class="tag">Flask + blueprints</span><span class="tag">Docker MySQL</span><span class="tag">Schema inicial</span><span class="tag">Planning Poker</span></div>
+        </div>
+        <div class="tl-panel" data-k="1">
+          <div class="tl-pk">Sprint 1 · EP01</div>
+          <h3 class="tl-pt">Usuários e<br>autenticação.</h3>
+          <p class="tl-pd">Cadastro com 4 papéis, login com senha temporária, edição de perfil, desativação e reset de senha — primeira entrega funcional no Railway.</p>
+          <div class="tl-ptags"><span class="tag">US01–US05</span><span class="tag">Login + RBAC</span><span class="tag">4 perfis</span><span class="tag">1ª entrega em produção</span></div>
+        </div>
+        <div class="tl-panel" data-k="2">
+          <div class="tl-pk">Sprint 2 · EP02</div>
+          <h3 class="tl-pt">Disciplinas e<br>indicação.</h3>
+          <p class="tl-pd">Cadastro de disciplinas e fluxo completo de indicação de monitor: professor indica, admin aprova, vínculo ativo no sistema.</p>
+          <div class="tl-ptags"><span class="tag">US06–US09</span><span class="tag">Professor → Admin → Monitor</span><span class="tag">Branch dev criada</span></div>
+        </div>
+        <div class="tl-panel" data-k="3">
+          <div class="tl-pk">Sprint 3 · EP03</div>
+          <h3 class="tl-pt">Agenda e<br>agendamentos.</h3>
+          <p class="tl-pd">Monitor cria slots de horário, aluno visualiza e agenda, monitor confirma e pode bloquear horários. Coração funcional do produto.</p>
+          <div class="tl-ptags"><span class="tag">US10–US15</span><span class="tag">Slots de horário</span><span class="tag">Agendamento</span><span class="tag">Cancelamento</span></div>
+        </div>
+        <div class="tl-panel" data-k="4">
+          <div class="tl-pk">Sprint 4 · EP04</div>
+          <h3 class="tl-pt">Presença e<br>relatórios.</h3>
+          <p class="tl-pd">Monitor registra presença e assunto da sessão. Admin acompanha horas por monitor. Professor vê histórico. Relatório de participação gerado.</p>
+          <div class="tl-ptags"><span class="tag">US16–US20</span><span class="tag">Registro de presença</span><span class="tag">Controle de bolsas</span><span class="tag">Relatórios</span></div>
+        </div>
+        <div class="tl-panel" data-k="5">
+          <div class="tl-pk">Sprint 5 · Entrega final</div>
+          <h3 class="tl-pt">Extras, testes e<br>apresentação.</h3>
+          <p class="tl-pd">Votação de horários, confirmação de presença, consolidação da suíte de testes e artefatos finais da disciplina.</p>
+          <div class="tl-ptags"><span class="tag">US21–US26</span><span class="tag">Votação</span><span class="tag">Confirmação</span><span class="tag">Testes</span><span class="tag">Docs finais</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 7 — NÚMEROS ============ -->
+  <section class="slide slide-stats" data-screen-label="Números">
+    <div class="slide-inner stats-inner">
+      <div class="stats-ghost">N</div>
+      <div class="stats-head">
+        <div>
+          <div class="kicker" data-anim="up" style="--d:0;margin-bottom:10px">Bloco 5 · Resultado</div>
+          <h2 class="stats-title" data-anim="up" style="--d:60">O que<br>entregamos.</h2>
+        </div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 05</div>
+      </div>
+      <div class="stat-grid" data-anim="up" style="--d:160">
+        <div class="stat-card" style="--sc:var(--primary)">
+          <div class="stat-num">6</div>
+          <div class="stat-lbl">Épicos entregues</div>
+          <div class="stat-note">EP00 → EP05 completos</div>
+        </div>
+        <div class="stat-card" style="--sc:var(--accent)">
+          <div class="stat-num">26+</div>
+          <div class="stat-lbl">User Stories</div>
+          <div class="stat-note">US01–US26 + novas do backlog</div>
+        </div>
+        <div class="stat-card" style="--sc:var(--success)">
+          <div class="stat-num">5</div>
+          <div class="stat-lbl">Sprints com entrega</div>
+          <div class="stat-note">100% das metas atingidas</div>
+        </div>
+        <div class="stat-card" style="--sc:var(--warning)">
+          <div class="stat-num">4</div>
+          <div class="stat-lbl">Papéis de usuário</div>
+          <div class="stat-note">Admin · Professor · Monitor · Aluno</div>
+        </div>
+      </div>
+      <div class="detail-grid" data-anim="up" style="--d:280">
+        <div class="detail-card success">
+          <h4>Processo QScrum funcionou</h4>
+          <p>DoR e DoD aplicados a cada US. Flags do QM resolvidas dentro da sprint. Sprint Review validada pelas POs em todas as sprints.</p>
+        </div>
+        <div class="detail-card">
+          <h4>Em produção desde a S1</h4>
+          <p>Aplicação acessível publicamente no Railway desde a primeira sprint. POs testaram o sistema em condições reais a cada entrega.</p>
+        </div>
+        <div class="detail-card warn">
+          <h4>Aprendizados de processo</h4>
+          <p>Branch isolada na S2, acúmulo no último dia, Sprint Tales pós-entrega. Cada problema gerou um action item concreto.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 8 — QSCRUM ============ -->
+  <section class="slide slide-qscrum" data-screen-label="QScrum">
+    <div class="slide-inner qs-inner">
+      <div class="qs-ghost">Q</div>
+      <div class="qs-head">
+        <div>
+          <div class="kicker" data-anim="up" style="--d:0;margin-bottom:10px">Bloco 6 · Qualidade</div>
+          <h2 class="qs-title" data-anim="up" style="--d:60">QScrum<br>na prática.</h2>
+        </div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 06</div>
+      </div>
+      <div class="qs-grid" data-anim="up" style="--d:160">
+        <div class="qs-col">
+          <div class="qs-card accent">
+            <h4>Definition of Ready (DoR)</h4>
+            <p>Cada US precisava ter critérios de aceitação no formato BDD (Given / When / Then) antes de entrar em desenvolvimento. O QM bloqueou histórias que não cumpriam o checklist — ex: US09 na S2 foi devolvida ao backlog por falta de critérios.</p>
+          </div>
+          <div class="qs-card accent">
+            <h4>Definition of Done (DoD)</h4>
+            <p>Código entregue, lógica técnica repassada ao QM, Sprint Tales atualizado e sem flags pendentes. Somente então a história ia para Done.</p>
+          </div>
+          <div class="qs-card ok">
+            <h4>Critérios BDD auxiliaram</h4>
+            <p>O formato Given / When / Then revelou cenários de borda que seriam ignorados sem formalização — ex: "professor inválido" em US06 e "aluno já monitor" em US08.</p>
+          </div>
+        </div>
+        <div class="qs-col">
+          <div class="qs-card warn">
+            <h4>Flags por sprint</h4>
+            <ul>
+              <li><strong>S2:</strong> 4 flags — Sprint Tales atrasado, lógica técnica não repassada, US09 sem DoR, branch não integrada</li>
+              <li>Todas resolvidas dentro da sprint ou com action item concreto</li>
+            </ul>
+          </div>
+          <div class="qs-card ok">
+            <h4>Sprint Review validada pelas POs</h4>
+            <p>Bruna e Thais testaram o sistema publicado no Railway em cada sprint. Nenhuma história foi rejeitada. Feedback gerou novas US no backlog (ex: US16-novo — monitor cancela agendamento).</p>
+          </div>
+          <div class="qs-card accent">
+            <h4>Sprint Tales como memória técnica</h4>
+            <p>Cada US documentada: responsável, solução adotada, arquivos alterados, impacto. Fonte única de verdade para o QM avaliar o escopo real de cada entrega.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 9 — DEMO AO VIVO ============ -->
+  <section class="slide slide-demo" data-screen-label="Demo">
+    <div class="slide-inner">
+      <div class="demo-inner">
+        <div class="demo-icon" data-anim="pop" style="--d:0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
+        </div>
+        <h2 class="demo-title" data-anim="up" style="--d:80">Demo<br><span class="accentword" style="color:var(--primary)">ao vivo.</span></h2>
+        <p class="demo-url" data-anim="up" style="--d:180">https://web-production-1f724.up.railway.app</p>
+        <div class="demo-creds" data-anim="pop" style="--d:280">
+          <h4>Credenciais pré-cadastradas · senha: <code>monitoria-app</code></h4>
+          <table>
+            <tr><td>Admin</td><td>willian.pessoa.cs@gmail.com</td></tr>
+            <tr><td>Professor</td><td>gustavopo@ic.ufrj.br</td></tr>
+            <tr><td>Monitor</td><td>pedroaac@ic.ufrj.br</td></tr>
+            <tr><td>Aluno</td><td>joaopmab@ic.ufrj.br</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 10 — RETROSPECTIVA ============ -->
+  <section class="slide slide-retro" data-screen-label="Retrospectiva">
+    <div class="slide-inner retro-inner">
+      <div class="retro-head">
+        <div>
+          <div class="kicker" data-anim="up" style="--d:0;margin-bottom:10px">Bloco 7 · Aprendizados</div>
+          <h2 class="retro-title" data-anim="up" style="--d:60">O que<br>aprendemos.</h2>
+        </div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 07</div>
+      </div>
+      <div class="retro-grid" data-anim="up" style="--d:160">
+        <div class="retro-col">
+          <h4><span class="dot" style="background:var(--success)"></span>O que foi bem</h4>
+          <ul>
+            <li>Entregamos histórias centrais em produção a cada sprint — sistema sempre acessível para as POs</li>
+            <li>DoR e DoD aumentaram a qualidade das entregas e revelaram borda que seriam ignoradas</li>
+            <li>Branch dev estruturou o fluxo de integração e reduziu conflitos a partir da S2</li>
+            <li>Sprint Review com as POs gerou feedback real e novas histórias de valor</li>
+          </ul>
+        </div>
+        <div class="retro-col">
+          <h4><span class="dot" style="background:var(--warning)"></span>O que pode melhorar</h4>
+          <ul>
+            <li>Branches isoladas sem partir da dev geraram conflitos de integração (caso US09/S2)</li>
+            <li>Sem prazo interno, trabalho se concentrou no último dia da sprint</li>
+            <li>Sprint Tales e lógica técnica ao QM viraram etapa pós-entrega em vez de parte do fluxo</li>
+            <li>Abertura de PR não era etapa obrigatória — precisa ser parte do processo</li>
+          </ul>
+        </div>
+        <div class="retro-col">
+          <h4><span class="dot" style="background:var(--primary)"></span>Action items</h4>
+          <div class="retro-action" style="margin-bottom:8px">
+            <h4>Branch dev obrigatória</h4>
+            <p>Todos os PRs partem e vão para dev — implementado ao final da S2 e mantido até o fim.</p>
+          </div>
+          <div class="retro-action" style="margin-bottom:8px">
+            <h4>Prazo por tarefa</h4>
+            <p>Definir no Sprint Planning um deadline interno proporcional ao período total — evitar acúmulo no último dia.</p>
+          </div>
+          <div class="retro-action">
+            <h4>Sprint Tales como parte do dev</h4>
+            <p>Preencher durante o desenvolvimento, não após — parte do DoD desde a S3.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 11 — FECHAMENTO ============ -->
+  <section class="slide slide-close" data-screen-label="Fechamento">
+    <div class="slide-inner">
+      <div class="close-blob"></div>
+      <div class="close-inner">
+        <div class="kicker" data-anim="up" style="--d:0">Obrigado · Perguntas?</div>
+        <h2 class="close-title" data-anim="up" style="--d:80">Monitoria<br><span class="accentword">entregue.</span></h2>
+        <p class="close-sub" data-anim="up" style="--d:180">Sistema em produção, 6 épicos, 26+ histórias, 6 sprints. Do zero ao ar — em equipe, com processo.</p>
+        <div class="close-rule" data-anim="up" style="--d:260"></div>
+        <p class="close-url" data-anim="up" style="--d:320">https://web-production-1f724.up.railway.app</p>
+        <div class="close-tags" data-anim="pop" style="--d:400">
+          <span class="tag">Flask 3.0.3</span>
+          <span class="tag">MySQL 8.0</span>
+          <span class="tag">Railway</span>
+          <span class="tag">QScrum</span>
+          <span class="tag">GitHub Projects</span>
+          <span class="tag">6 épicos</span>
+          <span class="tag">26+ user stories</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  const root=document.documentElement;
+  const slides=[...document.querySelectorAll('.slide')];
+  const counter=document.getElementById('counter');
+  const progress=document.getElementById('progress');
+  const navHud=document.getElementById('navHud');
+  let i=0,sub=0,hudTimer=null;
+
+  function clamp(n){return Math.max(0,Math.min(slides.length-1,n));}
+  function pad(n){return String(n).padStart(2,'0');}
+  function steps(idx){return parseInt(slides[idx].dataset.steps||'1',10);}
+
+  function showHud(){
+    navHud.classList.add('show');
+    clearTimeout(hudTimer);
+    hudTimer=setTimeout(()=>navHud.classList.remove('show'),3000);
+  }
+
+  function applySub(idx,s){
+    const sl=slides[idx];
+    if(sl.classList.contains('slide-timeline')) updateTimeline(s);
+  }
+
+  function render(opts){
+    slides.forEach((s,idx)=>s.classList.toggle('active',idx===i));
+    applySub(i,sub);
+    counter.textContent=pad(i+1)+' / '+pad(slides.length);
+    progress.style.width=((i+1)/slides.length*100)+'%';
+    if(!opts||!opts.silent)history.replaceState(null,'','#'+(i+1));
+  }
+  function show(n,opts){i=clamp(n);sub=0;render(opts);}
+  function next(){
+    if(sub<steps(i)-1){sub++;applySub(i,sub);}
+    else if(i<slides.length-1){i++;sub=0;render();}
+  }
+  function prev(){
+    if(sub>0){sub--;applySub(i,sub);}
+    else if(i>0){i--;sub=steps(i)-1;render();}
+  }
+
+  /* Timeline */
+  const tlNodes=[...document.querySelectorAll('.tl-node')];
+  const tlPanels=[...document.querySelectorAll('.tl-panel')];
+  function updateTimeline(s){
+    const focus=s-1;
+    tlNodes.forEach((n,k)=>{
+      n.classList.toggle('done',focus>=0&&k<focus);
+      n.classList.toggle('active',k===focus);
+    });
+    tlPanels.forEach((p,k)=>p.classList.toggle('on',k===focus));
+    const hint=document.getElementById('tlHint');
+    if(hint)hint.style.display=focus<0?'':'none';
+    const ghost=document.getElementById('tlGhost');
+    if(ghost)ghost.textContent=focus<0?'':('S'+focus);
+    const fill=document.getElementById('tlFill');
+    if(fill)fill.style.width=(focus<0?0:(focus/(tlNodes.length-1)*94))+'%';
+  }
+  tlNodes.forEach(n=>n.addEventListener('click',()=>{
+    sub=parseInt(n.dataset.k,10)+1;applySub(i,sub);
+  }));
+
+  /* Keyboard */
+  document.addEventListener('keydown',e=>{
+    showHud();
+    if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '){e.preventDefault();next();}
+    else if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();prev();}
+    else if(e.key==='Home'){show(0);}
+    else if(e.key==='End'){show(slides.length-1);}
+    else if(e.key==='f'||e.key==='F'){toggleFullscreen();}
+  });
+
+  /* Touch */
+  let tx=0,ty=0;
+  document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+  document.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-tx;
+    const dy=e.changedTouches[0].clientY-ty;
+    if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>40){dx<0?next():prev();showHud();}
+  });
+
+  /* Mouse move → show HUD */
+  document.addEventListener('mousemove',showHud);
+
+  /* Nav buttons */
+  document.getElementById('nextBtn').addEventListener('click',()=>{next();showHud();});
+  document.getElementById('prevBtn').addEventListener('click',()=>{prev();showHud();});
+
+  /* Theme toggle */
+  const tBtn=document.getElementById('themeToggle');
+  const tIcon=document.getElementById('themeIcon');
+  const tLbl=document.getElementById('themeLabel');
+  const sunPath='M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41M12 7a5 5 0 1 0 0 10A5 5 0 0 0 12 7z';
+  const moonPath='M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z';
+  function setTheme(t){
+    root.setAttribute('data-theme',t);
+    localStorage.setItem('pres-theme',t);
+    if(t==='dark'){tIcon.innerHTML='<path d="'+moonPath+'" stroke-linecap="round" stroke-linejoin="round"/>';tLbl.textContent='Claro';}
+    else{tIcon.innerHTML='<path d="'+sunPath+'" stroke-linecap="round" stroke-linejoin="round"/>';tLbl.textContent='Escuro';}
+  }
+  tBtn.addEventListener('click',()=>{
+    setTheme(root.getAttribute('data-theme')==='dark'?'light':'dark');
+  });
+  const saved=localStorage.getItem('pres-theme');
+  if(saved)setTheme(saved);
+
+  /* Fullscreen */
+  function toggleFullscreen(){
+    if(!document.fullscreenElement)document.documentElement.requestFullscreen().catch(()=>{});
+    else document.exitFullscreen().catch(()=>{});
+  }
+
+  /* URL hash */
+  const hash=parseInt(location.hash.slice(1));
+  if(hash>=1&&hash<=slides.length)show(hash-1,{silent:true});
+  else render({silent:true});
+  showHud();
+})();
+</script>
+</body>
+</html>
