@@ -301,6 +301,7 @@ def list_by_professor_with_stats(professor_id):
             LEFT JOIN usuarios a ON a.id = m.aluno_id
             LEFT JOIN disciplina_alunos da ON da.disciplina_id = d.id
             WHERE d.professor_id = %s
+              AND d.status = 'ATIVA'
             GROUP BY d.id, d.codigo, d.nome, d.status, m.aluno_id, a.nome
             ORDER BY d.nome ASC
             """,
@@ -465,12 +466,14 @@ def list_sessoes_resumo(disciplina_id):
                    s.data_fim,
                    s.assunto,
                    s.status,
+                   u.nome AS monitor_nome,
                    COUNT(p.id) AS total_presentes
             FROM monitoria_sessoes s
+            JOIN usuarios u ON u.id = s.monitor_id
             LEFT JOIN presencas p
                 ON p.sessao_id = s.id AND p.status = 'CONFIRMADA'
             WHERE s.disciplina_id = %s AND s.status = 'CONCLUIDA'
-            GROUP BY s.id, s.data_inicio, s.data_fim, s.assunto, s.status
+            GROUP BY s.id, s.data_inicio, s.data_fim, s.assunto, s.status, u.nome
             ORDER BY s.data_inicio DESC
             """,
             (disciplina_id,),
@@ -481,7 +484,32 @@ def list_sessoes_resumo(disciplina_id):
         conn.close()
 
 
-def list_disciplinas_admin_filtered(q=None, status=None, professor_id=None, aluno_id=None, min_hours_not_met=False):
+def list_disciplinas_ativas():
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT d.id,
+                   d.codigo,
+                   d.nome,
+                   d.status,
+                   d.professor_id,
+                   p.nome AS professor_nome,
+                   d.criado_em
+            FROM disciplinas d
+            JOIN usuarios p ON p.id = d.professor_id
+            WHERE d.status = 'ATIVA'
+            ORDER BY d.nome ASC
+            """
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def list_disciplinas_admin_filtered(q=None, status=None, professor_id=None, aluno_id=None, min_hours=None):
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
     try:
@@ -509,18 +537,6 @@ def list_disciplinas_admin_filtered(q=None, status=None, professor_id=None, alun
 
         where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
 
-        having_clause = ""
-        if min_hours_not_met:
-            having_clause = """
-            HAVING m.aluno_id IS NOT NULL AND (
-                SELECT COALESCE(SUM(TIMESTAMPDIFF(MINUTE, s.data_inicio, s.data_fim)) / 60.0, 0)
-                FROM monitoria_sessoes s
-                WHERE s.disciplina_id = d.id
-                  AND s.status = 'CONCLUIDA'
-                  AND s.data_inicio >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-            ) < 4
-            """
-
         cursor.execute(
             f"""
             SELECT d.id,
@@ -532,7 +548,23 @@ def list_disciplinas_admin_filtered(q=None, status=None, professor_id=None, alun
                    m.aluno_id AS monitor_aluno_id,
                    a.nome AS monitor_nome,
                    COUNT(DISTINCT da.aluno_id) AS alunos_count,
-                   d.criado_em
+                   d.criado_em,
+                   (SELECT COALESCE(SUM(TIMESTAMPDIFF(MINUTE, ms.data_inicio, ms.data_fim) / 60.0), 0)
+                    FROM monitoria_sessoes ms
+                    WHERE ms.disciplina_id = d.id AND ms.status = 'CONCLUIDA') AS total_horas,
+                   GREATEST(
+                       DATEDIFF(
+                           CASE WHEN d.status = 'ATIVA' THEN CURDATE()
+                               ELSE COALESCE(
+                                   (SELECT DATE(MAX(ms2.data_inicio))
+                                    FROM monitoria_sessoes ms2
+                                    WHERE ms2.disciplina_id = d.id AND ms2.status = 'CONCLUIDA'),
+                                   DATE(d.criado_em))
+                           END,
+                           DATE(d.criado_em)
+                       ) / 7.0,
+                       1
+                   ) AS semanas_ativas
             FROM disciplinas d
             JOIN usuarios p ON p.id = d.professor_id
             LEFT JOIN monitorias m ON m.disciplina_id = d.id AND m.status = 'ATIVO'
@@ -540,12 +572,20 @@ def list_disciplinas_admin_filtered(q=None, status=None, professor_id=None, alun
             LEFT JOIN disciplina_alunos da ON da.disciplina_id = d.id
             {where_clause}
             GROUP BY d.id, d.codigo, d.nome, d.status, d.professor_id, p.nome, m.aluno_id, a.nome, d.criado_em
-            {having_clause}
             ORDER BY d.criado_em DESC
             """,
             params,
         )
-        return cursor.fetchall()
+        rows = cursor.fetchall()
+        for row in rows:
+            row["cumpre_minimo"] = float(row["total_horas"]) >= float(row["semanas_ativas"])
+
+        if min_hours == "cumpridas":
+            rows = [r for r in rows if r["cumpre_minimo"]]
+        elif min_hours == "nao_cumpridas":
+            rows = [r for r in rows if not r["cumpre_minimo"]]
+
+        return rows
     finally:
         cursor.close()
         conn.close()

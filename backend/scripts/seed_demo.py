@@ -7,12 +7,13 @@ Cria:
   • 4 alunos: aluno1@ufrj.br ... aluno4@ufrj.br / senha123
   • 2 monitores (papel ALUNO): monitor1@ufrj.br, monitor2@ufrj.br / senha123
   • 2 professores: professor1@ufrj.br, professor2@ufrj.br / senha123
-  • 2 disciplinas:
+  • 2 disciplinas ativas:
       - Disciplina 1: professor1, monitor1, aluno1, aluno2
       - Disciplina 2: professor2, monitor2, aluno3, aluno4
-  • 1 mês de sessões passadas para cada disciplina (4 semanas):
-      - Disciplina 1: 4 sessões de 1h (cumpre mínimo: 4h)
-      - Disciplina 2: 2 sessões de 1h (NÃO cumpre mínimo: 2h < 4h)
+  • 1 disciplina inativa (encerrada):
+      - Programação Linear: professor1, monitor1 (rejeitado), aluno1, aluno2
+      - Sessões concluídas de Jul–Dez 2025 (12 sessões, quinzenais)
+  • 1 mês de sessões passadas para cada disciplina ativa (4 semanas)
   • Presenças: em cada sessão, apenas 1 aluno presente
 
 Uso:
@@ -97,18 +98,51 @@ def main():
     conn.commit()
     print("  Usuários criados.")
 
-    print("Criando disciplinas...")
+    print("Configurando contato e disponibilidade dos monitores...")
+    # monitor1: celular (21) 99999-0001, disponível Seg 10h e Ter 14h
     cur.execute(
-        "INSERT INTO disciplinas (codigo, nome, professor_id, status) VALUES (%s, %s, %s, 'ATIVA')",
-        ("MAB001", "Cálculo I", prof1_id),
+        "UPDATE usuarios SET contato = %s, carga_horaria_semanal = 1 WHERE id = %s",
+        ("(21) 99999-0001", mon1_id),
+    )
+    for weekday, hora in [(1, "10:00:00"), (2, "14:00:00")]:
+        cur.execute(
+            "INSERT INTO monitor_disponibilidade (monitor_id, weekday, hora_inicio, status) VALUES (%s, %s, %s, 'LIVRE')",
+            (mon1_id, weekday, hora),
+        )
+
+    # monitor2: celular (21) 99999-0002, disponível Qua 10h e Qui 14h
+    cur.execute(
+        "UPDATE usuarios SET contato = %s, carga_horaria_semanal = 1 WHERE id = %s",
+        ("(21) 99999-0002", mon2_id),
+    )
+    for weekday, hora in [(3, "10:00:00"), (4, "14:00:00")]:
+        cur.execute(
+            "INSERT INTO monitor_disponibilidade (monitor_id, weekday, hora_inicio, status) VALUES (%s, %s, %s, 'LIVRE')",
+            (mon2_id, weekday, hora),
+        )
+    conn.commit()
+    print("  Contato e disponibilidade configurados.")
+
+    print("Criando disciplinas...")
+    criado_em_ativas = (NOW - datetime.timedelta(days=21)).replace(hour=9, minute=0, second=0, microsecond=0)
+    cur.execute(
+        "INSERT INTO disciplinas (codigo, nome, professor_id, status, criado_em) VALUES (%s, %s, %s, 'ATIVA', %s)",
+        ("MAB001", "Cálculo I", prof1_id, criado_em_ativas),
     )
     disc1_id = cur.lastrowid
 
     cur.execute(
-        "INSERT INTO disciplinas (codigo, nome, professor_id, status) VALUES (%s, %s, %s, 'ATIVA')",
-        ("MAB002", "Álgebra Linear", prof2_id),
+        "INSERT INTO disciplinas (codigo, nome, professor_id, status, criado_em) VALUES (%s, %s, %s, 'ATIVA', %s)",
+        ("MAB002", "Álgebra Linear", prof2_id, criado_em_ativas),
     )
     disc2_id = cur.lastrowid
+
+    # Disciplina inativa: encerrada ao fim do semestre 2025/2
+    cur.execute(
+        "INSERT INTO disciplinas (codigo, nome, professor_id, status, criado_em) VALUES (%s, %s, %s, 'INATIVA', %s)",
+        ("MAB003", "Programação Linear", prof1_id, datetime.datetime(2025, 7, 1, 9, 0)),
+    )
+    disc3_id = cur.lastrowid
     conn.commit()
     print("  Disciplinas criadas.")
 
@@ -120,6 +154,11 @@ def main():
     cur.execute(
         "INSERT INTO monitorias (disciplina_id, professor_id, aluno_id, status) VALUES (%s,%s,%s,'ATIVO')",
         (disc2_id, prof2_id, mon2_id),
+    )
+    # Disciplina inativa: monitoria encerrada (REJEITADO)
+    cur.execute(
+        "INSERT INTO monitorias (disciplina_id, professor_id, aluno_id, status, motivo_rejeicao) VALUES (%s,%s,%s,'REJEITADO','Disciplina desativada pelo admin.')",
+        (disc3_id, prof1_id, mon1_id),
     )
     conn.commit()
     print("  Monitorias criadas.")
@@ -134,6 +173,12 @@ def main():
         cur.execute(
             "INSERT INTO disciplina_alunos (disciplina_id, aluno_id) VALUES (%s, %s)",
             (disc2_id, aluno_id),
+        )
+    # Disciplina inativa: alunos 1 e 2 permanecem matriculados
+    for aluno_id in [aluno1_id, aluno2_id]:
+        cur.execute(
+            "INSERT INTO disciplina_alunos (disciplina_id, aluno_id) VALUES (%s, %s)",
+            (disc3_id, aluno_id),
         )
     conn.commit()
     print("  Matrículas criadas.")
@@ -183,6 +228,47 @@ def main():
     pend2 = (NOW - datetime.timedelta(days=1)).replace(hour=10, minute=0, second=0, microsecond=0)
     create_session(disc2_id, mon2_id, pend2, pend2 + datetime.timedelta(hours=1), "AGENDADA")
 
+    # Disciplina inativa (MAB003): 12 sessões quinzenais de Jul a Dez 2025
+    assuntos_disc3 = [
+        "Introdução à Programação Linear",
+        "Modelagem de problemas de otimização",
+        "Método Simplex — fundamentos",
+        "Método Simplex — tableau e pivotamento",
+        "Dualidade e interpretação econômica",
+        "Análise de sensibilidade",
+        "Programação inteira — introdução",
+        "Branch and Bound",
+        "Programação linear aplicada à logística",
+        "Revisão geral e exercícios",
+        "Simulado de prova",
+        "Encerramento e avaliação do semestre",
+    ]
+    # Quinzenalmente: 1/7, 15/7, 1/8, 15/8, 1/9, 15/9, 1/10, 15/10, 3/11, 17/11, 1/12, 15/12 de 2025
+    datas_disc3 = [
+        datetime.datetime(2025, 7, 1, 14, 0),
+        datetime.datetime(2025, 7, 15, 14, 0),
+        datetime.datetime(2025, 8, 5, 14, 0),
+        datetime.datetime(2025, 8, 19, 14, 0),
+        datetime.datetime(2025, 9, 2, 14, 0),
+        datetime.datetime(2025, 9, 16, 14, 0),
+        datetime.datetime(2025, 10, 7, 14, 0),
+        datetime.datetime(2025, 10, 21, 14, 0),
+        datetime.datetime(2025, 11, 4, 14, 0),
+        datetime.datetime(2025, 11, 18, 14, 0),
+        datetime.datetime(2025, 12, 2, 14, 0),
+        datetime.datetime(2025, 12, 16, 14, 0),
+    ]
+    # Aluno1 presente nas ímpares, ausente nas pares; Aluno2 o inverso
+    for i, dt in enumerate(datas_disc3):
+        sid = create_session(
+            disc3_id, mon1_id,
+            dt, dt + datetime.timedelta(hours=2),
+            "CONCLUIDA",
+            assuntos_disc3[i],
+        )
+        add_presenca(sid, aluno1_id, "CONFIRMADA" if i % 2 == 0 else "AUSENTE")
+        add_presenca(sid, aluno2_id, "AUSENTE" if i % 2 == 0 else "CONFIRMADA")
+
     conn.commit()
     print("  Sessões e presenças criadas.")
 
@@ -192,14 +278,14 @@ def main():
     print("\n✓ Seed concluído com sucesso!")
     print("\nCredenciais (senha: senha123):")
     print("  admin@ufrj.br           → ADMIN")
-    print("  professor1@ufrj.br      → PROFESSOR (Cálculo I)")
+    print("  professor1@ufrj.br      → PROFESSOR (Cálculo I + Programação Linear [inativa])")
     print("  professor2@ufrj.br      → PROFESSOR (Álgebra Linear)")
-    print("  monitor1@ufrj.br        → MONITOR (Cálculo I) — horas OK")
+    print("  monitor1@ufrj.br        → MONITOR (Cálculo I) — horas OK; ex-monitor de Prog. Linear")
     print("  monitor2@ufrj.br        → MONITOR (Álgebra Linear) — horas INSUFICIENTES")
-    print("  aluno1@ufrj.br          → ALUNO (Cálculo I, presente nas sessões)")
-    print("  aluno2@ufrj.br          → ALUNO (Cálculo I, ausente nas sessões)")
-    print("  aluno3@ufrj.br          → ALUNO (Álgebra Linear, presente nas sessões)")
-    print("  aluno4@ufrj.br          → ALUNO (Álgebra Linear, ausente nas sessões)")
+    print("  aluno1@ufrj.br          → ALUNO (Cálculo I + Programação Linear [inativa])")
+    print("  aluno2@ufrj.br          → ALUNO (Cálculo I + Programação Linear [inativa])")
+    print("  aluno3@ufrj.br          → ALUNO (Álgebra Linear)")
+    print("  aluno4@ufrj.br          → ALUNO (Álgebra Linear)")
 
 
 if __name__ == "__main__":

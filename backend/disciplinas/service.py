@@ -232,5 +232,5 @@ def list_sessoes_resumo(disciplina_id):
     return repository.list_sessoes_resumo(disciplina_id)
 
 
-def list_disciplinas_admin_filtered(q=None, status="ATIVA", professor_id=None, aluno_id=None, min_hours_not_met=False):
-    return repository.list_disciplinas_admin_filtered(q, status, professor_id, aluno_id, min_hours_not_met)
+def list_disciplinas_admin_filtered(q=None, status="ATIVA", professor_id=None, aluno_id=None, min_hours=None):
+    return repository.list_disciplinas_admin_filtered(q, status, professor_id, aluno_id, min_hours)

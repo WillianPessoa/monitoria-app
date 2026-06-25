@@ -49,14 +49,16 @@
         {% endfor %}
       </select>
     </div>
-    <div style="display:flex;align-items:flex-end;gap:8px;">
-      <label style="display:flex;align-items:center;gap:6px;padding:9px 0;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;">
-        <input type="checkbox" name="min_hours_not_met" value="1" {% if min_hours_filter == '1' %}checked{% endif %} style="width:15px;height:15px;" />
-        Horas mínimas não cumpridas
-      </label>
+    <div style="min-width:160px;">
+      <label style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px;display:block;">Horas mínimas</label>
+      <select name="min_hours" style="width:100%;">
+        <option value="">Todas</option>
+        <option value="cumpridas" {% if min_hours_filter == 'cumpridas' %}selected{% endif %}>Cumpridas</option>
+        <option value="nao_cumpridas" {% if min_hours_filter == 'nao_cumpridas' %}selected{% endif %}>Não cumpridas</option>
+      </select>
     </div>
     <button type="submit" class="button" style="align-self:flex-end;">Filtrar</button>
-    {% if q or status_filter != 'ATIVA' or professor_id_filter or aluno_id_filter or min_hours_filter %}
+    {% if q or status_filter != 'ATIVA' or professor_id_filter or aluno_id_filter or min_hours_filter != '' %}
     <a href="{{ url_for('disciplinas.index') }}" class="button btn-outline" style="text-decoration:none;align-self:flex-end;">Limpar</a>
     {% endif %}
   </form>
@@ -64,17 +66,18 @@
   {# ─ Tabela de disciplinas ─ #}
   {% if disciplinas_admin %}
   <div class="card" style="padding:0;overflow:hidden;">
-    <div style="display:grid;grid-template-columns:90px 1fr 1fr 1fr 60px 80px 120px;gap:0;padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;">
+    <div style="display:grid;grid-template-columns:90px 1fr 1fr 1fr 60px 80px 80px 120px;gap:0;padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;">
       <span>Código</span>
       <span>Nome</span>
       <span>Professor</span>
       <span>Monitor</span>
       <span style="text-align:center;">Alunos</span>
       <span style="text-align:center;">Status</span>
+      <span style="text-align:center;">Horas</span>
       <span style="text-align:right;">Ações</span>
     </div>
     {% for d in disciplinas_admin %}
-    <div style="display:grid;grid-template-columns:90px 1fr 1fr 1fr 60px 80px 120px;gap:0;padding:12px 16px;align-items:center;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}font-size:13.5px;">
+    <div style="display:grid;grid-template-columns:90px 1fr 1fr 1fr 60px 80px 80px 120px;gap:0;padding:12px 16px;align-items:center;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}font-size:13.5px;">
       <span style="font-weight:700;font-family:'Space Grotesk',sans-serif;color:var(--primary);font-size:12.5px;">{{ d.codigo }}</span>
       <span style="font-weight:600;">{{ d.nome }}</span>
       <span style="color:var(--muted);">{{ d.professor_nome }}</span>
@@ -83,6 +86,9 @@
       <span style="text-align:center;">
         {% if d.status == 'ATIVA' %}<span class="status-pill success">Ativa</span>
         {% else %}<span class="status-pill muted">Inativa</span>{% endif %}
+      </span>
+      <span style="text-align:center;font-weight:700;font-size:13px;color:{% if d.cumpre_minimo %}var(--success){% else %}var(--error){% endif %};">
+        {{ "%.1f"|format(d.total_horas) }}h
       </span>
       <div style="display:flex;gap:6px;justify-content:flex-end;">
         <a href="{{ url_for('disciplinas.monitoria_detalhe', disciplina_id=d.id) }}" class="button btn-outline btn-sm" style="text-decoration:none;">Ver</a>
@@ -110,6 +116,14 @@
           <select name="professor_id" required>
             {% for professor in professores %}
             <option value="{{ professor.id }}" {% if professor.id == d.professor_id %}selected{% endif %}>{{ professor.nome }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Monitor
+          <select name="monitor_id">
+            <option value="">— Sem alteração —</option>
+            {% for aluno in alunos %}
+            <option value="{{ aluno.id }}" {% if aluno.id == d.monitor_aluno_id %}selected{% endif %}>{{ aluno.nome }}</option>
             {% endfor %}
           </select>
         </label>

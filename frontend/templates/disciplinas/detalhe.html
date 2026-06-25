@@ -179,7 +179,7 @@
         </div>
         <div class="agenda-body">
           <div class="agenda-disc">{{ sessao.data_inicio.strftime('%H:%M') }} — {{ sessao.data_fim.strftime('%H:%M') }}</div>
-          <div class="agenda-meta">{{ (sessao.data_fim - sessao.data_inicio).seconds // 60 }} min</div>
+          <div class="agenda-meta">Monitor: {{ sessao.monitor_nome }} · {{ (sessao.data_fim - sessao.data_inicio).seconds // 60 }} min</div>
         </div>
         <span class="status-pill muted">Finalizada</span>
         <a href="{{ url_for('monitorias.sessao_detalhe', sessao_id=sessao.id) }}" class="button btn-outline btn-sm" style="text-decoration:none;">Detalhes</a>
@@ -205,7 +205,7 @@
         </div>
         <div class="agenda-body">
           <div class="agenda-disc">{{ sessao.data_inicio.strftime('%H:%M') }} — {{ sessao.data_fim.strftime('%H:%M') }}</div>
-          <div class="agenda-meta">{{ sessao.assunto or '—' }}</div>
+          <div class="agenda-meta">Monitor: {{ sessao.monitor_nome }} · {{ sessao.assunto or '—' }}</div>
         </div>
         {% if sessao.presenca_status == 'CONFIRMADA' %}
         <span class="status-pill success">Presente</span>

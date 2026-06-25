@@ -1,4 +1,5 @@
 from flask import Flask, redirect, render_template, session, url_for
+import importlib.util
 import os
 
 from agenda import bp as agenda_bp
@@ -12,6 +13,14 @@ from usuarios import bp as usuarios_bp
 from monitorias import bp as monitorias_bp
 
 
+def _run_seed():
+    seed_path = os.path.join(os.path.dirname(__file__), "scripts", "seed_demo.py")
+    spec = importlib.util.spec_from_file_location("seed_demo", seed_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    mod.main()
+
+
 def create_app():
     # Serve templates and static files from the top-level `frontend/` folder (absolute paths)
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -22,6 +31,7 @@ def create_app():
     app.config.from_object(Config)
 
     init_db(app)
+    _run_seed()
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(usuarios_bp)

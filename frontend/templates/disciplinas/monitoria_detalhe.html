@@ -172,7 +172,7 @@
         </div>
         <div class="agenda-body">
           <div class="agenda-disc">{{ s.data_inicio.strftime('%H:%M') }} — {{ s.data_fim.strftime('%H:%M') }}</div>
-          <div class="agenda-meta">{{ s.assunto or '—' }}</div>
+          <div class="agenda-meta">Monitor: {{ s.monitor_nome }} · {{ s.assunto or '—' }}</div>
         </div>
         <span class="status-pill success">{{ s.total_presentes }} presente{{ 's' if s.total_presentes != 1 }}</span>
         <a href="{{ url_for('monitorias.sessao_detalhe', sessao_id=s.id) }}" class="button btn-outline btn-sm" style="text-decoration:none;">Ver detalhes</a>

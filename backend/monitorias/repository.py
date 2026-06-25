@@ -248,6 +248,19 @@ def deactivate_monitorias_by_disciplina(disciplina_id, motivo):
     try:
         cursor.execute(
             """
+            SELECT m.aluno_id
+            FROM monitorias m
+            JOIN usuarios u ON u.id = m.aluno_id
+            WHERE m.disciplina_id = %s
+              AND m.status = 'ATIVO'
+              AND u.papel = 'MONITOR'
+            """,
+            (disciplina_id,),
+        )
+        monitor_ids = [row[0] for row in cursor.fetchall()]
+
+        cursor.execute(
+            """
             UPDATE monitorias
             SET status = 'REJEITADO',
                 motivo_rejeicao = %s,
@@ -257,6 +270,19 @@ def deactivate_monitorias_by_disciplina(disciplina_id, motivo):
             """,
             (motivo, disciplina_id),
         )
+
+        if monitor_ids:
+            placeholders = ", ".join(["%s"] * len(monitor_ids))
+            cursor.execute(
+                f"""
+                UPDATE usuarios
+                SET papel = 'ALUNO', atualizado_em = CURRENT_TIMESTAMP
+                WHERE id IN ({placeholders})
+                  AND papel = 'MONITOR'
+                """,
+                monitor_ids,
+            )
+
         conn.commit()
     finally:
         cursor.close()
@@ -698,13 +724,15 @@ def list_sessoes_disciplina_semana(disciplina_id, semana_inicio, semana_fim):
     try:
         cursor.execute(
             """
-            SELECT id, disciplina_id, monitor_id, data_inicio, data_fim, status
-            FROM monitoria_sessoes
-            WHERE disciplina_id = %s
-              AND data_inicio >= %s
-              AND data_inicio <= %s
-              AND status = 'AGENDADA'
-            ORDER BY data_inicio ASC
+            SELECT s.id, s.disciplina_id, s.monitor_id, s.data_inicio, s.data_fim,
+                   s.status, u.nome AS monitor_nome
+            FROM monitoria_sessoes s
+            JOIN usuarios u ON u.id = s.monitor_id
+            WHERE s.disciplina_id = %s
+              AND s.data_inicio >= %s
+              AND s.data_inicio <= %s
+              AND s.status = 'AGENDADA'
+            ORDER BY s.data_inicio ASC
             """,
             (disciplina_id, f"{semana_inicio} 00:00:00", f"{semana_fim} 23:59:59"),
         )

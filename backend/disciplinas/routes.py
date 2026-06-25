@@ -35,7 +35,7 @@ def index():
     status_filter = request.args.get("status", "ATIVA")
     professor_id_filter = request.args.get("professor_id", "")
     aluno_id_filter = request.args.get("aluno_id", "")
-    min_hours_filter = request.args.get("min_hours_not_met", "")
+    min_hours_filter = request.args.get("min_hours", "")
 
     try:
         professor_id_filter_int = int(professor_id_filter) if professor_id_filter else None
@@ -57,7 +57,7 @@ def index():
         status_filter,
         professor_id_filter_int,
         aluno_id_filter_int,
-        min_hours_filter == "1",
+        min_hours_filter or None,
     )
     return render_template(
         "disciplinas/index.html",

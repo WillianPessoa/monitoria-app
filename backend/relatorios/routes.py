@@ -23,7 +23,7 @@ def index():
             disciplina_id = None
 
     painel = service.get_painel_horas(disciplina_id)
-    disciplinas = disciplinas_repository.list_disciplinas()
+    disciplinas = disciplinas_repository.list_disciplinas_ativas()
 
     return render_template(
         "relatorios/horas.html",
@@ -61,7 +61,7 @@ def _parse_periodo():
 def participacao():
     disciplina_id = request.args.get("disciplina_id", type=int)
     data_inicio, data_fim = _parse_periodo()
-    disciplinas = disciplinas_repository.list_disciplinas()
+    disciplinas = disciplinas_repository.list_disciplinas_ativas()
 
     relatorio = None
     semanas_no_periodo = 0

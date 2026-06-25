@@ -278,6 +278,7 @@ document.addEventListener('DOMContentLoaded', function(){
       }
 
       function update2hOverlaps(){
+        if(grid2h.hidden) return;
         grid2h.querySelectorAll('input[name="slots"]').forEach(function(cb){
           cb.disabled = false;
         });
