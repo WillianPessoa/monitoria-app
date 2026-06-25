@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitoria App — Apresentação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Manrope:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+/* ============================== RESET ============================== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;width:100%;overflow:hidden}
+body{font-family:"Manrope",system-ui,sans-serif;background:var(--bg);color:var(--text);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+html{--pad-y:clamp(40px,5vh,90px);--pad-x:clamp(34px,4vw,80px)}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+.grotesk{font-family:"Space Grotesk",sans-serif}
+
+/* ============================== THEMES ============================== */
+html[data-theme="light"]{
+  --bg:linear-gradient(180deg,#f4f7fb,#eaf0f7);
+  --card:#ffffff; --surface2:#f1f5fa;
+  --border:rgba(13,40,71,0.10); --border-strong:rgba(13,40,71,0.18);
+  --shadow:0 8px 24px rgba(13,40,71,0.08); --shadow-lg:0 18px 48px rgba(13,40,71,0.14);
+  --text:#0c1a2b; --muted:#5b6b7a;
+  --primary:#0e9c8e; --accent:#2b8bd6;
+  --success:#0f9d6b; --warning:#a86a00; --error:#e11d48;
+  --hairline:rgba(13,40,71,0.14); --grid:rgba(13,40,71,0.055);
+  --on-color:#ffffff;
+}
+html[data-theme="dark"]{
+  --bg:radial-gradient(1100px 700px at 15% -10%,#0a1b2e,#050d18);
+  --card:#0d1626; --surface2:#0a1322;
+  --border:rgba(125,211,252,0.10); --border-strong:rgba(125,211,252,0.22);
+  --shadow:0 8px 24px rgba(0,0,0,0.45); --shadow-lg:0 24px 60px rgba(0,0,0,0.55);
+  --text:#e6eef6; --muted:#8da0b0;
+  --primary:#4fd1c5; --accent:#7dd3fc;
+  --success:#34d399; --warning:#fbbf24; --error:#fb7185;
+  --hairline:rgba(125,211,252,0.16); --grid:rgba(125,211,252,0.05);
+  --on-color:#04121f;
+}
+body{transition:background .5s ease,color .35s ease}
+
+/* ============================== STAGE / SLIDES ============================== */
+.stage{position:fixed;inset:0}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;
+  opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity .4s ease;padding:var(--pad-y) var(--pad-x);}
+.slide.active{opacity:1;visibility:visible;pointer-events:auto}
+.slide-inner{width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;
+  position:relative;z-index:2}
+
+.kicker{font-family:"JetBrains Mono",monospace;font-size:clamp(13px,1.05vw,18px);
+  letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.sec-num{font-family:"Space Grotesk",sans-serif;font-weight:700;color:var(--primary);
+  font-size:clamp(22px,2vw,34px);opacity:.9;white-space:nowrap}
+.dot{width:.5em;height:.5em;border-radius:50%;display:inline-block;background:currentColor}
+
+/* ============================== ENTRANCE ============================== */
+@keyframes blobFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3%) scale(1.04)}}
+[data-anim]{opacity:0;transition:opacity .6s ease,transform .7s cubic-bezier(.2,.7,.2,1);
+  transition-delay:calc(var(--d,0)*1ms)}
+[data-anim="up"]{transform:translateY(30px)}
+[data-anim="right"]{transform:translateX(-34px)}
+[data-anim="pop"]{transform:scale(.92)}
+.slide.active [data-anim]{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce),print{
+  [data-anim]{transition:none !important;opacity:1 !important;transform:none !important}}
+html.no-anim [data-anim]{transition:none !important;opacity:1 !important;transform:none !important}
+html.no-anim *{animation:none !important;transition:none !important}
+
+/* ============================== HUD ============================== */
+.hud{position:fixed;z-index:50;display:flex;align-items:center;gap:10px}
+.hud.top-right{top:clamp(16px,2vh,28px);right:clamp(16px,2vw,28px)}
+.hud.bottom{left:50%;transform:translateX(-50%);bottom:clamp(14px,2vh,26px);
+  opacity:0;pointer-events:none;transition:opacity .35s ease}
+.hud.bottom.show{opacity:1;pointer-events:auto}
+.ctl{display:inline-flex;align-items:center;gap:8px;height:clamp(38px,3.2vw,48px);
+  padding:0 clamp(12px,1.1vw,16px);border-radius:999px;background:var(--card);
+  border:1px solid var(--border);box-shadow:var(--shadow);color:var(--text);
+  font-size:clamp(12px,1vw,15px);font-weight:600;
+  transition:transform .15s ease,box-shadow .2s ease,border-color .2s ease}
+.ctl:hover{transform:translateY(-1px);box-shadow:var(--shadow-lg);border-color:var(--border-strong)}
+.ctl svg{width:clamp(15px,1.3vw,19px);height:clamp(15px,1.3vw,19px)}
+.counter{font-family:"JetBrains Mono",monospace;font-size:clamp(13px,1.05vw,16px);
+  color:var(--muted);min-width:62px;text-align:center;font-weight:500}
+.navbtn{width:clamp(42px,3.4vw,52px);height:clamp(42px,3.4vw,52px);border-radius:999px;
+  background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);
+  display:inline-flex;align-items:center;justify-content:center;transition:all .15s ease}
+.navbtn:hover{transform:translateY(-1px);box-shadow:var(--shadow-lg);color:var(--primary)}
+.navbtn svg{width:clamp(19px,1.6vw,24px);height:clamp(19px,1.6vw,24px)}
+.progress{position:fixed;top:0;left:0;height:3px;background:var(--primary);z-index:60;
+  transition:width .45s cubic-bezier(.4,0,.2,1);box-shadow:0 0 12px var(--primary);width:0}
+
+/* ============================== GENERIC SECTION HEAD ============================== */
+.shead{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;
+  margin-bottom:clamp(18px,2.2vw,38px)}
+.shead .kicker{margin-bottom:12px}
+.stitle{font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:-.02em;line-height:1;
+  font-size:clamp(38px,4.8vw,84px)}
+.lead{font-size:clamp(20px,2vw,34px);line-height:1.4}
+
+/* grids */
+.col2{display:grid;grid-template-columns:1fr 1fr;gap:clamp(18px,2vw,40px);flex:1;align-content:center}
+.col3{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(16px,1.6vw,30px);flex:1;align-content:center}
+.col4{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(14px,1.3vw,24px);flex:1;align-content:center}
+@media (max-width:1000px){.col3,.col4{grid-template-columns:repeat(2,1fr)}}
+
+/* panel / card */
+.panel{background:var(--card);border:1px solid var(--border);border-radius:16px;
+  padding:clamp(18px,1.8vw,30px);box-shadow:var(--shadow);display:flex;flex-direction:column;
+  gap:clamp(10px,1vw,16px)}
+.panel.acc{border-top:8px solid var(--c,var(--primary))}
+.panel h3{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:clamp(20px,1.9vw,30px);
+  line-height:1.1;color:var(--c,var(--text))}
+.panel .ph{font-family:"JetBrains Mono",monospace;font-size:clamp(12px,1vw,15px);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--c,var(--muted));font-weight:600}
+.ulist{list-style:none;display:flex;flex-direction:column;gap:clamp(8px,.9vw,13px);margin:0;padding:0}
+.ulist li{display:flex;gap:10px;font-size:clamp(15px,1.2vw,20px);line-height:1.4;color:var(--text)}
+.ulist li::before{content:"›";color:var(--c,var(--primary));font-weight:700;flex:none}
+.muted{color:var(--muted)}
+.note{font-size:clamp(13px,1vw,16px);color:var(--muted);font-style:italic}
+.tag{font-family:"JetBrains Mono",monospace;font-size:clamp(12px,.95vw,15px);padding:7px 14px;
+  border-radius:999px;background:var(--surface2);border:1px solid var(--border);color:var(--text)}
+.tags{display:flex;gap:10px;flex-wrap:wrap}
+
+/* ============================== COVER / ENCERRAMENTO ============================== */
+.cover-inner{justify-content:space-between;height:100%}
+.cover-top{display:flex;justify-content:space-between;align-items:flex-start}
+.brand-mark{display:flex;align-items:center;gap:14px;font-weight:700;letter-spacing:-.01em;
+  font-size:clamp(18px,1.5vw,24px)}
+.brand-glyph{width:clamp(40px,3.4vw,52px);height:clamp(40px,3.4vw,52px);border-radius:14px;
+  background:var(--primary);display:grid;place-items:center;color:var(--on-color);flex:none;box-shadow:var(--shadow)}
+.brand-glyph svg{width:60%;height:60%}
+.cover-title{font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:-.025em;
+  font-size:clamp(66px,11.5vw,210px);line-height:.86}
+.cover-title .accentword{color:var(--primary)}
+.cover-sub{font-size:clamp(18px,1.7vw,30px);color:var(--muted);max-width:30ch;line-height:1.4;
+  margin-top:clamp(20px,2vw,34px)}
+.cover-meta{display:flex;gap:clamp(28px,3vw,56px);align-items:flex-end;flex-wrap:wrap}
+.cover-meta .mi{display:flex;flex-direction:column;gap:6px}
+.cover-meta .mk{font-family:"JetBrains Mono",monospace;font-size:clamp(11px,.85vw,14px);
+  letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.cover-meta .mv{font-size:clamp(16px,1.4vw,22px);font-weight:600}
+.cover-rule{height:1px;background:var(--hairline);width:100%;margin:clamp(20px,2.2vw,40px) 0}
+.slide-cover{padding:0}
+.slide-cover .cover-inner{padding:var(--pad-y) var(--pad-x);overflow:hidden}
+.slide-cover .slide-inner::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(150deg,color-mix(in oklab,var(--primary) 22%,transparent),transparent 50%)}
+.cover-blob{position:absolute;right:-6%;top:-14%;width:48vw;height:48vw;border-radius:50%;
+  background:radial-gradient(circle at 32% 32%,var(--accent),transparent 68%);
+  opacity:.55;filter:blur(6px);pointer-events:none;z-index:1;animation:blobFloat 9s ease-in-out infinite}
+
+/* ============================== TEAM ============================== */
+.team-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:clamp(24px,2.6vw,46px)}
+.team-title{font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:-.02em;line-height:1;font-size:clamp(40px,5.2vw,88px)}
+.team-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,1.5vw,26px);align-content:center}
+.member{position:relative;border-radius:8px;padding:clamp(18px,1.9vw,32px);box-shadow:var(--shadow);
+  display:flex;flex-direction:column;gap:clamp(10px,1.1vw,18px);overflow:hidden;
+  background:color-mix(in oklab,var(--c) 16%,var(--card));
+  border:1px solid color-mix(in oklab,var(--c) 32%,transparent);border-top:10px solid var(--c);
+  transition:transform .25s ease,box-shadow .25s ease}
+.member:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.m-avatar{width:clamp(54px,4.6vw,80px);height:clamp(54px,4.6vw,80px);border-radius:50%;display:grid;
+  place-items:center;font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(20px,1.9vw,32px);
+  background:var(--c);color:var(--on-color)}
+.m-name{font-family:"Space Grotesk",sans-serif;font-weight:600;letter-spacing:-.01em;font-size:clamp(22px,2.1vw,34px);line-height:1.1}
+.m-role{display:inline-flex;align-items:center;gap:8px;font-size:clamp(14px,1.2vw,20px);font-weight:600;color:var(--c)}
+.m-role .dot{background:var(--c)}
+.m-body{display:contents}
+@media (max-width:1000px){.team-grid{grid-template-columns:repeat(2,1fr)!important}}
+
+/* ============================== PILLAR ============================== */
+.pillar-inner{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(32px,4vw,76px);align-items:center;height:100%}
+.pillar-text{display:flex;flex-direction:column;gap:clamp(14px,1.6vw,26px);justify-content:center}
+.pillar-index{display:flex;align-items:baseline;gap:14px}
+.pillar-index .big{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(48px,5.4vw,96px);color:var(--primary);line-height:1}
+.pillar-index .tot{font-family:"JetBrains Mono",monospace;color:var(--muted);font-size:clamp(15px,1.2vw,20px);letter-spacing:.08em}
+.pillar-title{font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:-.02em;line-height:1.02;font-size:clamp(48px,6.4vw,120px)}
+.pillar-desc{font-size:clamp(17px,1.5vw,26px);color:var(--muted);line-height:1.5;max-width:32ch}
+.pillar-art{display:flex;align-items:center;justify-content:center;height:100%;min-height:0}
+.pillar-art svg{width:100%;max-width:clamp(320px,34vw,560px);height:auto;overflow:visible}
+.hub-line{stroke:var(--accent);stroke-width:2;stroke-dasharray:7 9;animation:dash 2.4s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-64}}
+.hub-center{transform-box:fill-box;transform-origin:center;animation:pulse 3.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.slide-pillar .slide-inner::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(120deg,color-mix(in oklab,var(--primary) 18%,transparent),transparent 55%)}
+.pillar-ghost{position:absolute;right:-2%;bottom:-14%;font-family:"Space Grotesk",sans-serif;font-weight:700;
+  font-size:46vw;line-height:.7;color:var(--primary);opacity:.10;pointer-events:none;z-index:0}
+
+/* ============================== TIMELINE ============================== */
+.tl-inner{display:flex;flex-direction:column;justify-content:flex-start;gap:clamp(12px,2vh,28px)}
+.slide-timeline .slide-inner::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(120deg,color-mix(in oklab,var(--primary) 14%,transparent),transparent 55%)}
+.tl-ghost{position:absolute;right:-1%;bottom:-18%;font-family:"Space Grotesk",sans-serif;font-weight:700;
+  font-size:42vw;line-height:.7;color:var(--primary);opacity:.08;pointer-events:none;z-index:0}
+.tl-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px}
+.tl-title{font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:-.02em;font-size:clamp(34px,4.4vw,72px);line-height:1}
+.tl-track{position:relative;display:flex;justify-content:space-between;align-items:flex-start;padding:0 1.5%;margin-top:clamp(8px,1.5vh,20px)}
+.tl-line,.tl-fill{position:absolute;top:clamp(22px,2vw,30px);height:3px;border-radius:3px}
+.tl-line{left:3%;right:3%;background:var(--border-strong)}
+.tl-fill{left:3%;width:0;background:var(--primary);transition:width .5s cubic-bezier(.4,0,.2,1)}
+.tl-node{display:flex;flex-direction:column;align-items:center;gap:10px;position:relative;z-index:2;flex:1;background:none;text-align:center}
+.tl-c{width:clamp(44px,4vw,60px);height:clamp(44px,4vw,60px);border-radius:50%;display:grid;place-items:center;font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(15px,1.4vw,22px);background:var(--card);border:2.5px solid var(--border-strong);color:var(--muted);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.tl-node.done .tl-c{border-color:var(--primary);color:var(--primary)}
+.tl-node.active .tl-c{background:var(--primary);border-color:var(--primary);color:var(--on-color);transform:scale(1.28);box-shadow:0 0 0 9px color-mix(in oklab,var(--primary) 18%,transparent)}
+.tl-nl{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:clamp(13px,1.1vw,18px);color:var(--muted);transition:color .3s}
+.tl-nd{font-family:"JetBrains Mono",monospace;font-size:clamp(10px,.8vw,13px);color:var(--muted);opacity:.7}
+.tl-node.active .tl-nl,.tl-node.done .tl-nl{color:var(--text)}
+.tl-detail{flex:1;position:relative;display:flex;align-items:center;min-height:0}
+.tl-hint{font-family:"JetBrains Mono",monospace;font-size:clamp(14px,1.3vw,20px);color:var(--muted);letter-spacing:.04em;display:flex;align-items:center;gap:12px}
+.tl-hint .dot{background:var(--primary)}
+.tl-panel{display:none}
+.tl-panel.on{display:block;animation:tlUp .4s ease both}
+@keyframes tlUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.tl-pk{font-family:"JetBrains Mono",monospace;font-size:clamp(13px,1.1vw,17px);letter-spacing:.1em;text-transform:uppercase;color:var(--primary);margin-bottom:clamp(8px,1vw,14px)}
+.tl-pt{font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:-.02em;line-height:1.02;font-size:clamp(34px,5vw,84px);margin-bottom:clamp(12px,1.5vw,24px)}
+.tl-pd{font-size:clamp(17px,1.5vw,26px);color:var(--muted);line-height:1.5;max-width:42ch;margin-bottom:clamp(14px,1.6vw,24px)}
+
+/* ============================== LIVE DEMO ============================== */
+.slide-livedemo .slide-inner{justify-content:flex-start;gap:14px}
+.demo-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;padding:12px 14px;
+  background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow)}
+.credgrp{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:6px 8px 6px 12px}
+.credrole{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(13px,1.1vw,17px);color:var(--c,var(--primary))}
+.copybtn{font-family:"JetBrains Mono",monospace;font-size:clamp(11px,.95vw,14px);font-weight:600;display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border-radius:8px;background:var(--card);border:1px solid var(--border-strong);color:var(--text);transition:all .15s ease}
+.copybtn:hover{border-color:var(--c,var(--primary));color:var(--c,var(--primary))}
+.copybtn.ok{background:var(--success)!important;color:#fff!important;border-color:var(--success)!important}
+.tb-sep{width:1px;align-self:stretch;background:var(--border);margin:0 2px}
+.routebtn{font-family:"Manrope",sans-serif;font-size:clamp(12px,1vw,15px);font-weight:600;padding:7px 13px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);transition:all .15s ease}
+.routebtn:hover{color:var(--primary);border-color:var(--primary)}
+.routebtn.primary{background:var(--primary);color:var(--on-color);border-color:var(--primary)}
+.routebtn.primary:hover{filter:brightness(1.05);color:var(--on-color)}
+.demo-stage{position:relative;flex:1;display:flex;min-height:0}
+.demo-iframe{flex:1;width:100%;border:1px solid var(--border-strong);border-radius:14px;background:#fff;box-shadow:var(--shadow-lg);min-height:0}
+.demo-overlay-btn{position:absolute;top:12px;right:12px;z-index:5;font-family:"Manrope",sans-serif;font-weight:700;font-size:clamp(13px,1.1vw,16px);padding:10px 16px;border-radius:10px;background:var(--primary);color:var(--on-color);box-shadow:var(--shadow-lg);border:none;cursor:pointer}
+.demo-overlay-btn:hover{filter:brightness(1.06)}
+
+/* ============================== GITHUB ISSUE ============================== */
+.gh-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(16px,1.8vw,32px);flex:1;min-height:0}
+.gh-card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.gh-top{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.gh-badge{font-family:"JetBrains Mono",monospace;font-size:clamp(11px,.9vw,14px);font-weight:600;padding:4px 10px;border-radius:999px}
+.gh-open{background:color-mix(in oklab,var(--success) 18%,transparent);color:var(--success);border:1px solid color-mix(in oklab,var(--success) 40%,transparent)}
+.gh-num{font-family:"JetBrains Mono",monospace;color:var(--muted);font-size:clamp(12px,1vw,15px)}
+.gh-ttl{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(15px,1.3vw,22px)}
+.gh-body{padding:clamp(12px,1.4vw,22px);overflow:auto;display:flex;flex-direction:column;gap:clamp(8px,1vw,14px)}
+.gh-sec{font-family:"JetBrains Mono",monospace;font-size:clamp(11px,.95vw,14px);letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.gh-li{display:flex;gap:8px;font-size:clamp(13px,1.1vw,18px);line-height:1.4}
+.gh-li .ck{color:var(--success);flex:none;font-weight:700}
+.gh-code{background:var(--surface2);border-left:4px solid var(--primary);border-radius:8px;padding:12px 14px;font-family:"JetBrains Mono",monospace;font-size:clamp(12px,1.05vw,17px);line-height:1.7;white-space:pre-wrap}
+.gh-comment{display:flex;flex-direction:column;gap:0;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+.gh-chead{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border)}
+.gh-av{width:32px;height:32px;border-radius:50%;background:var(--primary);color:var(--on-color);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+.gh-au{font-weight:600;font-size:clamp(13px,1.1vw,18px)}
+.gh-cbody{padding:clamp(12px,1.3vw,20px);font-size:clamp(13px,1.1vw,18px);line-height:1.5}
+.gh-flag{color:var(--error);font-weight:700}
+.gh-pass{color:var(--success);font-weight:700}
+
+/* ============================== PROBLEM (slide 3) ============================== */
+.slide-prob .slide-inner{justify-content:flex-start}
+.prob-row{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(20px,3vw,60px);
+  margin:clamp(16px,3vh,46px) 0;flex:1;align-items:center}
+.prob-item{position:relative;display:flex;flex-direction:column;align-items:center;
+  gap:clamp(12px,1.4vw,22px);text-align:center}
+.prob-logo{width:clamp(110px,13vw,190px);height:clamp(110px,13vw,190px)}
+.prob-logo svg{width:100%;height:100%;display:block}
+.prob-badge{position:absolute;top:-6px;right:16%;width:clamp(34px,3vw,46px);height:clamp(34px,3vw,46px);
+  border-radius:50%;background:var(--error);color:#fff;display:grid;place-items:center;font-weight:700;
+  font-size:clamp(18px,1.6vw,24px);box-shadow:var(--shadow)}
+.prob-name{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(22px,2.2vw,38px)}
+.prob-cap{font-size:clamp(15px,1.3vw,22px);color:var(--error);font-weight:600}
+.prob-cons{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.prob-cons .lbl{font-family:"JetBrains Mono",monospace;font-size:clamp(12px,1vw,15px);
+  text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-right:6px}
+
+/* ============================== QSCRUM FLOW ============================== */
+.flow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:clamp(8px,1vw,16px)}
+.flow .step{background:var(--surface2);border:1px solid var(--border-strong);border-radius:12px;
+  padding:12px 22px;font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:clamp(16px,1.4vw,24px)}
+.flow .step.hi{background:var(--primary);color:var(--on-color);border-color:var(--primary)}
+.flow .arr{color:var(--primary);font-size:clamp(20px,1.8vw,28px);font-weight:700}
+
+/* ============================== STATS / BARS ============================== */
+.statrow{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(16px,2vw,32px);margin-bottom:clamp(20px,2.6vw,44px)}
+.statbox{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:clamp(16px,2vw,32px);text-align:center;box-shadow:var(--shadow)}
+.statbox .n{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(44px,6vw,108px);line-height:1;color:var(--c,var(--primary))}
+.statbox .l{font-size:clamp(14px,1.1vw,18px);color:var(--muted);margin-top:8px}
+.bars{display:flex;flex-direction:column;gap:clamp(9px,1.1vw,15px)}
+.bar{display:flex;align-items:center;gap:16px}
+.bar .bl{width:clamp(150px,16vw,280px);font-size:clamp(13px,1.1vw,18px);color:var(--muted);flex:none}
+.bar .bt{flex:1;height:12px;background:var(--surface2);border-radius:8px;overflow:hidden}
+.bar .bf{height:100%;width:0;border-radius:8px;background:var(--c,var(--primary));transition:width 1s cubic-bezier(.4,0,.2,1) .1s}
+.bar .bn{width:46px;text-align:right;font-family:"JetBrains Mono",monospace;font-size:clamp(13px,1.1vw,17px);color:var(--text);flex:none}
+
+/* ============================== BDD ============================== */
+.bdd{background:var(--surface2);border:1px solid var(--border);border-left:6px solid var(--primary);
+  border-radius:14px;padding:clamp(20px,2vw,34px);font-family:"JetBrains Mono",monospace;
+  font-size:clamp(15px,1.25vw,22px);line-height:1.85;white-space:pre-wrap;overflow:auto}
+.bk{color:var(--accent);font-weight:600}
+.bv{color:var(--success)}
+
+/* ============================== DEMO ============================== */
+.slide-demo .slide-inner{justify-content:stretch}
+.demoframe{flex:1;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--border-strong);
+  border-radius:16px;overflow:hidden;box-shadow:var(--shadow-lg);min-height:0}
+.demobar{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.dots{display:flex;gap:7px;flex:none}
+.dots i{width:12px;height:12px;border-radius:50%;background:var(--border-strong);display:block}
+.demourl{flex:1;font-family:"JetBrains Mono",monospace;font-size:clamp(12px,1vw,16px);color:var(--muted);
+  background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.demopill{flex:none;font-family:"JetBrains Mono",monospace;font-size:clamp(11px,.9vw,14px);font-weight:600;
+  padding:6px 12px;border-radius:999px;background:color-mix(in oklab,var(--c,var(--primary)) 16%,transparent);
+  color:var(--c,var(--primary));border:1px solid color-mix(in oklab,var(--c,var(--primary)) 35%,transparent)}
+.demobody{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(12px,1.4vw,22px);
+  text-align:center;padding:clamp(24px,3vw,60px);min-height:0}
+.demobody .dicon{width:clamp(56px,5vw,84px);height:clamp(56px,5vw,84px);color:var(--c,var(--primary))}
+.demobody .dt{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(28px,3.4vw,56px);line-height:1.05}
+.demobody .dd{font-size:clamp(16px,1.4vw,24px);color:var(--muted);max-width:46ch;line-height:1.45}
+
+/* ============================== CENTER (transição/encerramento) ============================== */
+.center-slide .slide-inner{align-items:center;justify-content:center;text-align:center}
+.tr-kicker{font-family:"JetBrains Mono",monospace;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--primary);font-size:clamp(13px,1.1vw,18px);margin-bottom:clamp(14px,1.6vw,24px)}
+.big-tr{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(56px,9vw,170px);
+  line-height:.92;letter-spacing:-.02em}
+.creds{display:flex;flex-direction:column;gap:clamp(8px,1vw,14px);margin-top:clamp(20px,2.4vw,40px);align-items:center}
+.cred{display:flex;gap:16px;align-items:center;font-size:clamp(14px,1.3vw,22px)}
+.cred .cr{font-weight:700;min-width:120px;text-align:right;color:var(--c,var(--primary))}
+.cred .ce{font-family:"JetBrains Mono",monospace}
+.chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:clamp(16px,2vw,30px)}
+.chip{font-family:"JetBrains Mono",monospace;font-size:clamp(12px,1vw,16px);padding:8px 16px;border-radius:999px;
+  border:1px solid var(--border);background:var(--surface2);color:var(--text)}
+.endlinks{display:flex;gap:clamp(28px,3vw,60px);justify-content:center;margin-top:clamp(18px,2vw,34px);flex-wrap:wrap}
+.endlinks .mk{font-family:"JetBrains Mono",monospace;font-size:clamp(11px,.85vw,14px);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px}
+.endlinks .mv{font-family:"JetBrains Mono",monospace;font-size:clamp(14px,1.2vw,18px);color:var(--primary)}
+
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<div class="hud top-right">
+  <button class="ctl" id="themeToggle" aria-label="Alternar tema">
+    <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+    <span id="themeLabel">Escuro</span>
+  </button>
+</div>
+
+<div class="hud bottom">
+  <button class="navbtn" id="prevBtn" aria-label="Anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>
+  <div class="counter mono" id="counter">01 / 29</div>
+  <button class="navbtn" id="nextBtn" aria-label="Próximo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button>
+</div>
+
+<div class="stage" id="stage">
+
+  <!-- ====== 1 · CAPA ====== -->
+  <section class="slide slide-cover active">
+    <div class="slide-inner cover-inner">
+      <div class="cover-blob"></div>
+      <div class="cover-top" data-anim="up" style="--d:0">
+        <div class="brand-mark">
+          <span class="brand-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9l8-5 8 5v10"></path><path d="M9 19v-6h6v6"></path></svg></span>
+          <span>Monitoria<span style="color:var(--primary)">App</span></span>
+        </div>
+      </div>
+      <div>
+        <div class="kicker" data-anim="up" style="--d:80;margin-bottom:clamp(14px,1.4vw,24px)">Apresentação final · Projeto de grupo</div>
+        <h1 class="cover-title" data-anim="up" style="--d:140">Monitoria<br><span class="accentword">acadêmica</span>, do jeito certo.</h1>
+        <p class="cover-sub" data-anim="up" style="--d:260">Sistema web de gestão de monitoria — Flask · MySQL · Jinja2, em produção no Railway.</p>
+      </div>
+      <div data-anim="up" style="--d:360">
+        <div class="cover-rule"></div>
+        <div class="cover-meta">
+          <div class="mi"><span class="mk">Disciplina</span><span class="mv">Oficina de Eng. de Software</span></div>
+          <div class="mi"><span class="mk">Processo</span><span class="mv">QScrum</span></div>
+          <div class="mi"><span class="mk">Status</span><span class="mv" style="color:var(--success)">● Em produção</span></div>
+          <div class="mi"><span class="mk">Sprints</span><span class="mv">S0 → S5</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 2 · TIME ====== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="team-head">
+        <div>
+          <div class="kicker" data-anim="up" style="--d:0;margin-bottom:14px">A equipe · QScrum</div>
+          <h2 class="team-title" data-anim="up" style="--d:60">Quem<br>construiu.</h2>
+        </div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 01</div>
+      </div>
+      <div class="team-grid">
+        <div class="member" data-anim="pop" style="--c:#2b8bd6;--d:140"><div class="m-avatar">BT</div><div class="m-body"><div class="m-name">Bruna &amp; Thais</div><div class="m-role"><span class="dot"></span>Product Owner</div></div></div>
+        <div class="member" data-anim="pop" style="--c:#0e9c8e;--d:200"><div class="m-avatar">JP</div><div class="m-body"><div class="m-name">João Pedro Bianco</div><div class="m-role"><span class="dot"></span>Scrum Master</div></div></div>
+        <div class="member" data-anim="pop" style="--c:#0f9d6b;--d:260"><div class="m-avatar">WG</div><div class="m-body"><div class="m-name">Willian G. Pessoa</div><div class="m-role"><span class="dot"></span>Quality Manager</div></div></div>
+        <div class="member" data-anim="pop" style="--c:#e11d48;--d:320"><div class="m-avatar">PC</div><div class="m-body"><div class="m-name">Pedro Chaves</div><div class="m-role"><span class="dot"></span>Desenvolvedor</div></div></div>
+        <div class="member" data-anim="pop" style="--c:#7c5cff;--d:380"><div class="m-avatar">GR</div><div class="m-body"><div class="m-name">Gabriel Benevides</div><div class="m-role"><span class="dot"></span>Desenvolvedor</div></div></div>
+        <div class="member" data-anim="pop" style="--c:#a86a00;--d:440"><div class="m-avatar">GB</div><div class="m-body"><div class="m-name">Gustavo Blandy</div><div class="m-role"><span class="dot"></span>Desenvolvedor</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 3 · PROBLEMA ====== -->
+  <section class="slide slide-prob">
+    <div class="slide-inner">
+      <div class="shead">
+        <div><div class="kicker" data-anim="up">Bloco 1 · Contexto</div><h2 class="stitle" data-anim="up" style="--d:60">Como funciona hoje</h2></div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 02</div>
+      </div>
+      <div class="prob-row">
+        <div class="prob-item" data-anim="pop" style="--d:140">
+          <div class="prob-badge">✕</div>
+          <div class="prob-logo"><svg viewBox="0 0 64 64" aria-label="WhatsApp"><circle cx="32" cy="32" r="30" fill="#25D366"/><path d="M32 16c-8.8 0-16 7-16 15.7 0 2.8.8 5.5 2.2 7.8L16 48l8.8-2.3c2.2 1.2 4.7 1.8 7.2 1.8h.1c8.8 0 16-7 16-15.8C48.3 23 41 16 32 16z" fill="#fff"/><path d="M26.2 24.3c-.4-.9-.7-.9-1.1-.9h-.9c-.3 0-.9.1-1.3.6-.5.5-1.7 1.6-1.7 3.9 0 2.3 1.7 4.6 2 4.9.2.3 3.4 5.4 8.4 7.3 4.1 1.6 5 1.3 5.9 1.2.9-.1 2.8-1.1 3.2-2.3.4-1.1.4-2.1.3-2.3-.1-.2-.4-.3-.9-.6-.5-.2-2.8-1.4-3.3-1.5-.4-.2-.7-.2-1 .2-.3.5-1.1 1.4-1.3 1.6-.2.3-.5.3-.9.1-.5-.2-2-.8-3.9-2.4-1.4-1.3-2.4-2.8-2.7-3.3-.2-.5 0-.7.2-.9.2-.2.5-.5.7-.8.2-.2.3-.4.5-.7.1-.3.1-.5 0-.7-.1-.2-1-2.5-1.4-3.4z" fill="#25D366"/></svg></div>
+          <div class="prob-name">WhatsApp</div>
+          <div class="prob-cap">agendamentos que se perdem</div>
+        </div>
+        <div class="prob-item" data-anim="pop" style="--d:220">
+          <div class="prob-badge">✕</div>
+          <div class="prob-logo"><svg viewBox="0 0 64 64" aria-label="Excel"><rect x="10" y="12" width="44" height="40" rx="6" fill="#1D6F42"/><rect x="32" y="12" width="22" height="40" rx="0" fill="#fff" opacity=".14"/><path d="M19 23l8 9-8 9h6.5l5-6 5 6H42l-8-9 8-9h-6.5l-5 6-5-6z" fill="#fff"/></svg></div>
+          <div class="prob-name">Planilha Excel</div>
+          <div class="prob-cap">presença no manual</div>
+        </div>
+        <div class="prob-item" data-anim="pop" style="--d:300">
+          <div class="prob-badge">✕</div>
+          <div class="prob-logo"><svg viewBox="0 0 64 64" aria-label="Boca a boca"><path d="M8 14h28a6 6 0 0 1 6 6v10a6 6 0 0 1-6 6H22l-9 7v-7h-5a6 6 0 0 1-6-6V20a6 6 0 0 1 6-6z" fill="var(--accent)"/><path d="M40 26h12a6 6 0 0 1 6 6v8a6 6 0 0 1-6 6h-1v6l-7-6h-4a6 6 0 0 1-6-6v-2" fill="none" stroke="var(--primary)" stroke-width="3"/></svg></div>
+          <div class="prob-name">Boca a boca</div>
+          <div class="prob-cap">sem alcance garantido</div>
+        </div>
+      </div>
+      <div class="prob-cons" data-anim="up" style="--d:380">
+        <span class="lbl">O que se perde</span>
+        <span class="chip">Aluno sem confirmação</span>
+        <span class="chip">Sem histórico</span>
+        <span class="chip">Professor sem visibilidade</span>
+        <span class="chip">Monitor sem controle</span>
+        <span class="chip">Admin sem dados</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 4 · PROPOSTA (ABERTURA) ====== -->
+  <section class="slide slide-pillar">
+    <div class="slide-inner pillar-inner">
+      <div class="pillar-text">
+        <div class="kicker" data-anim="up">Bloco 1 · A proposta</div>
+        <h2 class="pillar-title" data-anim="up" style="--d:80;font-size:clamp(40px,5vw,96px)">Tudo num<br>só lugar.</h2>
+        <p class="pillar-desc" data-anim="up" style="--d:180;font-size:clamp(19px,1.7vw,30px);max-width:24ch">Um sistema web que centraliza agendamentos, registros e relatórios de monitoria.</p>
+        <div class="tags" data-anim="up" style="--d:260"><span class="tag">Admin</span><span class="tag">Professor</span><span class="tag">Monitor</span><span class="tag">Aluno</span></div>
+      </div>
+      <div class="pillar-art" data-anim="pop" style="--d:200">
+        <svg viewBox="0 0 400 360" fill="none" aria-hidden="true">
+          <line class="hub-line" x1="200" y1="180" x2="80" y2="70"></line>
+          <line class="hub-line" x1="200" y1="180" x2="330" y2="80"></line>
+          <line class="hub-line" x1="200" y1="180" x2="70" y2="290"></line>
+          <line class="hub-line" x1="200" y1="180" x2="335" y2="285"></line>
+          <g><circle cx="80" cy="70" r="34" fill="color-mix(in oklab,var(--accent) 18%,transparent)" stroke="var(--accent)" stroke-width="2.5"></circle><text x="80" y="75" text-anchor="middle" fill="var(--accent)" font-size="13" font-family="Manrope,sans-serif" font-weight="700">Admin</text></g>
+          <g><circle cx="330" cy="80" r="34" fill="color-mix(in oklab,var(--success) 18%,transparent)" stroke="var(--success)" stroke-width="2.5"></circle><text x="330" y="78" text-anchor="middle" fill="var(--success)" font-size="12" font-family="Manrope,sans-serif" font-weight="700">Prof.</text></g>
+          <g><circle cx="70" cy="290" r="34" fill="color-mix(in oklab,var(--warning) 18%,transparent)" stroke="var(--warning)" stroke-width="2.5"></circle><text x="70" y="294" text-anchor="middle" fill="var(--warning)" font-size="12" font-family="Manrope,sans-serif" font-weight="700">Monitor</text></g>
+          <g><circle cx="335" cy="285" r="34" fill="color-mix(in oklab,var(--error) 18%,transparent)" stroke="var(--error)" stroke-width="2.5"></circle><text x="335" y="290" text-anchor="middle" fill="var(--error)" font-size="13" font-family="Manrope,sans-serif" font-weight="700">Aluno</text></g>
+          <g class="hub-center"><rect x="155" y="135" width="90" height="90" rx="22" fill="var(--primary)"></rect><path d="M178 205v-34l22-15 22 15v34" stroke="var(--on-color)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></g>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 5 · PILAR 01 — AGENDA ONLINE ====== -->
+  <section class="slide slide-pillar">
+    <div class="slide-inner pillar-inner">
+      <div class="pillar-ghost">01</div>
+      <div class="pillar-text">
+        <div class="pillar-index" data-anim="up"><span class="big">01</span><span class="tot mono">/ 04 · Pilares</span></div>
+        <h2 class="pillar-title" data-anim="up" style="--d:90">Agenda<br>online.</h2>
+        <p class="pillar-desc" data-anim="up" style="--d:180">O monitor cria horários; o aluno agenda em poucos cliques; confirmação na hora, sem "achismo".</p>
+        <div class="tags" data-anim="up" style="--d:260"><span class="tag">Slots</span><span class="tag">Agendamento</span><span class="tag">Confirmação</span></div>
+      </div>
+      <div class="pillar-art" data-anim="pop" style="--d:200">
+        <svg viewBox="0 0 400 320" aria-hidden="true">
+          <rect x="30" y="40" width="340" height="250" rx="16" fill="var(--card)" stroke="var(--border-strong)" stroke-width="2"/>
+          <rect x="30" y="40" width="340" height="46" rx="16" fill="var(--primary)"/>
+          <rect x="30" y="70" width="340" height="16" fill="var(--primary)"/>
+          <circle cx="58" cy="63" r="6" fill="var(--on-color)"/><circle cx="80" cy="63" r="6" fill="var(--on-color)"/>
+          <g stroke="var(--border)" stroke-width="1.5">
+            <line x1="30" y1="130" x2="370" y2="130"/><line x1="30" y1="180" x2="370" y2="180"/><line x1="30" y1="230" x2="370" y2="230"/>
+            <line x1="115" y1="86" x2="115" y2="290"/><line x1="200" y1="86" x2="200" y2="290"/><line x1="285" y1="86" x2="285" y2="290"/>
+          </g>
+          <rect x="120" y="135" width="75" height="40" rx="8" fill="color-mix(in oklab,var(--primary) 70%,var(--card))"/>
+          <rect x="205" y="185" width="75" height="40" rx="8" fill="color-mix(in oklab,var(--accent) 22%,transparent)" stroke="var(--accent)" stroke-width="2"/>
+          <rect x="35" y="235" width="75" height="40" rx="8" fill="color-mix(in oklab,var(--accent) 22%,transparent)" stroke="var(--accent)" stroke-width="2"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 6 · PILAR 02 — CONTROLE DE PRESENÇA ====== -->
+  <section class="slide slide-pillar">
+    <div class="slide-inner pillar-inner">
+      <div class="pillar-ghost">02</div>
+      <div class="pillar-text">
+        <div class="pillar-index" data-anim="up"><span class="big">02</span><span class="tot mono">/ 04 · Pilares</span></div>
+        <h2 class="pillar-title" data-anim="up" style="--d:90">Controle de<br>presença.</h2>
+        <p class="pillar-desc" data-anim="up" style="--d:180">O monitor registra quem compareceu e o assunto tratado em cada atendimento.</p>
+        <div class="tags" data-anim="up" style="--d:260"><span class="tag">Presença</span><span class="tag">Assunto</span><span class="tag">Sessão</span></div>
+      </div>
+      <div class="pillar-art" data-anim="pop" style="--d:200">
+        <svg viewBox="0 0 400 320" aria-hidden="true">
+          <rect x="40" y="30" width="320" height="260" rx="16" fill="var(--card)" stroke="var(--border-strong)" stroke-width="2"/>
+          <g>
+            <circle cx="80" cy="80" r="18" fill="var(--success)"/><path d="M72 80l6 6 10-12" stroke="var(--on-color)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="112" y="72" width="210" height="16" rx="8" fill="var(--surface2)"/>
+          </g>
+          <g>
+            <circle cx="80" cy="140" r="18" fill="var(--success)"/><path d="M72 140l6 6 10-12" stroke="var(--on-color)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="112" y="132" width="170" height="16" rx="8" fill="var(--surface2)"/>
+          </g>
+          <g>
+            <circle cx="80" cy="200" r="18" fill="none" stroke="var(--border-strong)" stroke-width="3"/>
+            <rect x="112" y="192" width="190" height="16" rx="8" fill="var(--surface2)"/>
+          </g>
+          <g>
+            <circle cx="80" cy="260" r="18" fill="var(--success)"/><path d="M72 260l6 6 10-12" stroke="var(--on-color)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="112" y="252" width="150" height="16" rx="8" fill="var(--surface2)"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 7 · PILAR 03 — RELATÓRIOS ====== -->
+  <section class="slide slide-pillar">
+    <div class="slide-inner pillar-inner">
+      <div class="pillar-ghost">03</div>
+      <div class="pillar-text">
+        <div class="pillar-index" data-anim="up"><span class="big">03</span><span class="tot mono">/ 04 · Pilares</span></div>
+        <h2 class="pillar-title" data-anim="up" style="--d:90">Relatórios<br>automáticos.</h2>
+        <p class="pillar-desc" data-anim="up" style="--d:180">Admin vê horas por monitor; professor vê histórico e participação — sem planilha manual.</p>
+        <div class="tags" data-anim="up" style="--d:260"><span class="tag">Horas</span><span class="tag">Participação</span><span class="tag">Histórico</span></div>
+      </div>
+      <div class="pillar-art" data-anim="pop" style="--d:200">
+        <svg viewBox="0 0 400 320" aria-hidden="true">
+          <line x1="50" y1="270" x2="370" y2="270" stroke="var(--border-strong)" stroke-width="2"/>
+          <rect x="70" y="170" width="46" height="100" rx="8" fill="color-mix(in oklab,var(--accent) 55%,var(--card))"/>
+          <rect x="140" y="120" width="46" height="150" rx="8" fill="color-mix(in oklab,var(--primary) 70%,var(--card))"/>
+          <rect x="210" y="200" width="46" height="70" rx="8" fill="color-mix(in oklab,var(--success) 55%,var(--card))"/>
+          <rect x="280" y="90" width="46" height="180" rx="8" fill="var(--primary)"/>
+          <circle cx="93" cy="150" r="5" fill="var(--accent)"/><circle cx="163" cy="100" r="5" fill="var(--primary)"/><circle cx="233" cy="180" r="5" fill="var(--success)"/><circle cx="303" cy="70" r="5" fill="var(--primary)"/>
+          <path d="M93 150 L163 100 L233 180 L303 70" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="5 5"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 8 · PILAR 04 — FLUXO DE INDICAÇÃO ====== -->
+  <section class="slide slide-pillar">
+    <div class="slide-inner pillar-inner">
+      <div class="pillar-ghost">04</div>
+      <div class="pillar-text">
+        <div class="pillar-index" data-anim="up"><span class="big">04</span><span class="tot mono">/ 04 · Pilares</span></div>
+        <h2 class="pillar-title" data-anim="up" style="--d:90">Fluxo de<br>indicação.</h2>
+        <p class="pillar-desc" data-anim="up" style="--d:180">Professor indica um aluno, admin aprova, monitor começa — formal e rastreável.</p>
+        <div class="tags" data-anim="up" style="--d:260"><span class="tag">Professor</span><span class="tag">Admin</span><span class="tag">Monitor</span></div>
+      </div>
+      <div class="pillar-art" data-anim="pop" style="--d:200">
+        <svg viewBox="0 0 400 320" aria-hidden="true">
+          <g>
+            <rect x="60" y="40" width="280" height="64" rx="12" fill="color-mix(in oklab,var(--success) 16%,var(--card))" stroke="var(--success)" stroke-width="2"/>
+            <text x="200" y="78" text-anchor="middle" fill="var(--success)" font-size="18" font-family="Space Grotesk,sans-serif" font-weight="700">Professor indica</text>
+          </g>
+          <path d="M200 104 L200 128" stroke="var(--muted)" stroke-width="2.5" marker-end="url(#a)"/>
+          <g>
+            <rect x="60" y="128" width="280" height="64" rx="12" fill="color-mix(in oklab,var(--primary) 16%,var(--card))" stroke="var(--primary)" stroke-width="2"/>
+            <text x="200" y="166" text-anchor="middle" fill="var(--primary)" font-size="18" font-family="Space Grotesk,sans-serif" font-weight="700">Admin aprova</text>
+          </g>
+          <path d="M200 192 L200 216" stroke="var(--muted)" stroke-width="2.5" marker-end="url(#a)"/>
+          <g>
+            <rect x="60" y="216" width="280" height="64" rx="12" fill="color-mix(in oklab,var(--accent) 16%,var(--card))" stroke="var(--accent)" stroke-width="2"/>
+            <text x="200" y="254" text-anchor="middle" fill="var(--accent)" font-size="18" font-family="Space Grotesk,sans-serif" font-weight="700">Monitor começa</text>
+          </g>
+          <defs><marker id="a" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0,9 3.5,0 7" fill="var(--muted)"/></marker></defs>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 9 · QSCRUM ====== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="shead">
+        <div><div class="kicker" data-anim="up">Bloco 2 · Processo</div><h2 class="stitle" data-anim="up" style="--d:60">QScrum</h2></div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 03</div>
+      </div>
+      <div class="col2">
+        <div class="panel acc" data-anim="up" style="--d:140;--c:var(--primary)">
+          <div class="ph">O que é</div>
+          <ul class="ulist">
+            <li>Scrum + um papel a mais: o <strong>Quality Manager</strong>.</li>
+            <li>Mesmo ritmo: sprints semanais, daily assíncrona, planning e review.</li>
+            <li>Cada US tem critério BDD escrito <em>antes</em> do código.</li>
+          </ul>
+          <div class="flow"><span class="step">Dev entrega</span><span class="arr">→</span><span class="step hi">QM valida BDD</span><span class="arr">→</span><span class="step">Merge</span></div>
+        </div>
+        <div class="panel acc" data-anim="up" style="--d:220;--c:var(--accent)">
+          <div class="ph" style="--c:var(--accent)">Por que muda o jogo</div>
+          <ul class="ulist" style="--c:var(--accent)">
+            <li>QM valida <strong>independente</strong> de quem implementou.</li>
+            <li>Bug pego antes do merge não chega em produção.</li>
+            <li>Testes automatizados são condição de aprovação, não opcional.</li>
+            <li>BDD vira linguagem comum entre PO, Dev e QM.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 10 · PAPÉIS ====== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="shead">
+        <div><div class="kicker" data-anim="up">Bloco 2 · Processo</div><h2 class="stitle" data-anim="up" style="--d:60">Papéis &amp; responsabilidades</h2></div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 04</div>
+      </div>
+      <div class="col4">
+        <div class="panel acc" data-anim="pop" style="--d:140;--c:#2b8bd6"><div class="ph">PO · Bruna &amp; Thais</div><ul class="ulist"><li>Backlog priorizado (MoSCoW)</li><li>Critérios de aceitação por US</li><li>Validação a cada sprint</li></ul></div>
+        <div class="panel acc" data-anim="pop" style="--d:200;--c:#0e9c8e"><div class="ph">SM · João Pedro</div><ul class="ulist"><li>Planning &amp; daily assíncrona</li><li>Coordenação de merges</li><li>Gestão do board GitHub</li></ul></div>
+        <div class="panel acc" data-anim="pop" style="--d:260;--c:#0f9d6b"><div class="ph">QM · Willian</div><ul class="ulist"><li>Validação BDD por US</li><li>308 testes automatizados</li><li>BUG-01 a BUG-05 registrados</li></ul></div>
+        <div class="panel acc" data-anim="pop" style="--d:320;--c:#e11d48"><div class="ph">Dev · Pedro · Gabriel · Gustavo</div><ul class="ulist"><li>26 user stories</li><li>Arquitetura de blueprints</li><li>Code review cruzado</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 11 · DINÂMICA ====== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="shead">
+        <div><div class="kicker" data-anim="up">Bloco 2 · Processo</div><h2 class="stitle" data-anim="up" style="--d:60">A dinâmica real das sprints</h2></div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 05</div>
+      </div>
+      <div class="col3">
+        <div class="panel acc" data-anim="up" style="--d:140;--c:var(--success)"><div class="ph" style="--c:var(--success)">Funcionou</div><ul class="ulist" style="--c:var(--success)"><li>Planning assíncrono (~30 min)</li><li>Review na sexta com deploy real</li><li>Deploy contínuo via Railway</li><li>Sprints curtas forçaram entregas</li></ul></div>
+        <div class="panel acc" data-anim="up" style="--d:220;--c:var(--warning)"><div class="ph" style="--c:var(--warning)">Adaptamos</div><ul class="ulist" style="--c:var(--warning)"><li>Retrospectiva informal (no grupo)</li><li>Estimativa por feeling</li><li>US movidas entre sprints quando bloqueadas</li></ul></div>
+        <div class="panel acc" data-anim="up" style="--d:300;--c:var(--error)"><div class="ph" style="--c:var(--error)">Abandonamos</div><ul class="ulist" style="--c:var(--error)"><li>Burndown chart</li><li>Pair programming formal</li><li>Definition of Done escrito (QM + BDD substituiu)</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 12 · TIMELINE ====== -->
+  <section class="slide slide-timeline" data-steps="7">
+    <div class="slide-inner tl-inner">
+      <div class="tl-ghost" id="tlGhost"></div>
+      <div class="tl-head">
+        <div><div class="kicker">Bloco 2 · Processo</div><h2 class="tl-title">Linha do tempo</h2></div>
+        <div class="sec-num">/ 06</div>
+      </div>
+      <div class="tl-track" id="tlTrack">
+        <div class="tl-line"></div><div class="tl-fill" id="tlFill"></div>
+        <button class="tl-node" data-k="0"><div class="tl-c">S0</div><div class="tl-nl">Fundação</div><div class="tl-nd">30/04–06/05</div></button>
+        <button class="tl-node" data-k="1"><div class="tl-c">S1</div><div class="tl-nl">EP01</div><div class="tl-nd">07–13/05</div></button>
+        <button class="tl-node" data-k="2"><div class="tl-c">S2</div><div class="tl-nl">EP02</div><div class="tl-nd">14–20/05</div></button>
+        <button class="tl-node" data-k="3"><div class="tl-c">S3</div><div class="tl-nl">EP03</div><div class="tl-nd">21–27/05</div></button>
+        <button class="tl-node" data-k="4"><div class="tl-c">S4</div><div class="tl-nl">EP04</div><div class="tl-nd">28/05–19/06</div></button>
+        <button class="tl-node" data-k="5"><div class="tl-c">S5</div><div class="tl-nl">Entrega</div><div class="tl-nd">20–24/06</div></button>
+      </div>
+      <div class="tl-detail">
+        <div class="tl-hint" id="tlHint"><span class="dot"></span>Use → para percorrer cada sprint</div>
+        <div class="tl-panel" data-k="0"><div class="tl-pk">Sprint 0 · Fundação</div><h3 class="tl-pt">Infra antes<br>de qualquer US.</h3><p class="tl-pd">Repositório, esqueleto Flask, banco em Docker e deploy no Railway já no ar — base para entregar desde a Sprint 1.</p><div class="tags"><span class="tag">Setup repo</span><span class="tag">Flask + blueprints</span><span class="tag">Docker MySQL</span><span class="tag">Railway</span></div></div>
+        <div class="tl-panel" data-k="1"><div class="tl-pk">Sprint 1 · EP01</div><h3 class="tl-pt">Usuários e<br>autenticação.</h3><p class="tl-pd">Cadastro, login, perfil, desativação e reset de senha — a primeira entrega funcional em produção.</p><div class="tags"><span class="tag">US01–US05</span><span class="tag">Login</span><span class="tag">1ª entrega no ar</span></div></div>
+        <div class="tl-panel" data-k="2"><div class="tl-pk">Sprint 2 · EP02</div><h3 class="tl-pt">Disciplinas e<br>indicação.</h3><p class="tl-pd">Cadastro de disciplinas e o fluxo completo: professor indica, admin aprova, monitor começa.</p><div class="tags"><span class="tag">US06–US09</span><span class="tag">Admin → Prof → Monitor</span></div></div>
+        <div class="tl-panel" data-k="3"><div class="tl-pk">Sprint 3 · EP03</div><h3 class="tl-pt">Agenda e<br>atendimentos.</h3><p class="tl-pd">Monitor cria horários, aluno agenda, monitor vê e bloqueia a agenda — o coração do produto.</p><div class="tags"><span class="tag">US10–US15</span><span class="tag">Slots</span><span class="tag">Agendamento</span></div></div>
+        <div class="tl-panel" data-k="4"><div class="tl-pk">Sprint 4 · EP04</div><h3 class="tl-pt">Registros e<br>relatórios.</h3><p class="tl-pd">Presença e assunto, painel de horas por monitor, histórico ao professor e relatório de participação.</p><div class="tags"><span class="tag">US16–US20</span><span class="tag">Presença</span><span class="tag">Relatórios</span></div></div>
+        <div class="tl-panel" data-k="5"><div class="tl-pk">Sprint 5 · Entrega</div><h3 class="tl-pt">Extras, testes e<br>apresentação.</h3><p class="tl-pd">Votação de horários, confirmação de presença e a suíte de testes consolidada — fechando o produto.</p><div class="tags"><span class="tag">US21–US26</span><span class="tag">308 testes</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 13 · DECISÕES (STACK) ====== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="shead">
+        <div><div class="kicker" data-anim="up">Bloco 3 · Construção</div><h2 class="stitle" data-anim="up" style="--d:60">As primeiras decisões</h2></div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 07</div>
+      </div>
+      <div class="col4">
+        <div class="panel acc" data-anim="pop" style="--d:140;--c:var(--primary)"><h3>Python 3.13 + Flask</h3><p class="muted">A equipe já conhecia Python; Flask cresce sem overhead de framework pesado.</p></div>
+        <div class="panel acc" data-anim="pop" style="--d:200;--c:var(--accent)"><h3>MySQL sem ORM</h3><p class="muted">SQL direto, connection pool manual — entender o banco de verdade, sem abstração.</p></div>
+        <div class="panel acc" data-anim="pop" style="--d:260;--c:var(--success)"><h3>Railway (CD)</h3><p class="muted">Cada push = produção atualizada; sem infraestrutura manual.</p></div>
+        <div class="panel acc" data-anim="pop" style="--d:320;--c:var(--warning)"><h3>Jinja2 + CSS puro</h3><p class="muted">Sem React, sem SPA — templates server-side, simples e eficazes.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 14 · FÁCIL / TRAVOU ====== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="shead">
+        <div><div class="kicker" data-anim="up">Bloco 3 · Construção</div><h2 class="stitle" data-anim="up" style="--d:60">O que foi fácil, o que travou</h2></div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 08</div>
+      </div>
+      <div class="col2">
+        <div class="panel acc" data-anim="up" style="--d:140;--c:var(--success)"><div class="ph" style="--c:var(--success)">Foi fácil</div><ul class="ulist" style="--c:var(--success)"><li>Auth e CRUD de usuários — padrões bem estabelecidos em Flask</li><li>Deploy contínuo desde a Sprint 1 — Railway funcionou de primeira</li><li>Blueprints escalaram para 7 domínios sem dor</li><li>Testes de backend em pytest — setup simples com fixtures</li></ul></div>
+        <div class="panel acc" data-anim="up" style="--d:220;--c:var(--error)"><div class="ph" style="--c:var(--error)">Travou</div><ul class="ulist" style="--c:var(--error)"><li>US14/US15 ficaram numa branch de backup por 2 sprints — pego pelo QM</li><li>Schema drift: ALTER TABLE manual sem migration tool</li><li>Conflito de branches: 3 devs no mesmo schema</li><li>Playwright (testes UI) aprendido do zero</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 15 · O QUE FUNCIONOU ====== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="shead">
+        <div><div class="kicker" data-anim="up">Bloco 3 · Construção</div><h2 class="stitle" data-anim="up" style="--d:60">O que funcionou no processo</h2></div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 09</div>
+      </div>
+      <div class="col3">
+        <div class="panel acc" data-anim="up" style="--d:140;--c:var(--primary)"><h3>Validação paralela</h3><p class="muted">BUG-01 a BUG-05 pegos pelo QM antes de produção. Horas de debugging economizadas.</p></div>
+        <div class="panel acc" data-anim="up" style="--d:220;--c:var(--accent)"><h3>Sprints curtas (1 semana)</h3><p class="muted">Forçaram entregas reais — WIP infinito virou produto funcionando.</p></div>
+        <div class="panel acc" data-anim="up" style="--d:300;--c:var(--success)"><h3>Deploy contínuo</h3><p class="muted">Railway desde a Sprint 1 — PO sempre na versão mais recente. Feedback real, não de demo local.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 16 · O QUE NÃO FUNCIONOU ====== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="shead">
+        <div><div class="kicker" data-anim="up">Bloco 3 · Construção</div><h2 class="stitle" data-anim="up" style="--d:60">O que não funcionou</h2></div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 10</div>
+      </div>
+      <div class="col2">
+        <div class="panel acc" data-anim="up" style="--d:140;--c:var(--error)"><h3>Branch isolada</h3><p class="muted">US14/US15 ficaram em <code>backup/sprint3-willian</code> por 2 semanas sem merge. Portadas na Sprint 5.</p></div>
+        <div class="panel acc" data-anim="up" style="--d:200;--c:var(--warning)"><h3>Schema sem migration</h3><p class="muted">ALTER TABLE manual em produção, sem Alembic/Flyway. Inconsistência local/prod em dois momentos.</p></div>
+        <div class="panel acc" data-anim="up" style="--d:260;--c:var(--warning)"><h3>Comunicação assíncrona</h3><p class="muted">Decisões de banco chegavam às 23h no grupo. O dev do dia seguinte não sabia da mudança.</p></div>
+        <div class="panel acc" data-anim="up" style="--d:320;--c:var(--muted)"><h3>Testes UI tardios</h3><p class="muted">Playwright escrito no fim. US21–26 com cobertura de backend, mas não de UI — dívida técnica.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 17 · DEMO — TRANSIÇÃO + CREDENCIAIS ====== -->
+  <section class="slide center-slide slide-pillar">
+    <div class="slide-inner">
+      <div class="tr-kicker" data-anim="up">Bloco 4</div>
+      <div class="big-tr" data-anim="up" style="--d:80">Demo ao vivo</div>
+      <div class="mono" data-anim="up" style="--d:160;color:var(--primary);font-size:clamp(14px,1.3vw,20px);margin-top:14px">web-production-db996d.up.railway.app</div>
+      <div class="creds" data-anim="up" style="--d:240">
+        <div class="cred" style="--c:var(--primary)"><span class="cr">Admin</span><span class="ce">admin@ufrj.br</span><span class="chip">senha123</span></div>
+        <div class="cred" style="--c:var(--accent)"><span class="cr">Professor</span><span class="ce">professor1@ufrj.br</span><span class="chip">senha123</span></div>
+        <div class="cred" style="--c:var(--success)"><span class="cr">Monitor</span><span class="ce">monitor1@ufrj.br</span><span class="chip">senha123</span></div>
+        <div class="cred" style="--c:var(--warning)"><span class="cr">Aluno</span><span class="ce">aluno1@ufrj.br</span><span class="chip">senha123</span></div>
+      </div>
+      <div class="note" data-anim="up" style="--d:320">No próximo slide: app ao vivo no iframe + botões pra copiar e-mail/senha de cada papel.</div>
+    </div>
+  </section>
+
+  <!-- ====== 18 · DEMO AO VIVO (iframe + copiar credenciais) ====== -->
+  <section class="slide slide-livedemo">
+    <div class="slide-inner">
+      <div class="demo-toolbar" data-anim="up">
+        <div class="credgrp" style="--c:var(--primary)"><span class="credrole">Admin</span>
+          <button class="copybtn" data-copy="admin@ufrj.br">✉ e-mail</button>
+          <button class="copybtn" data-copy="senha123">🔑 senha</button></div>
+        <div class="credgrp" style="--c:var(--accent)"><span class="credrole">Professor</span>
+          <button class="copybtn" data-copy="professor1@ufrj.br">✉ e-mail</button>
+          <button class="copybtn" data-copy="senha123">🔑 senha</button></div>
+        <div class="credgrp" style="--c:var(--success)"><span class="credrole">Monitor</span>
+          <button class="copybtn" data-copy="monitor1@ufrj.br">✉ e-mail</button>
+          <button class="copybtn" data-copy="senha123">🔑 senha</button></div>
+        <div class="credgrp" style="--c:var(--warning)"><span class="credrole">Aluno</span>
+          <button class="copybtn" data-copy="aluno1@ufrj.br">✉ e-mail</button>
+          <button class="copybtn" data-copy="senha123">🔑 senha</button></div>
+        <span class="tb-sep"></span>
+        <button class="routebtn primary" id="demoOpen">▶ Abrir o app</button>
+        <button class="routebtn" data-route="/usuarios">Usuários</button>
+        <button class="routebtn" data-route="/disciplinas">Disciplinas</button>
+        <button class="routebtn" data-route="/agenda">Agenda</button>
+        <button class="routebtn" data-route="/relatorios">Relatórios</button>
+      </div>
+      <div class="note" data-anim="up" style="--d:80;margin:-2px 2px 0">O login só persiste em aba própria — clique em <strong>▶ Abrir o app</strong>, cole as credenciais e navegue lá. O preview abaixo é ilustrativo (cookies de iframe são bloqueados pelo navegador).</div>
+      <div class="demo-stage" data-anim="pop" style="--d:120">
+        <iframe class="demo-iframe" id="demoFrame" src="about:blank" title="Monitoria App ao vivo"></iframe>
+        <button class="demo-overlay-btn" id="demoOpen2">↗ Abrir em nova aba</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 23 · VALIDAÇÃO PARALELA ====== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="shead">
+        <div><div class="kicker" data-anim="up">Bloco 5 · Qualidade</div><h2 class="stitle" data-anim="up" style="--d:60">Validação paralela</h2></div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 11</div>
+      </div>
+      <div class="col2" style="align-items:center">
+        <div class="pillar-art" data-anim="pop" style="--d:140">
+          <svg viewBox="0 0 320 280" fill="none" aria-hidden="true">
+            <defs>
+              <marker id="m1" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0,9 3.5,0 7" fill="var(--muted)"/></marker>
+              <marker id="mg" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0,9 3.5,0 7" fill="var(--success)"/></marker>
+              <marker id="mr" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0,9 3.5,0 7" fill="var(--error)"/></marker>
+            </defs>
+            <rect x="95" y="10" width="130" height="48" rx="10" fill="var(--card)" stroke="var(--primary)" stroke-width="2"/><text x="160" y="40" text-anchor="middle" fill="var(--primary)" font-size="16" font-family="Space Grotesk,sans-serif" font-weight="700">Dev entrega</text>
+            <line x1="160" y1="58" x2="160" y2="86" stroke="var(--muted)" stroke-width="2.5" marker-end="url(#m1)"/>
+            <rect x="80" y="88" width="160" height="48" rx="10" fill="var(--card)" stroke="var(--accent)" stroke-width="2"/><text x="160" y="118" text-anchor="middle" fill="var(--accent)" font-size="16" font-family="Space Grotesk,sans-serif" font-weight="700">QM valida BDD</text>
+            <line x1="120" y1="136" x2="80" y2="186" stroke="var(--success)" stroke-width="2.5" marker-end="url(#mg)"/>
+            <line x1="200" y1="136" x2="240" y2="186" stroke="var(--error)" stroke-width="2.5" marker-end="url(#mr)"/>
+            <rect x="10" y="188" width="120" height="48" rx="10" fill="color-mix(in oklab,var(--success) 14%,var(--card))" stroke="var(--success)" stroke-width="2"/><text x="70" y="211" text-anchor="middle" fill="var(--success)" font-size="14" font-family="Space Grotesk,sans-serif" font-weight="700">✓ Aprovada</text><text x="70" y="227" text-anchor="middle" fill="var(--muted)" font-size="11" font-family="Manrope,sans-serif">merge autorizado</text>
+            <rect x="190" y="188" width="120" height="48" rx="10" fill="color-mix(in oklab,var(--error) 14%,var(--card))" stroke="var(--error)" stroke-width="2"/><text x="250" y="211" text-anchor="middle" fill="var(--error)" font-size="14" font-family="Space Grotesk,sans-serif" font-weight="700">✗ Bug</text><text x="250" y="227" text-anchor="middle" fill="var(--muted)" font-size="11" font-family="Manrope,sans-serif">volta pro Dev</text>
+            <text x="160" y="268" text-anchor="middle" fill="var(--muted)" font-size="11" font-family="Manrope,sans-serif">5 ciclos completos neste projeto</text>
+          </svg>
+        </div>
+        <div data-anim="up" style="--d:220">
+          <div class="panel acc" style="--c:var(--error);margin-bottom:16px"><div class="ph" style="--c:var(--error)">Exemplo real · BUG-01</div><p style="font-size:clamp(15px,1.2vw,20px);line-height:1.5"><strong>US03 — editar perfil:</strong> <code>update_monitor_profile()</code> retornava <code>False</code> quando o UPDATE não alterava nada. Critério BDD falhou na validação do QM.</p></div>
+          <div class="panel acc" style="--c:var(--success)"><div class="ph" style="--c:var(--success)">Correção</div><p style="font-size:clamp(15px,1.2vw,20px);line-height:1.5">Tratar "sem alteração" como sucesso. Merge autorizado após re-validação. BUG-02 a BUG-05 seguiram o mesmo fluxo.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 24 · BDD ====== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="shead">
+        <div><div class="kicker" data-anim="up">Bloco 5 · Qualidade</div><h2 class="stitle" data-anim="up" style="--d:60">Critérios BDD</h2></div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 12</div>
+      </div>
+      <div class="col2" style="align-items:center">
+        <div class="bdd" data-anim="up" style="--d:140"><span class="bk">Cenário:</span> Aluno agenda slot disponível
+  <span class="bk">Dado</span> que estou logado como <span class="bv">aluno</span>
+  <span class="bk">E</span> existe slot de <span class="bv">"Cálculo I"</span> às <span class="bv">"14:00"</span>
+  <span class="bk">Quando</span> clico em <span class="bv">"Agendar"</span>
+  <span class="bk">Então</span> vejo <span class="bv">"Agendamento confirmado"</span>
+  <span class="bk">E</span> o slot aparece como <span class="bv">"Agendado"</span></div>
+        <div data-anim="up" style="--d:220">
+          <ul class="ulist" style="font-size:clamp(16px,1.3vw,22px)">
+            <li>O PO escreve o critério <em>antes</em> da US entrar em dev</li>
+            <li>O Dev implementa para satisfazer o cenário</li>
+            <li>O QM testa o cenário e escreve o teste automatizado</li>
+            <li>Divergência = bug registrado, US não aprovada</li>
+          </ul>
+          <div class="tags" style="margin-top:20px"><span class="tag">26 US com AC BDD</span><span class="tag">207 testes backend</span><span class="tag">101 testes UI</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== GITHUB · A TAREFA (US14) ====== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="shead">
+        <div><div class="kicker" data-anim="up">Bloco 5 · No board</div><h2 class="stitle" data-anim="up" style="--d:60">Uma tarefa bem escrita</h2></div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 13</div>
+      </div>
+      <div class="gh-grid">
+        <div class="gh-card" data-anim="up" style="--d:140">
+          <div class="gh-top"><span class="gh-badge gh-open">● Closed</span><span class="gh-num">#19</span><span class="gh-ttl">[US14] Aluno cancela um agendamento</span></div>
+          <div class="gh-body">
+            <div class="gh-sec">User story</div>
+            <div class="gh-li"><span>Como aluno, quero cancelar um agendamento, para liberar o horário se não puder ir.</span></div>
+            <div class="gh-sec">Definition of Ready</div>
+            <div class="gh-li"><span class="ck">✔</span>Formato Como / Quero / Para que</div>
+            <div class="gh-li"><span class="ck">✔</span>Critérios de aceitação definidos</div>
+            <div class="gh-li"><span class="ck">✔</span>Dependência clara — depende de US12</div>
+            <div class="gh-li"><span class="ck">✔</span>Estimada — 3 pontos (Planning Poker)</div>
+            <div class="gh-sec">Definition of Done</div>
+            <div class="gh-li"><span class="ck">✔</span>Código atende aos critérios</div>
+            <div class="gh-li"><span class="ck">✔</span>Regra das 6 horas testada</div>
+            <div class="gh-li"><span class="ck">✔</span>Sem flags pendentes do QM</div>
+            <div class="gh-li"><span class="ck">✔</span>QM atualizou o Sprint Tales</div>
+          </div>
+        </div>
+        <div class="gh-card" data-anim="up" style="--d:220">
+          <div class="gh-top"><span class="gh-badge" style="background:color-mix(in oklab,var(--accent) 18%,transparent);color:var(--accent);border:1px solid color-mix(in oklab,var(--accent) 40%,transparent)">Critérios de Aceitação · BDD</span></div>
+          <div class="gh-body">
+            <div class="gh-sec">Cenário 1 — cancelamento ok</div>
+            <div class="gh-code"><span class="bk">Given</span> aluno com agendamento confirmado
+<span class="bk">When</span>  cancela com +6h de antecedência
+<span class="bk">Then</span>  agendamento removido e o horário
+      volta a aparecer como disponível</div>
+            <div class="gh-sec">Cenário 2 — fora do prazo</div>
+            <div class="gh-code"><span class="bk">Given</span> agendamento em menos de 6h
+<span class="bk">When</span>  aluno tenta cancelar
+<span class="bk">Then</span>  rejeita: "Cancelamento não permitido
+      com menos de 6 horas de antecedência"</div>
+          </div>
+        </div>
+      </div>
+      <div class="note" data-anim="up" style="--d:300;text-align:center;margin-top:14px"><a href="https://github.com/users/WillianPessoa/projects/2" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600;text-decoration:none">Ver a tarefa no GitHub Projects ↗</a></div>
+    </div>
+  </section>
+
+  <!-- ====== GITHUB · COMENTÁRIOS (bug → correção) ====== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="shead">
+        <div><div class="kicker" data-anim="up">Bloco 5 · No board</div><h2 class="stitle" data-anim="up" style="--d:60">Os comentários: bug → correção</h2></div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 14</div>
+      </div>
+      <div class="gh-grid">
+        <div class="gh-comment" data-anim="up" style="--d:140">
+          <div class="gh-chead"><div class="gh-av" style="background:var(--error)">W</div><div><div class="gh-au">Willian · QM</div><div class="gh-num">28/05 · QM Review</div></div></div>
+          <div class="gh-cbody">
+            <p class="gh-flag">🚩 Flag QM — implementação incorreta</p>
+            <p style="margin-top:12px">O endpoint cancelava a <em>presença numa sessão votada</em>, não o <em>agendamento individual</em>. O horário não voltava para <code>DISPONIVEL</code> — o Cenário 1 não era atendido.</p>
+            <p style="margin-top:12px" class="muted">Movido para <strong>Ready for Review</strong>, pendente de correção antes de Done.</p>
+          </div>
+        </div>
+        <div class="gh-comment" data-anim="up" style="--d:220">
+          <div class="gh-chead"><div class="gh-av" style="background:var(--success)">W</div><div><div class="gh-au">Willian · QM</div><div class="gh-num">28/05 · Corrigido e fechado</div></div></div>
+          <div class="gh-cbody">
+            <p class="gh-pass">✓ Corrigido e fechado</p>
+            <p style="margin-top:12px">Novo endpoint <code>POST /agenda/agendamentos/&lt;id&gt;/cancelar</code>: valida o dono e a regra das 6h, cancela o agendamento e reverte a disponibilidade na mesma transação (<code>SELECT FOR UPDATE</code>).</p>
+            <p style="margin-top:12px">Frontend ganhou a seção <strong>"Meus agendamentos"</strong> com botão Cancelar. Critérios atendidos.</p>
+          </div>
+        </div>
+      </div>
+      <div class="note" data-anim="up" style="--d:300;text-align:center">O mesmo fluxo da Validação Paralela — aqui registrado no board, de verdade.</div>
+    </div>
+  </section>
+
+  <!-- ====== 25 · TESTES ====== -->
+  <section class="slide slide-stats">
+    <div class="slide-inner">
+      <div class="shead">
+        <div><div class="kicker" data-anim="up">Bloco 5 · Qualidade</div><h2 class="stitle" data-anim="up" style="--d:60">Testes automatizados</h2></div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 15</div>
+      </div>
+      <div class="statrow">
+        <div class="statbox" data-anim="pop" style="--d:140;--c:var(--primary)"><div class="n">207</div><div class="l">testes de backend (pytest)</div></div>
+        <div class="statbox" data-anim="pop" style="--d:200;--c:var(--accent)"><div class="n">101</div><div class="l">testes de UI (Playwright)</div></div>
+        <div class="statbox" data-anim="pop" style="--d:260;--c:var(--success)"><div class="n">308</div><div class="l">total · 26 US cobertas</div></div>
+      </div>
+      <div class="bars" data-anim="up" style="--d:320">
+        <div class="bar"><span class="bl">EP01 — Usuários (S1)</span><div class="bt"><div class="bf" style="--c:var(--primary)" data-w="71%"></div></div><span class="bn">39</span></div>
+        <div class="bar"><span class="bl">EP01 — UI (S1)</span><div class="bt"><div class="bf" style="--c:var(--accent)" data-w="85%"></div></div><span class="bn">47</span></div>
+        <div class="bar"><span class="bl">EP02 — Disciplinas (S2)</span><div class="bt"><div class="bf" style="--c:var(--primary)" data-w="71%"></div></div><span class="bn">39</span></div>
+        <div class="bar"><span class="bl">EP03 — Agenda (S3)</span><div class="bt"><div class="bf" style="--c:var(--primary)" data-w="93%"></div></div><span class="bn">51</span></div>
+        <div class="bar"><span class="bl">EP03 — UI (S3)</span><div class="bt"><div class="bf" style="--c:var(--accent)" data-w="51%"></div></div><span class="bn">28</span></div>
+        <div class="bar"><span class="bl">EP04 — Registros (S4)</span><div class="bt"><div class="bf" style="--c:var(--primary)" data-w="49%"></div></div><span class="bn">27</span></div>
+        <div class="bar"><span class="bl">Extras (S5)</span><div class="bt"><div class="bf" style="--c:var(--success)" data-w="93%"></div></div><span class="bn">51</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 26 · APRENDIZADOS TÉCNICOS ====== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="shead">
+        <div><div class="kicker" data-anim="up">Bloco 6 · Aprendizados</div><h2 class="stitle" data-anim="up" style="--d:60">Aprendizados técnicos</h2></div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 16</div>
+      </div>
+      <div class="col4">
+        <div class="panel acc" data-anim="pop" style="--d:140;--c:var(--primary)"><h3>Flask sem ORM</h3><p class="muted">SQL direto obriga entender o banco: joins explícitos, transações manuais, sem N+1 escondido.</p></div>
+        <div class="panel acc" data-anim="pop" style="--d:200;--c:var(--accent)"><h3>MySQL em produção</h3><p class="muted">Schema drift é real — sem migration tool vira dívida. Próximo projeto: Alembic na Sprint 0.</p></div>
+        <div class="panel acc" data-anim="pop" style="--d:260;--c:var(--success)"><h3>Railway como CD</h3><p class="muted">Env vars, MySQL gerenciado, deploy por push. Produção desde a Sprint 1 sem ops manual.</p></div>
+        <div class="panel acc" data-anim="pop" style="--d:320;--c:var(--warning)"><h3>Jinja2 + CSS puro</h3><p class="muted">SSR é subestimado. Sem bundler, sem transpilação — template simples, resultado limpo.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 27 · APRENDIZADOS DE PROCESSO ====== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="shead">
+        <div><div class="kicker" data-anim="up">Bloco 6 · Aprendizados</div><h2 class="stitle" data-anim="up" style="--d:60">Aprendizados de processo</h2></div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 17</div>
+      </div>
+      <div class="col2">
+        <div class="panel acc" data-anim="up" style="--d:140;--c:var(--primary)"><div class="ph">O que levamos</div><ul class="ulist"><li>Validação paralela precisa começar na Sprint 1 — não funciona se o QM entra no fim</li><li>Testes de UI devem acompanhar a US, não vir depois</li></ul></div>
+        <div class="panel acc" data-anim="up" style="--d:220;--c:var(--accent)"><div class="ph" style="--c:var(--accent)">E mais</div><ul class="ulist" style="--c:var(--accent)"><li>Migration tool desde o início — schema sem Alembic dói cedo</li><li>Feature branch por US, não por dev</li><li>BDD antes do código muda a conversa — para de adivinhar o que "funcionar" significa</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 28 · FORA DE ESCOPO / PRÓXIMOS PASSOS ====== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="shead">
+        <div><div class="kicker" data-anim="up">Bloco 6 · Aprendizados</div><h2 class="stitle" data-anim="up" style="--d:60">Fora do escopo &amp; próximos passos</h2></div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 18</div>
+      </div>
+      <div class="col3">
+        <div class="panel acc" data-anim="up" style="--d:140;--c:var(--success)"><div class="ph" style="--c:var(--success)">Implementadas</div><p class="muted">US21 &amp; US22 — confirmação rica e badge "Hoje/Amanhã". No ar, sem teste de UI.</p></div>
+        <div class="panel acc" data-anim="up" style="--d:220;--c:var(--warning)"><div class="ph" style="--c:var(--warning)">Backend only</div><p class="muted">US24/US25 (votação) e US26 (presença): 30 testes de backend, UI sem Playwright.</p></div>
+        <div class="panel acc" data-anim="up" style="--d:300;--c:var(--accent)"><div class="ph" style="--c:var(--accent)">Pendências conhecidas &amp; próximos passos</div><p class="muted" style="font-size:clamp(14px,1.1vw,18px);line-height:1.45">Há ajustes de responsividade mobile pendentes em algumas telas.</p><div class="tags" style="margin-top:6px"><span class="tag">Responsividade mobile</span><span class="tag">Alembic</span><span class="tag">Testes UI US21–26</span><span class="tag">Notificações</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== PALAVRA DO TIME (depoimentos sinceros) ====== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="shead">
+        <div><div class="kicker" data-anim="up">Bloco 6 · Aprendizados</div><h2 class="stitle" data-anim="up" style="--d:60">A palavra de quem construiu</h2></div>
+        <div class="sec-num" data-anim="up" style="--d:120">/ 19</div>
+      </div>
+      <p class="lead muted" data-anim="up" style="--d:140;margin-bottom:clamp(16px,2vw,30px)">Reclamações reais — com o perdão da palavra.</p>
+      <div class="col3">
+        <div class="panel acc" data-anim="up" style="--d:160;--c:#0e9c8e"><div class="ph">João Pedro · SM</div><p style="font-size:clamp(15px,1.25vw,21px);line-height:1.5;font-style:italic">"Daily assíncrona não foi escolha de metodologia — foi que ninguém tinha porra de horário livre. Somos tudo carioca: marca reunião e some geral."</p></div>
+        <div class="panel acc" data-anim="up" style="--d:220;--c:#0f9d6b"><div class="ph">Willian · QM</div><p style="font-size:clamp(15px,1.25vw,21px);line-height:1.5;font-style:italic">"Deixei tudo profissional e documentadinho. E teve coisa que eu fiz na sala, no susto, na hora — graças a Deus deu tudo certo."</p></div>
+        <div class="panel acc" data-anim="up" style="--d:280;--c:#e11d48"><div class="ph">Pedro · Dev</div><p style="font-size:clamp(15px,1.25vw,21px);line-height:1.5;font-style:italic">"Migration tool? A gente foi de ALTER TABLE na unha. Cada deploy era uma reza pra não cair tudo."</p></div>
+        <div class="panel acc" data-anim="up" style="--d:340;--c:#7c5cff"><div class="ph">Gabriel · Dev</div><p style="font-size:clamp(15px,1.25vw,21px);line-height:1.5;font-style:italic">"Conflito de schema às 2h da manhã é foda. Branch por dev foi cada uma — nunca mais."</p></div>
+        <div class="panel acc" data-anim="up" style="--d:400;--c:#a86a00"><div class="ph">Gustavo · Dev</div><p style="font-size:clamp(15px,1.25vw,21px);line-height:1.5;font-style:italic">"Railway salvou demais. Agora, testar no celular? A gente foi ver no dia da apresentação, 5 min antes... aí já era, né."</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 29 · ENCERRAMENTO ====== -->
+  <section class="slide slide-cover center-slide">
+    <div class="slide-inner cover-inner" style="justify-content:center">
+      <div class="cover-blob"></div>
+      <div data-anim="up">
+        <div class="tr-kicker">Obrigado</div>
+        <h1 class="cover-title" style="font-size:clamp(56px,9vw,170px)">Perguntas?</h1>
+      </div>
+      <div class="endlinks" data-anim="up" style="--d:160">
+        <div><span class="mk">Produção</span><span class="mv">web-production-db996d.up.railway.app</span></div>
+        <div><span class="mk">Repositório</span><span class="mv">github.com/WillianPessoa/monitoria-app</span></div>
+        <div><span class="mk">GitHub Projects</span><span class="mv"><a href="https://github.com/users/WillianPessoa/projects/2" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">github.com/users/WillianPessoa/projects/2</a></span></div>
+      </div>
+      <div class="chips" data-anim="up" style="--d:240">
+        <span class="chip">Bruna &amp; Thais · PO</span><span class="chip">João Pedro · SM</span><span class="chip">Willian · QM</span><span class="chip">Pedro · Dev</span><span class="chip">Gabriel · Dev</span><span class="chip">Gustavo · Dev</span>
+      </div>
+      <div class="note" data-anim="up" style="--d:320;margin-top:18px">308 testes · 26 US · 6 sprints · 1 produto em produção</div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  const root=document.documentElement;
+  const slides=[...document.querySelectorAll('.slide')];
+  const counter=document.getElementById('counter');
+  const progress=document.getElementById('progress');
+  let i=0, sub=0;
+
+  function clamp(n){return Math.max(0,Math.min(slides.length-1,n));}
+  function pad(n){return String(n).padStart(2,'0');}
+  function steps(idx){return parseInt(slides[idx].dataset.steps||'1',10);}
+
+  function applySub(idx,s){
+    const sl=slides[idx];
+    if(sl.classList.contains('slide-timeline')) updateTimeline(s);
+  }
+
+  function render(opts){
+    slides.forEach((s,idx)=>s.classList.toggle('active',idx===i));
+    applySub(i,sub);
+    if(slides[i].classList.contains('slide-stats')) animateBars();
+    if(slides[i].classList.contains('slide-livedemo')) loadDemo();
+    counter.textContent=pad(i+1)+' / '+pad(slides.length);
+    progress.style.width=((i+1)/slides.length*100)+'%';
+    if(!opts||!opts.silent){history.replaceState(null,'','#'+(i+1));}
+  }
+  function show(n,opts){i=clamp(n);sub=0;render(opts);}
+  function next(){
+    if(sub<steps(i)-1){sub++;applySub(i,sub);}
+    else if(i<slides.length-1){i++;sub=0;render();}
+  }
+  function prev(){
+    if(sub>0){sub--;applySub(i,sub);}
+    else if(i>0){i--;sub=steps(i)-1;render();}
+  }
+
+  document.getElementById('nextBtn').addEventListener('click',next);
+  document.getElementById('prevBtn').addEventListener('click',prev);
+
+  function key(e){
+    const k=e.key;
+    if(k==='ArrowRight'||k==='PageDown'){e.preventDefault();next();}
+    else if(k==='ArrowLeft'||k==='PageUp'){e.preventDefault();prev();}
+    else if(k===' '){e.preventDefault();next();}
+    else if(k==='Home'){e.preventDefault();show(0);}
+    else if(k==='End'){e.preventDefault();show(slides.length-1);}
+  }
+  window.addEventListener('keydown',key,true);
+
+  /* auto-hide bottom nav */
+  const bottomHud=document.querySelector('.hud.bottom');
+  let navTimer;
+  function pokeNav(){bottomHud.classList.add('show');clearTimeout(navTimer);
+    navTimer=setTimeout(function(){bottomHud.classList.remove('show');},2400);}
+  window.addEventListener('mousemove',pokeNav);
+
+  /* LIVE DEMO — iframe + copiar credenciais + atalhos de rota */
+  const DEMO_BASE='https://web-production-db996d.up.railway.app';
+  const demoFrame=document.getElementById('demoFrame');
+  function loadDemo(){ if(demoFrame && demoFrame.src==='about:blank'){ demoFrame.src=DEMO_BASE+'/auth/login'; } }
+  function fallbackCopy(t){try{const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);}catch(e){}}
+  document.querySelectorAll('.copybtn').forEach(b=>b.addEventListener('click',()=>{
+    const txt=b.getAttribute('data-copy');const o=b.textContent;
+    const done=()=>{b.classList.add('ok');b.textContent='✓ copiado';setTimeout(()=>{b.classList.remove('ok');b.textContent=o;},1100);};
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done).catch(()=>{fallbackCopy(txt);done();});}
+    else{fallbackCopy(txt);done();}
+  }));
+  document.querySelectorAll('.routebtn[data-route]').forEach(b=>b.addEventListener('click',()=>{ window.open(DEMO_BASE+b.getAttribute('data-route'),'_blank'); }));
+  function openDemoTab(){ window.open((demoFrame&&demoFrame.src!=='about:blank')?demoFrame.src:DEMO_BASE+'/auth/login','_blank'); }
+  ['demoOpen','demoOpen2'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('click',openDemoTab); });
+
+  /* THEME */
+  const sun='<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>';
+  const moon='<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+  const themeIcon=document.getElementById('themeIcon');
+  const themeLabel=document.getElementById('themeLabel');
+  function applyTheme(t){root.setAttribute('data-theme',t);
+    themeIcon.innerHTML=t==='light'?moon:sun;themeLabel.textContent=t==='light'?'Escuro':'Claro';
+    try{localStorage.setItem('ma-theme',t);}catch(e){}}
+  document.getElementById('themeToggle').addEventListener('click',()=>{
+    applyTheme(root.getAttribute('data-theme')==='light'?'dark':'light');});
+
+  /* TIMELINE */
+  const tlNodes=[...document.querySelectorAll('.tl-node')];
+  const tlPanels=[...document.querySelectorAll('.tl-panel')];
+  function updateTimeline(s){
+    const focus=s-1;
+    tlNodes.forEach((n,k)=>{n.classList.toggle('done',focus>=0&&k<focus);n.classList.toggle('active',k===focus);});
+    tlPanels.forEach((p,k)=>p.classList.toggle('on',k===focus));
+    const hint=document.getElementById('tlHint'); if(hint) hint.style.display=focus<0?'':'none';
+    const ghost=document.getElementById('tlGhost'); if(ghost) ghost.textContent=focus<0?'':('S'+focus);
+    const fill=document.getElementById('tlFill'); if(fill) fill.style.width=(focus<0?0:(focus/(tlNodes.length-1)*94))+'%';
+  }
+  tlNodes.forEach(n=>n.addEventListener('click',()=>{sub=parseInt(n.dataset.k,10)+1;applySub(i,sub);}));
+
+  /* STATS bars */
+  function animateBars(){
+    document.querySelectorAll('.slide-stats .bf').forEach(f=>{f.style.width='0';
+      const t=f.getAttribute('data-w');setTimeout(()=>{f.style.width=t;},120);});
+  }
+
+  /* INIT */
+  let t0='light';try{t0=localStorage.getItem('ma-theme')||'light';}catch(e){}
+  applyTheme(t0);
+  const h=parseInt(location.hash.replace('#',''),10);
+  show(!isNaN(h)?h-1:0,{silent:true});
+  window.__deck={show,next,prev};
+})();
+</script>
+
+</body></html>
